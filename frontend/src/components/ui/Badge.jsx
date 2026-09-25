@@ -1,4 +1,4 @@
-function Badge({ children, variant = "success" }) {
+function Badge({ children, variant = "success", className = "" }) {
   const variants = {
     success: "bg-smart-success/10 text-smart-success",
 
@@ -15,7 +15,14 @@ function Badge({ children, variant = "success" }) {
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${variants[variant]}`}
+      className={`
+        inline-flex items-center
+        rounded-full
+        px-3 py-1
+        text-xs font-semibold
+        ${variants[variant]}
+        ${className}
+      `}
     >
       {children}
     </span>
