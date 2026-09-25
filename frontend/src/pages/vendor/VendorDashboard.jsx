@@ -11,7 +11,6 @@ import {
 import { Link } from "react-router-dom";
 
 import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 
 function VendorDashboard() {
@@ -109,7 +108,10 @@ function VendorDashboard() {
           const Icon = stat.icon;
 
           return (
-            <Card key={stat.title} className="transition hover:-translate-y-1">
+            <Card
+              key={stat.title}
+              className="transition duration-200 hover:-translate-y-1 hover:shadow-md"
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-medium text-smart-secondary">
@@ -151,33 +153,36 @@ function VendorDashboard() {
               </p>
             </div>
 
-            <button className="flex items-center gap-1 text-sm font-semibold text-smart-blue hover:text-smart-primary">
+            <Link
+              to="/vendor/orders"
+              className="flex items-center gap-1 text-sm font-semibold text-smart-blue transition hover:text-smart-primary"
+            >
               View All
               <ArrowUpRight size={16} />
-            </button>
+            </Link>
           </div>
 
           <div className="mt-6 overflow-x-auto">
             <table className="w-full min-w-[650px]">
               <thead>
                 <tr className="border-b border-black/5 text-left">
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
+                  <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
                     Order
                   </th>
 
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
+                  <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
                     Customer
                   </th>
 
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
+                  <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
                     Item
                   </th>
 
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
+                  <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
                     Amount
                   </th>
 
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
+                  <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
                     Status
                   </th>
                 </tr>
@@ -187,7 +192,7 @@ function VendorDashboard() {
                 {recentOrders.map((order) => (
                   <tr
                     key={order.id}
-                    className="border-b border-black/5 last:border-0"
+                    className="border-b border-black/5 last:border-0 transition hover:bg-smart-background/40"
                   >
                     <td className="py-4 text-sm font-semibold text-smart-primary">
                       {order.id}
@@ -228,8 +233,9 @@ function VendorDashboard() {
           </p>
 
           <div className="mt-6 space-y-4">
+            {/* Verification */}
             <div className="flex items-center gap-4 rounded-xl bg-smart-success/10 p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-smart-success/20 text-smart-success">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-smart-success/20 text-smart-success">
                 <CheckCircle size={21} />
               </div>
 
@@ -244,6 +250,7 @@ function VendorDashboard() {
               </div>
             </div>
 
+            {/* Vendor Name */}
             <div className="rounded-xl bg-smart-background p-4">
               <p className="text-xs font-medium text-smart-secondary">
                 Vendor Name
@@ -254,6 +261,7 @@ function VendorDashboard() {
               </p>
             </div>
 
+            {/* Vendor ID */}
             <div className="rounded-xl bg-smart-background p-4">
               <p className="text-xs font-medium text-smart-secondary">
                 Vendor ID
@@ -262,6 +270,7 @@ function VendorDashboard() {
               <p className="mt-1 font-semibold text-smart-primary">VEN-00124</p>
             </div>
 
+            {/* Pass Expiry */}
             <div className="flex items-start gap-3 rounded-xl bg-smart-warning/10 p-4">
               <AlertCircle
                 size={20}
@@ -291,11 +300,15 @@ function VendorDashboard() {
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Add Food Item */}
           <Link
             to="/vendor/food-items"
-            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+            className="group rounded-xl border border-black/5 bg-smart-background p-4 text-left transition duration-200 hover:-translate-y-1 hover:bg-smart-blue/10 hover:shadow-sm"
           >
-            <Utensils className="text-smart-teal" size={22} />
+            <Utensils
+              className="text-smart-teal transition group-hover:scale-110"
+              size={22}
+            />
 
             <p className="mt-3 font-semibold text-smart-primary">
               Add Food Item
@@ -306,11 +319,15 @@ function VendorDashboard() {
             </p>
           </Link>
 
+          {/* Manage Orders */}
           <Link
             to="/vendor/orders"
-            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+            className="group rounded-xl border border-black/5 bg-smart-background p-4 text-left transition duration-200 hover:-translate-y-1 hover:bg-smart-blue/10 hover:shadow-sm"
           >
-            <ShoppingBag className="text-smart-blue" size={22} />
+            <ShoppingBag
+              className="text-smart-blue transition group-hover:scale-110"
+              size={22}
+            />
 
             <p className="mt-3 font-semibold text-smart-primary">
               Manage Orders
@@ -321,11 +338,15 @@ function VendorDashboard() {
             </p>
           </Link>
 
+          {/* View Earnings */}
           <Link
-            to="/vendor/dashboard"
-            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+            to="/vendor/earnings"
+            className="group rounded-xl border border-black/5 bg-smart-background p-4 text-left transition duration-200 hover:-translate-y-1 hover:bg-smart-blue/10 hover:shadow-sm"
           >
-            <Wallet className="text-smart-success" size={22} />
+            <Wallet
+              className="text-smart-success transition group-hover:scale-110"
+              size={22}
+            />
 
             <p className="mt-3 font-semibold text-smart-primary">
               View Earnings
@@ -336,11 +357,15 @@ function VendorDashboard() {
             </p>
           </Link>
 
+          {/* Vendor Pass */}
           <Link
             to="/vendor/pass"
-            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+            className="group rounded-xl border border-black/5 bg-smart-background p-4 text-left transition duration-200 hover:-translate-y-1 hover:bg-smart-blue/10 hover:shadow-sm"
           >
-            <CheckCircle className="text-smart-teal" size={22} />
+            <CheckCircle
+              className="text-smart-teal transition group-hover:scale-110"
+              size={22}
+            />
 
             <p className="mt-3 font-semibold text-smart-primary">Vendor Pass</p>
 

@@ -10,6 +10,7 @@ import {
   Utensils,
   ClipboardList,
   QrCode,
+  Wallet,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -73,11 +74,17 @@ const vendorMenuItems = [
     path: "/vendor/pass",
     icon: QrCode,
   },
+  {
+    name: "Earnings",
+    path: "/vendor/earnings",
+    icon: Wallet,
+  },
 ];
 
 function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-black/5 bg-smart-primary text-white lg:block">
+      {/* Logo */}
       <div className="flex h-20 items-center border-b border-white/10 px-6">
         <div>
           <h1 className="text-2xl font-bold">
@@ -103,7 +110,7 @@ function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                  `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 ${
                     isActive
                       ? "bg-smart-blue text-white shadow-md"
                       : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -132,7 +139,7 @@ function Sidebar() {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 ${
                       isActive
                         ? "bg-smart-blue text-white shadow-md"
                         : "text-white/70 hover:bg-white/10 hover:text-white"
@@ -148,9 +155,11 @@ function Sidebar() {
         </div>
       </nav>
 
+      {/* Footer */}
       <div className="absolute bottom-0 w-full border-t border-white/10 p-4">
         <div className="rounded-xl bg-white/5 p-4">
           <p className="text-sm font-semibold">SmartStay</p>
+
           <p className="mt-1 text-xs text-white/50">Student Portal</p>
         </div>
       </div>
