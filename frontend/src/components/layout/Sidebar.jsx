@@ -1,4 +1,5 @@
-import {
+
+import{
   LayoutDashboard,
   CreditCard,
   ShoppingBag,
@@ -11,6 +12,11 @@ import {
   ClipboardList,
   QrCode,
   Wallet,
+  Building2,
+  DoorOpen,
+  UserRoundCheck,
+  ArrowRightLeft,
+  BarChart3,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -50,6 +56,39 @@ const menuItems = [
     name: "Profile",
     path: "/profile",
     icon: User,
+  },
+];
+
+const hostelMenuItems = [
+  {
+    name: "Hostel Dashboard",
+    path: "/hostel",
+    icon: Building2,
+  },
+  {
+    name: "Buildings",
+    path: "/hostel/buildings",
+    icon: Building2,
+  },
+  {
+    name: "Rooms & Beds",
+    path: "/hostel/rooms",
+    icon: DoorOpen,
+  },
+  {
+    name: "Allocations",
+    path: "/hostel/allocations",
+    icon: UserRoundCheck,
+  },
+  {
+    name: "Transfers",
+    path: "/hostel/transfers",
+    icon: ArrowRightLeft,
+  },
+  {
+    name: "Occupancy",
+    path: "/hostel/occupancy",
+    icon: BarChart3,
   },
 ];
 
@@ -110,11 +149,9 @@ function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 ${
-                    isActive
-                      ? "bg-smart-blue text-white shadow-md"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
-                  }`
+                  isActive
+                    ? "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 bg-smart-blue text-white shadow-md"
+                    : "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 text-white/70 hover:bg-white/10 hover:text-white"
                 }
               >
                 <Icon size={19} />
@@ -122,6 +159,34 @@ function Sidebar() {
               </NavLink>
             );
           })}
+        </div>
+
+        {/* Hostel Management */}
+        <div className="mt-8">
+          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+            Hostel Management
+          </p>
+
+          <div className="space-y-1">
+            {hostelMenuItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    isActive
+                      ? "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 bg-smart-blue text-white shadow-md"
+                      : "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 text-white/70 hover:bg-white/10 hover:text-white"
+                  }
+                >
+                  <Icon size={19} />
+                  <span>{item.name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
         </div>
 
         {/* Vendor Management */}
@@ -139,11 +204,9 @@ function Sidebar() {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 ${
-                      isActive
-                        ? "bg-smart-blue text-white shadow-md"
-                        : "text-white/70 hover:bg-white/10 hover:text-white"
-                    }`
+                    isActive
+                      ? "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 bg-smart-blue text-white shadow-md"
+                      : "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 text-white/70 hover:bg-white/10 hover:text-white"
                   }
                 >
                   <Icon size={19} />
@@ -159,8 +222,7 @@ function Sidebar() {
       <div className="absolute bottom-0 w-full border-t border-white/10 p-4">
         <div className="rounded-xl bg-white/5 p-4">
           <p className="text-sm font-semibold">SmartStay</p>
-
-          <p className="mt-1 text-xs text-white/50">Student Portal</p>
+   <p className="mt-1 text-xs text-white/50">Student Portal</p>
         </div>
       </div>
     </aside>
