@@ -5,6 +5,9 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import Payments from "./pages/finance/Payments";
 import Marketplace from "./pages/marketplace/Marketplace";
+import VendorDashboard from "./pages/vendor/VendorDashboard";
+import FoodItems from "./pages/vendor/FoodItems";
+import VendorOrders from "./pages/vendor/VendorOrders";
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
           <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+          <Route path="/vendor/food-items" element={<FoodItems />} />
+          <Route path="/vendor/orders" element={<VendorOrders />} />
         </Route>
       </Routes>
     </BrowserRouter>
