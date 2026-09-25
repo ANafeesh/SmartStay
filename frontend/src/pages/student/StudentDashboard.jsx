@@ -94,12 +94,12 @@ function StudentDashboard() {
               </p>
             </div>
 
-            <a
-              href="/payments"
+            <Link
+              to="/payments"
               className="text-sm font-semibold text-smart-blue hover:text-smart-primary"
             >
               View all
-            </a>
+            </Link>
           </div>
 
           <div className="mt-6 divide-y divide-black/5">
