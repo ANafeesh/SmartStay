@@ -6,7 +6,10 @@ import {
   MessageSquare,
   Bell,
   User,
-  X,
+  Store,
+  Utensils,
+  ClipboardList,
+  QrCode,
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
@@ -49,6 +52,29 @@ const menuItems = [
   },
 ];
 
+const vendorMenuItems = [
+  {
+    name: "Vendor Dashboard",
+    path: "/vendor/dashboard",
+    icon: Store,
+  },
+  {
+    name: "Food Items",
+    path: "/vendor/food-items",
+    icon: Utensils,
+  },
+  {
+    name: "Vendor Orders",
+    path: "/vendor/orders",
+    icon: ClipboardList,
+  },
+  {
+    name: "Vendor Pass",
+    path: "/vendor/pass",
+    icon: QrCode,
+  },
+];
+
 function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 border-r border-black/5 bg-smart-primary text-white lg:block">
@@ -63,6 +89,7 @@ function Sidebar() {
       </div>
 
       <nav className="p-4">
+        {/* Main Menu */}
         <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
           Main Menu
         </p>
@@ -88,6 +115,36 @@ function Sidebar() {
               </NavLink>
             );
           })}
+        </div>
+
+        {/* Vendor Management */}
+        <div className="mt-8">
+          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+            Vendor Management
+          </p>
+
+          <div className="space-y-1">
+            {vendorMenuItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-smart-blue text-white shadow-md"
+                        : "text-white/70 hover:bg-white/10 hover:text-white"
+                    }`
+                  }
+                >
+                  <Icon size={19} />
+                  <span>{item.name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
         </div>
       </nav>
 

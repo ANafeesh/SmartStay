@@ -8,6 +8,7 @@ import Marketplace from "./pages/marketplace/Marketplace";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import FoodItems from "./pages/vendor/FoodItems";
 import VendorOrders from "./pages/vendor/VendorOrders";
+import VendorPass from "./pages/vendor/VendorPass";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
           <Route path="/vendor/food-items" element={<FoodItems />} />
           <Route path="/vendor/orders" element={<VendorOrders />} />
+          <Route path="/vendor/pass" element={<VendorPass />} />
         </Route>
       </Routes>
     </BrowserRouter>
