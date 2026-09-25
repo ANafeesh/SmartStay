@@ -11,6 +11,7 @@ import VendorOrders from "./pages/vendor/VendorOrders";
 import VendorPass from "./pages/vendor/VendorPass";
 import VendorEarnings from "./pages/vendor/VendorEarnings";
 import Room from "./pages/student/Room";
+import Complaints from "./pages/student/Complaints";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/room" element={<Room />} />
+          <Route path="/complaints" element={<Complaints />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
           <Route path="/vendor/food-items" element={<FoodItems />} />
