@@ -8,7 +8,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import { Link } from "react-router-dom";
+
 import Card from "../../components/ui/Card";
+import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 
 function VendorDashboard() {
@@ -288,7 +291,10 @@ function VendorDashboard() {
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <button className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10">
+          <Link
+            to="/vendor/food-items"
+            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+          >
             <Utensils className="text-smart-teal" size={22} />
 
             <p className="mt-3 font-semibold text-smart-primary">
@@ -298,9 +304,12 @@ function VendorDashboard() {
             <p className="mt-1 text-xs text-smart-secondary">
               Add a new food item to your menu
             </p>
-          </button>
+          </Link>
 
-          <button className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10">
+          <Link
+            to="/vendor/orders"
+            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+          >
             <ShoppingBag className="text-smart-blue" size={22} />
 
             <p className="mt-3 font-semibold text-smart-primary">
@@ -310,9 +319,12 @@ function VendorDashboard() {
             <p className="mt-1 text-xs text-smart-secondary">
               View and update student orders
             </p>
-          </button>
+          </Link>
 
-          <button className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10">
+          <Link
+            to="/vendor/dashboard"
+            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+          >
             <Wallet className="text-smart-success" size={22} />
 
             <p className="mt-3 font-semibold text-smart-primary">
@@ -322,9 +334,12 @@ function VendorDashboard() {
             <p className="mt-1 text-xs text-smart-secondary">
               Check your sales and earnings
             </p>
-          </button>
+          </Link>
 
-          <button className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10">
+          <Link
+            to="/vendor/pass"
+            className="rounded-xl border border-black/5 bg-smart-background p-4 text-left transition hover:-translate-y-1 hover:bg-smart-blue/10"
+          >
             <CheckCircle className="text-smart-teal" size={22} />
 
             <p className="mt-3 font-semibold text-smart-primary">Vendor Pass</p>
@@ -332,7 +347,7 @@ function VendorDashboard() {
             <p className="mt-1 text-xs text-smart-secondary">
               View your campus access pass
             </p>
-          </button>
+          </Link>
         </div>
       </Card>
     </div>
