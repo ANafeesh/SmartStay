@@ -13,6 +13,7 @@ import VendorEarnings from "./pages/vendor/VendorEarnings";
 import Room from "./pages/student/Room";
 import Complaints from "./pages/student/Complaints";
 import Notifications from "./pages/student/Notifications";
+import Profile from "./pages/student/Profile";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/room" element={<Room />} />
           <Route path="/complaints" element={<Complaints />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
           <Route path="/vendor/food-items" element={<FoodItems />} />
