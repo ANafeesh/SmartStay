@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import HostelDashboard from "./pages/hostel/HostelDashboard";
 import Home from "./pages/Home";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -15,6 +16,7 @@ import Complaints from "./pages/student/Complaints";
 import Notifications from "./pages/student/Notifications";
 import Profile from "./pages/student/Profile";
 
+
 function App() {
   return (
     <BrowserRouter>
@@ -24,6 +26,7 @@ function App() {
 
         {/* Student Application */}
         <Route element={<DashboardLayout />}>
+        <Route element={<DashboardLayout />}></Route>
           <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/room" element={<Room />} />
@@ -36,6 +39,7 @@ function App() {
           <Route path="/vendor/orders" element={<VendorOrders />} />
           <Route path="/vendor/pass" element={<VendorPass />} />
           <Route path="/vendor/earnings" element={<VendorEarnings />} />
+          <Route path="/hostel" element={<HostelDashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>
