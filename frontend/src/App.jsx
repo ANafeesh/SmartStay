@@ -4,6 +4,7 @@ import HostelDashboard from "./pages/hostel/HostelDashboard";
 import Buildings from "./pages/hostel/Buildings";
 import RoomsBeds from "./pages/hostel/RoomsBeds";
 import Allocations from "./pages/hostel/Allocations";
+import Transfers from "./pages/hostel/Transfers";
 import Home from "./pages/Home";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -46,6 +47,7 @@ function App() {
           <Route path="/hostel/buildings" element={<Buildings />} />
           <Route path="/hostel/rooms" element={<RoomsBeds />} />
           <Route path="/hostel/allocations" element={<Allocations />} />
+          <Route path="/hostel/transfers" element={<Transfers />} />
         </Route>
       </Routes>
     </BrowserRouter>
