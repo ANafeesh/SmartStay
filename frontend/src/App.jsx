@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HostelDashboard from "./pages/hostel/HostelDashboard";
 import Buildings from "./pages/hostel/Buildings";
 import RoomsBeds from "./pages/hostel/RoomsBeds";
+import Allocations from "./pages/hostel/Allocations";
 import Home from "./pages/Home";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -44,6 +45,7 @@ function App() {
           <Route path="/hostel" element={<HostelDashboard />} />
           <Route path="/hostel/buildings" element={<Buildings />} />
           <Route path="/hostel/rooms" element={<RoomsBeds />} />
+          <Route path="/hostel/allocations" element={<Allocations />} />
         </Route>
       </Routes>
     </BrowserRouter>
