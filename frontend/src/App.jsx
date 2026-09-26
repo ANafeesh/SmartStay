@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import HostelDashboard from "./pages/hostel/HostelDashboard";
+import Buildings from "./pages/hostel/Buildings";
 import Home from "./pages/Home";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -40,6 +41,7 @@ function App() {
           <Route path="/vendor/pass" element={<VendorPass />} />
           <Route path="/vendor/earnings" element={<VendorEarnings />} />
           <Route path="/hostel" element={<HostelDashboard />} />
+          <Route path="/hostel/buildings" element={<Buildings />} />
         </Route>
       </Routes>
     </BrowserRouter>
