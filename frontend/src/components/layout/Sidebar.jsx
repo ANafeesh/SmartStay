@@ -1,6 +1,10 @@
 
 import {
   LayoutDashboard,
+  ChartNoAxesCombined,
+  FileText,
+  Droplets,
+  Activity,
   CreditCard,
   ShoppingBag,
   BedDouble,
@@ -100,6 +104,12 @@ const hostelMenuItems = [
   { name: "Allocations", path: "/hostel/allocations", icon: UserRoundCheck },
   { name: "Transfers", path: "/hostel/transfers", icon: ArrowRightLeft },
   { name: "Occupancy", path: "/hostel/occupancy", icon: BarChart3 },
+];
+const analyticsMenuItems = [
+  { name: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
+  { name: "Reports", path: "/reports", icon: FileText },
+  { name: "Utilities & Food", path: "/utilities", icon: Droplets },
+  { name: "Smart Monitoring", path: "/monitoring", icon: Activity },
 ];
 const vendorMenuItems = [
   { name: "Vendor Dashboard", path: "/vendor/dashboard", icon: Store },
@@ -275,6 +285,35 @@ export default Sidebar;
             </p>{" "}
             <div className="space-y-1">
               {" "}
+            <div className="space-y-1">
+              {" "}
+              {hostelMenuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 ${isActive ? "bg-smart-blue text-white shadow-md" : "text-white/70 hover:bg-white/10 hover:text-white"}`
+                    }
+                  >
+                    {" "}
+                    <Icon size={19} /> <span>{item.name}</span>{" "}
+                  </NavLink>
+                );
+              })}{" "}
+            </div>{" "}
+          </div>{" "}
+          {/* Vendor Management */}{" "}
+          <div className="mt-8">
+            {" "}
+            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+              {" "}
+              Vendor Management{" "}
+            </p>{" "}
+            <div className="space-y-1">
+              {" "}
               {vendorMenuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -294,6 +333,30 @@ export default Sidebar;
             </div>{" "}
           </div>{" "}
         </nav>{" "}
+        {/* Analytics */}
+        <div className="mt-8">
+          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
+            Analytics
+          </p>
+          <div className="space-y-1">
+            {analyticsMenuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition duration-200 ${isActive ? "bg-smart-blue text-white shadow-md" : "text-white/70 hover:bg-white/10 hover:text-white"}`
+                  }
+                >
+                  <Icon size={19} />
+                  <span>{item.name}</span>
+                </NavLink>
+              );
+            })}
+          </div>
+        </div>
         {/* Footer */}{" "}
         <div className="absolute bottom-0 w-full border-t border-white/10 bg-smart-primary p-4">
           {" "}
