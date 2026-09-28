@@ -27,7 +27,7 @@ function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/utilities" element={<UtilitiesAnalytics />} />
           <Route path="/monitoring" element={<SmartMonitoring />} />
-          <Route path="/notifications" element={<NotificationsCenter />} />
+          <Route path="/notification-center" element={<NotificationsCenter />} />
         </Route>
       </Routes>
     </BrowserRouter>
