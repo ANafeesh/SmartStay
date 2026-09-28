@@ -3,6 +3,7 @@ function Button({
   variant = "primary",
   size = "md",
   className = "",
+  disabled = false,
   ...props
 }) {
   const variants = {
@@ -11,7 +12,7 @@ function Button({
     secondary: "bg-smart-primary text-white hover:bg-smart-blue",
 
     outline:
-      "border border-smart-primary text-smart-primary hover:bg-smart-primary hover:text-white",
+      "border border-smart-primary bg-transparent text-smart-primary hover:bg-smart-primary hover:text-white",
 
     teal: "bg-smart-teal text-white hover:bg-smart-blue",
 
@@ -28,7 +29,17 @@ function Button({
 
   return (
     <button
-      className={`rounded-xl font-semibold transition duration-200 hover:-translate-y-0.5 ${variants[variant]} ${sizes[size]} ${className}`}
+      disabled={disabled}
+      className={`
+        inline-flex items-center justify-center
+        rounded-xl font-semibold
+        transition duration-200
+        focus:outline-none focus:ring-2 focus:ring-smart-blue/40
+        ${disabled ? "cursor-not-allowed opacity-50" : "hover:-translate-y-0.5"}
+        ${variants[variant]}
+        ${sizes[size]}
+        ${className}
+      `}
       {...props}
     >
       {children}

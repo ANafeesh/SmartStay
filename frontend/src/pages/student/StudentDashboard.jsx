@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import {
   Wallet,
   BedDouble,
@@ -92,12 +94,12 @@ function StudentDashboard() {
               </p>
             </div>
 
-            <a
-              href="/payments"
+            <Link
+              to="/payments"
               className="text-sm font-semibold text-smart-blue hover:text-smart-primary"
             >
               View all
-            </a>
+            </Link>
           </div>
 
           <div className="mt-6 divide-y divide-black/5">
@@ -139,9 +141,12 @@ function StudentDashboard() {
             <p className="mt-1 font-semibold">2 Students</p>
           </div>
 
-          <button className="mt-5 w-full rounded-xl bg-smart-blue px-4 py-3 font-semibold transition hover:bg-smart-teal">
+          <Link
+            to="/room"
+            className="mt-5 block w-full rounded-xl bg-smart-blue px-4 py-3 text-center font-semibold text-white transition hover:bg-smart-teal"
+          >
             View Room Details
-          </button>
+          </Link>
         </div>
       </div>
     </div>

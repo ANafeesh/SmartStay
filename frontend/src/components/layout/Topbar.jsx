@@ -1,29 +1,54 @@
-import { Bell, Search } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 
-function Topbar() {
+function Topbar({ onMenuClick }) {
   return (
     <header className="sticky top-0 z-30 border-b border-black/5 bg-white/90 backdrop-blur">
-      <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div>
-          <p className="text-sm text-smart-secondary">Welcome back,</p>
+      <div className="flex min-h-20 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        {/* Left Side */}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={onMenuClick}
+            className="flex shrink-0 items-center justify-center rounded-xl border border-black/10 bg-white p-2.5 text-smart-primary transition hover:bg-smart-background lg:hidden"
+            aria-label="Open menu"
+          >
+            <Menu size={22} />
+          </button>
 
-          <h2 className="text-xl font-bold text-smart-primary">
-            Ahamed Nafeesh
-          </h2>
+          {/* Welcome */}
+          <div className="min-w-0">
+            <p className="hidden text-sm text-smart-secondary sm:block">
+              Welcome back,
+            </p>
+
+            <h2 className="truncate text-base font-bold text-smart-primary sm:text-xl">
+              Ahamed Nafeesh
+            </h2>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button className="hidden rounded-xl border border-black/10 bg-white p-3 text-smart-secondary transition hover:bg-smart-background sm:block">
+        {/* Right Side */}
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          {/* Search */}
+          <button
+            className="hidden rounded-xl border border-black/10 bg-white p-3 text-smart-secondary transition hover:bg-smart-background sm:block"
+            aria-label="Search"
+          >
             <Search size={20} />
           </button>
 
-          <button className="relative rounded-xl border border-black/10 bg-white p-3 text-smart-secondary transition hover:bg-smart-background">
-            <Bell size={20} />
+          {/* Notifications */}
+          <button
+            className="relative rounded-xl border border-black/10 bg-white p-2.5 text-smart-secondary transition hover:bg-smart-background sm:p-3"
+            aria-label="Notifications"
+          >
+            <Bell size={19} className="sm:h-5 sm:w-5" />
 
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-smart-danger" />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-smart-danger sm:right-2 sm:top-2" />
           </button>
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-smart-blue font-bold text-white">
+          {/* Profile */}
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-smart-blue text-sm font-bold text-white sm:h-10 sm:w-10">
             AN
           </div>
         </div>
