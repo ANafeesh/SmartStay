@@ -10,6 +10,11 @@ import DashboardLayout from "./components/layout/DashboardLayout";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import Payments from "./pages/finance/Payments";
 import Marketplace from "./pages/marketplace/Marketplace";
+import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
+import Reports from "./pages/analytics/Reports";
+import UtilitiesAnalytics from "./pages/analytics/UtilitiesAnalytics";
+import SmartMonitoring from "./pages/analytics/SmartMonitoring";
+import NotificationsCenter from "./pages/analytics/NotificationsCenter";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import FoodItems from "./pages/vendor/FoodItems";
 import VendorOrders from "./pages/vendor/VendorOrders";
@@ -38,6 +43,11 @@ function App() {
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/utilities" element={<UtilitiesAnalytics />} />
+          <Route path="/monitoring" element={<SmartMonitoring />} />
+          <Route path="/notification-center" element={<NotificationsCenter />} />
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
           <Route path="/vendor/food-items" element={<FoodItems />} />
           <Route path="/vendor/orders" element={<VendorOrders />} />
