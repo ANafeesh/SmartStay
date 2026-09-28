@@ -1,15 +1,15 @@
-import {
+﻿import {
   LayoutDashboard,
+  ChartNoAxesCombined,
+  FileText,
+  Droplets,
+  Activity,
   CreditCard,
   ShoppingBag,
   BedDouble,
   MessageSquare,
   Bell,
   User,
-  ChartNoAxesCombined,
-  FileText,
-  Droplets,
-  Activity,
   Store,
   Utensils,
   ClipboardList,
@@ -25,7 +25,6 @@ import {
 
 import { NavLink } from "react-router-dom";
 
-// Main Menu Items
 const menuItems = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "My Room", path: "/room", icon: BedDouble },
@@ -36,7 +35,6 @@ const menuItems = [
   { name: "Profile", path: "/profile", icon: User },
 ];
 
-// Hostel Management Items
 const hostelMenuItems = [
   { name: "Hostel Dashboard", path: "/hostel", icon: Building2 },
   { name: "Buildings", path: "/hostel/buildings", icon: Building2 },
@@ -46,7 +44,6 @@ const hostelMenuItems = [
   { name: "Occupancy", path: "/hostel/occupancy", icon: BarChart3 },
 ];
 
-// Vendor Management Items
 const vendorMenuItems = [
   { name: "Vendor Dashboard", path: "/vendor/dashboard", icon: Store },
   { name: "Food Items", path: "/vendor/food-items", icon: Utensils },
@@ -55,7 +52,6 @@ const vendorMenuItems = [
   { name: "Earnings", path: "/vendor/earnings", icon: Wallet },
 ];
 
-// Analytics Items
 const analyticsMenuItems = [
   { name: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
   { name: "Reports", path: "/reports", icon: FileText },
@@ -64,7 +60,6 @@ const analyticsMenuItems = [
   { name: "Notification Center", path: "/notifications-center", icon: Bell },
 ];
 
-// Render Menu Section
 const MenuSection = ({ title, items, onClose }) => (
   <div className="mt-8">
     <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
@@ -73,6 +68,7 @@ const MenuSection = ({ title, items, onClose }) => (
     <div className="space-y-1">
       {items.map((item) => {
         const Icon = item.icon;
+
         return (
           <NavLink
             key={item.path}
@@ -98,7 +94,6 @@ const MenuSection = ({ title, items, onClose }) => (
 function Sidebar({ isOpen, onClose }) {
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -106,7 +101,6 @@ function Sidebar({ isOpen, onClose }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed left-0 top-0 z-50 h-screen w-64
@@ -117,7 +111,6 @@ function Sidebar({ isOpen, onClose }) {
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Logo */}
         <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
           <div>
             <h1 className="text-2xl font-bold">
@@ -126,7 +119,6 @@ function Sidebar({ isOpen, onClose }) {
             <p className="text-xs text-white/50">Hostel Management</p>
           </div>
 
-          {/* Mobile Close Button */}
           <button
             onClick={onClose}
             className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white lg:hidden"
@@ -136,15 +128,14 @@ function Sidebar({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Navigation */}
         <nav className="h-[calc(100vh-80px)] overflow-y-auto p-4 pb-24">
-          {/* Main Menu */}
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-white/40">
             Main Menu
           </p>
           <div className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
+
               return (
                 <NavLink
                   key={item.path}
@@ -165,21 +156,18 @@ function Sidebar({ isOpen, onClose }) {
             })}
           </div>
 
-          {/* Hostel Management Section */}
           <MenuSection
             title="Hostel Management"
             items={hostelMenuItems}
             onClose={onClose}
           />
 
-          {/* Vendor Management Section */}
           <MenuSection
             title="Vendor Management"
             items={vendorMenuItems}
             onClose={onClose}
           />
 
-          {/* Analytics Section */}
           <MenuSection
             title="Analytics & Insights"
             items={analyticsMenuItems}
@@ -187,7 +175,6 @@ function Sidebar({ isOpen, onClose }) {
           />
         </nav>
 
-        {/* Footer */}
         <div className="absolute bottom-0 w-full border-t border-white/10 bg-smart-primary p-4">
           <div className="rounded-xl bg-white/5 p-4">
             <p className="text-sm font-semibold">SmartStay</p>
