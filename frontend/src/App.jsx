@@ -23,6 +23,11 @@ import Payments from "./pages/finance/Payments";
 import Marketplace from "./pages/marketplace/Marketplace";
 
 // Vendor
+import AnalyticsDashboard from "./pages/analytics/AnalyticsDashboard";
+import Reports from "./pages/analytics/Reports";
+import UtilitiesAnalytics from "./pages/analytics/UtilitiesAnalytics";
+import SmartMonitoring from "./pages/analytics/SmartMonitoring";
+import NotificationsCenter from "./pages/analytics/NotificationsCenter";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
 import FoodItems from "./pages/vendor/FoodItems";
 import VendorOrders from "./pages/vendor/VendorOrders";
@@ -36,6 +41,7 @@ import UtilitiesAnalytics from "./pages/analytics/UtilitiesAnalytics";
 import SmartMonitoring from "./pages/analytics/SmartMonitoring";
 import NotificationsCenter from "./pages/analytics/NotificationsCenter";
 
+
 function App() {
   return (
     <BrowserRouter>
@@ -46,6 +52,7 @@ function App() {
         {/* Dashboard Layout */}
         <Route element={<DashboardLayout />}>
           {/* Student Routes */}
+        <Route element={<DashboardLayout />}></Route>
           <Route path="/dashboard" element={<StudentDashboard />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/room" element={<Room />} />
@@ -55,6 +62,11 @@ function App() {
           <Route path="/marketplace" element={<Marketplace />} />
 
           {/* Vendor Routes */}
+          <Route path="/analytics" element={<AnalyticsDashboard />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/utilities" element={<UtilitiesAnalytics />} />
+          <Route path="/monitoring" element={<SmartMonitoring />} />
+          <Route path="/notification-center" element={<NotificationsCenter />} />
           <Route path="/vendor/dashboard" element={<VendorDashboard />} />
           <Route path="/vendor/food-items" element={<FoodItems />} />
           <Route path="/vendor/orders" element={<VendorOrders />} />
