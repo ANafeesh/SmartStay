@@ -1,122 +1,144 @@
 import { Link } from "react-router-dom";
-
 import {
   Wallet,
   BedDouble,
   ShoppingBag,
   AlertCircle,
   ArrowUpRight,
+  ChevronRight,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
 
 const stats = [
   {
     title: "Outstanding Balance",
     value: "Rs. 12,500",
+    badge: "Due Soon",
+    badgeColor: "bg-amber-50 text-amber-700 border-amber-200/60",
     icon: Wallet,
-    color: "text-smart-blue",
-    bg: "bg-smart-blue/10",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
   },
   {
-    title: "Room",
+    title: "Room Assigned",
     value: "B-204",
+    badge: "Active",
+    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
     icon: BedDouble,
-    color: "text-smart-teal",
-    bg: "bg-smart-teal/10",
+    color: "text-cyan-600",
+    bg: "bg-cyan-50",
   },
   {
     title: "Food Orders",
     value: "08",
+    badge: "This Month",
+    badgeColor: "bg-slate-100 text-slate-600 border-slate-200",
     icon: ShoppingBag,
-    color: "text-smart-warning",
-    bg: "bg-smart-warning/10",
+    color: "text-amber-600",
+    bg: "bg-amber-50",
   },
   {
     title: "Open Complaints",
     value: "02",
+    badge: "In Progress",
+    badgeColor: "bg-rose-50 text-rose-700 border-rose-200/60",
     icon: AlertCircle,
-    color: "text-smart-danger",
-    bg: "bg-smart-danger/10",
+    color: "text-rose-600",
+    bg: "bg-rose-50",
   },
 ];
 
 function StudentDashboard() {
   return (
-    <div className="mx-auto max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-smart-primary">
+    <div className="mx-auto max-w-7xl space-y-6">
+      {/* Title Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Student Dashboard
         </h1>
-
-        <p className="mt-2 text-smart-secondary">
-          Here's what's happening with your hostel services.
+        <p className="mt-1 text-sm text-slate-500">
+          Here is a quick overview of your hostel services and balance.
         </p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Stat Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
             <div
               key={stat.title}
-              className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-md"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-center justify-between">
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bg} ${stat.color}`}
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.bg} ${stat.color}`}
                 >
-                  <Icon size={24} />
+                  <Icon size={22} />
                 </div>
 
-                <ArrowUpRight size={18} className="text-smart-secondary" />
+                <span
+                  className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${stat.badgeColor}`}
+                >
+                  {stat.badge}
+                </span>
               </div>
 
-              <p className="mt-5 text-sm text-smart-secondary">{stat.title}</p>
-
-              <h3 className="mt-1 text-2xl font-bold text-smart-primary">
-                {stat.value}
-              </h3>
+              <p className="mt-4 text-xs font-medium text-slate-500">
+                {stat.title}
+              </p>
+              <div className="mt-1 flex items-baseline justify-between">
+                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  {stat.value}
+                </h3>
+                <ArrowUpRight
+                  size={18}
+                  className="text-slate-300 transition-colors group-hover:text-slate-600"
+                />
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm lg:col-span-2">
+      {/* Lower Section Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Recent Payments Card */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs lg:col-span-2">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-smart-primary">
+              <h2 className="text-base font-bold text-slate-900">
                 Recent Payments
               </h2>
-
-              <p className="text-sm text-smart-secondary">
-                Your latest payment activity
+              <p className="text-xs text-slate-500">
+                Your latest payment activity & receipts
               </p>
             </div>
 
             <Link
               to="/payments"
-              className="text-sm font-semibold text-smart-blue hover:text-smart-primary"
+              className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
-              View all
+              <span>View all</span>
+              <ChevronRight size={14} />
             </Link>
           </div>
 
-          <div className="mt-6 divide-y divide-black/5">
+          <div className="mt-4 divide-y divide-slate-100">
             <PaymentRow
               title="September Hostel Fee"
               date="24 Sep 2026"
               amount="Rs. 8,000"
               status="Paid"
             />
-
             <PaymentRow
               title="Utility Charge"
               date="20 Sep 2026"
               amount="Rs. 2,500"
               status="Paid"
             />
-
             <PaymentRow
               title="Semester Fee"
               date="15 Sep 2026"
@@ -126,24 +148,46 @@ function StudentDashboard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-black/5 bg-smart-primary p-6 text-white shadow-sm">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10">
-            <BedDouble size={24} />
-          </div>
+        {/* Room Card Redesign */}
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-6 text-white shadow-md">
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
+                <BedDouble size={22} className="text-blue-400" />
+              </div>
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
+                <ShieldCheck size={13} />
+                Occupied
+              </span>
+            </div>
 
-          <h2 className="mt-5 text-xl font-bold">Room B-204</h2>
+            <p className="mt-6 text-xs font-medium text-slate-400 uppercase tracking-wider">
+              Current Room
+            </p>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Room B-204
+            </h2>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Block B · Second Floor
+            </p>
 
-          <p className="mt-2 text-sm text-white/60">Block B · Second Floor</p>
-
-          <div className="mt-6 rounded-xl bg-white/10 p-4">
-            <p className="text-xs text-white/50">Roommates</p>
-
-            <p className="mt-1 font-semibold">2 Students</p>
+            <div className="mt-6 flex items-center justify-between rounded-xl bg-white/5 border border-white/10 p-3.5 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
+                  <Users size={16} />
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400">Roommates</p>
+                  <p className="text-xs font-semibold text-white">2 Students</p>
+                </div>
+              </div>
+              <span className="text-xs text-slate-400 font-medium">Cap: 3</span>
+            </div>
           </div>
 
           <Link
             to="/room"
-            className="mt-5 block w-full rounded-xl bg-smart-blue px-4 py-3 text-center font-semibold text-white transition hover:bg-smart-teal"
+            className="mt-6 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-xs font-semibold text-white transition hover:bg-blue-500 shadow-sm shadow-blue-500/30"
           >
             View Room Details
           </Link>
@@ -157,21 +201,19 @@ function PaymentRow({ title, date, amount, status }) {
   const isPaid = status === "Paid";
 
   return (
-    <div className="flex items-center justify-between gap-4 py-4">
+    <div className="flex items-center justify-between gap-4 py-3.5">
       <div>
-        <p className="font-semibold text-smart-primary">{title}</p>
-
-        <p className="mt-1 text-sm text-smart-secondary">{date}</p>
+        <p className="text-sm font-semibold text-slate-800">{title}</p>
+        <p className="text-xs text-slate-400">{date}</p>
       </div>
 
       <div className="text-right">
-        <p className="font-semibold text-smart-primary">{amount}</p>
-
+        <p className="text-sm font-semibold text-slate-900">{amount}</p>
         <span
-          className={`mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${
+          className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold ${
             isPaid
-              ? "bg-smart-success/10 text-smart-success"
-              : "bg-smart-warning/10 text-smart-warning"
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-amber-50 text-amber-700"
           }`}
         >
           {status}
