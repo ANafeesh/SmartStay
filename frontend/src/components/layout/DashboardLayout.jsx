@@ -16,13 +16,13 @@ function DashboardLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-smart-background">
+    <div className="min-h-screen bg-slate-50">
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
-      <div className="lg:ml-64">
+      <div className="lg:ml-64 flex flex-col min-h-screen">
         <Topbar onMenuClick={openSidebar} />
 
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
