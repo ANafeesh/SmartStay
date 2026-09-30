@@ -57,6 +57,7 @@ const navigationGroups = [
       { name: "Rooms & Beds", href: "/hostel/rooms", icon: Bed },
       { name: "Allocations", href: "/hostel/allocations", icon: Users },
       { name: "Transfers", href: "/hostel/transfers", icon: ArrowLeftRight },
+      { name: "Occupancy", href: "/hostel/occupancy", icon: BarChart3 },
     ],
   },
   {
