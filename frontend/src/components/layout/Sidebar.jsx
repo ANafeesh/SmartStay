@@ -27,7 +27,7 @@
 import { NavLink } from "react-router-dom";
 
 const menuItems = [
-  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+  { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, exact: true },
   { name: "My Room", path: "/room", icon: BedDouble },
   { name: "Payments", path: "/payments", icon: CreditCard },
   { name: "Marketplace", path: "/marketplace", icon: ShoppingBag },
@@ -37,7 +37,7 @@ const menuItems = [
 ];
 
 const hostelMenuItems = [
-  { name: "Hostel Dashboard", path: "/hostel", icon: Building2 },
+  { name: "Hostel Dashboard", path: "/hostel", icon: Building2, exact: true },
   { name: "Buildings", path: "/hostel/buildings", icon: Building2 },
   { name: "Rooms & Beds", path: "/hostel/rooms", icon: DoorOpen },
   { name: "Allocations", path: "/hostel/allocations", icon: UserRoundCheck },
@@ -46,7 +46,12 @@ const hostelMenuItems = [
 ];
 
 const vendorMenuItems = [
-  { name: "Vendor Dashboard", path: "/vendor/dashboard", icon: Store },
+  {
+    name: "Vendor Dashboard",
+    path: "/vendor/dashboard",
+    icon: Store,
+    exact: true,
+  },
   { name: "Food Items", path: "/vendor/food-items", icon: Utensils },
   { name: "Vendor Orders", path: "/vendor/orders", icon: ClipboardList },
   { name: "Vendor Pass", path: "/vendor/pass", icon: QrCode },
@@ -54,7 +59,12 @@ const vendorMenuItems = [
 ];
 
 const analyticsMenuItems = [
-  { name: "Analytics", path: "/analytics", icon: ChartNoAxesCombined },
+  {
+    name: "Analytics",
+    path: "/analytics",
+    icon: ChartNoAxesCombined,
+    exact: true,
+  },
   { name: "Reports", path: "/reports", icon: FileText },
   { name: "Utilities & Food", path: "/utilities", icon: Droplets },
   { name: "Smart Monitoring", path: "/monitoring", icon: Activity },
@@ -74,6 +84,7 @@ const MenuSection = ({ title, items, onClose }) => (
           <NavLink
             key={item.path}
             to={item.path}
+            end={item.exact}
             onClick={onClose}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all ${
@@ -149,6 +160,7 @@ function Sidebar({ isOpen, onClose }) {
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  end={item.exact}
                   onClick={onClose}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium outline-none transition-all ${
