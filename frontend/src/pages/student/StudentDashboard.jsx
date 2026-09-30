@@ -51,7 +51,7 @@ const stats = [
 
 function StudentDashboard() {
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
       {/* Title Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
@@ -104,90 +104,94 @@ function StudentDashboard() {
       </div>
 
       {/* Lower Section Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 items-stretch">
         {/* Recent Payments Card */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">
-                Recent Payments
-              </h2>
-              <p className="text-xs text-slate-500">
-                Your latest payment activity & receipts
-              </p>
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs lg:col-span-2">
+          <div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">
+                  Recent Payments
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Your latest payment activity & receipts
+                </p>
+              </div>
+
+              <Link
+                to="/payments"
+                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+              >
+                <span>View all</span>
+                <ChevronRight size={14} />
+              </Link>
             </div>
 
-            <Link
-              to="/payments"
-              className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
-            >
-              <span>View all</span>
-              <ChevronRight size={14} />
-            </Link>
-          </div>
-
-          <div className="mt-4 divide-y divide-slate-100">
-            <PaymentRow
-              title="September Hostel Fee"
-              date="24 Sep 2026"
-              amount="Rs. 8,000"
-              status="Paid"
-            />
-            <PaymentRow
-              title="Utility Charge"
-              date="20 Sep 2026"
-              amount="Rs. 2,500"
-              status="Paid"
-            />
-            <PaymentRow
-              title="Semester Fee"
-              date="15 Sep 2026"
-              amount="Rs. 2,000"
-              status="Pending"
-            />
+            <div className="mt-4 divide-y divide-slate-100">
+              <PaymentRow
+                title="September Hostel Fee"
+                date="24 Sep 2026"
+                amount="Rs. 8,000"
+                status="Paid"
+              />
+              <PaymentRow
+                title="Utility Charge"
+                date="20 Sep 2026"
+                amount="Rs. 2,500"
+                status="Paid"
+              />
+              <PaymentRow
+                title="Semester Fee"
+                date="15 Sep 2026"
+                amount="Rs. 2,000"
+                status="Pending"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Room Card Redesign */}
+        {/* Room Card */}
         <div className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-6 text-white shadow-md">
-          <div>
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
-                <BedDouble size={22} className="text-blue-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
+                <BedDouble size={20} className="text-blue-400" />
               </div>
-              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
-                <ShieldCheck size={13} />
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+                <ShieldCheck size={12} />
                 Occupied
               </span>
             </div>
 
-            <p className="mt-6 text-xs font-medium text-slate-400 uppercase tracking-wider">
-              Current Room
-            </p>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
-              Room B-204
-            </h2>
-            <p className="text-xs text-slate-300 mt-0.5">
-              Block B · Second Floor
-            </p>
+            <div>
+              <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                Current Room
+              </p>
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                Room B-204
+              </h2>
+              <p className="text-xs text-slate-300">Block B · Second Floor</p>
+            </div>
 
-            <div className="mt-6 flex items-center justify-between rounded-xl bg-white/5 border border-white/10 p-3.5 backdrop-blur-sm">
+            <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 p-3 backdrop-blur-sm">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
-                  <Users size={16} />
+                  <Users size={15} />
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400">Roommates</p>
+                  <p className="text-[10px] text-slate-400">Roommates</p>
                   <p className="text-xs font-semibold text-white">2 Students</p>
                 </div>
               </div>
-              <span className="text-xs text-slate-400 font-medium">Cap: 3</span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                Cap: 3
+              </span>
             </div>
           </div>
 
           <Link
             to="/room"
-            className="mt-6 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-xs font-semibold text-white transition hover:bg-blue-500 shadow-sm shadow-blue-500/30"
+            className="mt-5 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-xs font-semibold text-white transition hover:bg-blue-500 shadow-sm shadow-blue-500/30"
           >
             View Room Details
           </Link>

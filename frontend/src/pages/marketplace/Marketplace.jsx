@@ -2,343 +2,420 @@ import { useState } from "react";
 import {
   Search,
   ShoppingCart,
-  Star,
-  Clock3,
-  MapPin,
   Plus,
-  Heart,
+  Minus,
+  X,
+  Clock,
+  Store,
+  CheckCircle2,
+  Utensils,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
 
-import Card from "../../components/ui/Card";
-import Badge from "../../components/ui/Badge";
-import Button from "../../components/ui/Button";
-
-const categories = [
-  "All",
-  "Rice & Curry",
-  "Short Eats",
-  "Burgers",
-  "Pizza",
-  "Drinks",
-  "Desserts",
+const initialFoodItems = [
+  {
+    id: "FD-101",
+    name: "Chicken Kottu Roti (Full)",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-01",
+    price: 850,
+    category: "Main Dishes",
+    image:
+      "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&q=80&w=400",
+    available: true,
+    rating: 4.8,
+  },
+  {
+    id: "FD-102",
+    name: "Crispy Chicken Burger & Fries",
+    vendor: "The Snack Shack",
+    vendorId: "VND-02",
+    price: 950,
+    category: "Fast Food",
+    image:
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400",
+    available: true,
+    rating: 4.6,
+  },
+  {
+    id: "FD-103",
+    name: "Egg Fried Rice with Chili Paste",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-01",
+    price: 650,
+    category: "Main Dishes",
+    image:
+      "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=400",
+    available: true,
+    rating: 4.5,
+  },
+  {
+    id: "FD-104",
+    name: "Iced Milk Coffee (500ml)",
+    vendor: "Bean & Brew Coffee Co.",
+    vendorId: "VND-03",
+    price: 350,
+    category: "Beverages",
+    image:
+      "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=400",
+    available: true,
+    rating: 4.9,
+  },
+  {
+    id: "FD-105",
+    name: "Vegetable Roti & Dhal Curry",
+    vendor: "The Snack Shack",
+    vendorId: "VND-02",
+    price: 300,
+    category: "Snacks",
+    image:
+      "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&q=80&w=400",
+    available: false,
+    rating: 4.2,
+  },
 ];
 
-const foods = [
-  {
-    id: 1,
-    name: "Chicken Rice & Curry",
-    vendor: "Campus Kitchen",
-    category: "Rice & Curry",
-    price: 450,
-    rating: 4.8,
-    time: "15-20 min",
-    image:
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80",
-    popular: true,
-  },
-  {
-    id: 2,
-    name: "Chicken Burger",
-    vendor: "Food Hub",
-    category: "Burgers",
-    price: 650,
-    rating: 4.7,
-    time: "15-20 min",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80",
-    popular: true,
-  },
-  {
-    id: 3,
-    name: "Cheese Pizza",
-    vendor: "Campus Bites",
-    category: "Pizza",
-    price: 850,
-    rating: 4.6,
-    time: "20-25 min",
-    image:
-      "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=80",
-    popular: false,
-  },
-  {
-    id: 4,
-    name: "Vegetable Roti",
-    vendor: "Quick Eats",
-    category: "Short Eats",
-    price: 180,
-    rating: 4.5,
-    time: "10-15 min",
-    image:
-      "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?auto=format&fit=crop&w=800&q=80",
-    popular: false,
-  },
-  {
-    id: 5,
-    name: "Fresh Fruit Juice",
-    vendor: "Juice Corner",
-    category: "Drinks",
-    price: 250,
-    rating: 4.9,
-    time: "5-10 min",
-    image:
-      "https://images.unsplash.com/photo-1613478223719-2ab802602423?auto=format&fit=crop&w=800&q=80",
-    popular: true,
-  },
-  {
-    id: 6,
-    name: "Chocolate Cake",
-    vendor: "Sweet Spot",
-    category: "Desserts",
-    price: 350,
-    rating: 4.8,
-    time: "10-15 min",
-    image:
-      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
-    popular: false,
-  },
+const categories = ["All", "Main Dishes", "Fast Food", "Snacks", "Beverages"];
+
+const timeSlots = [
+  "12:30 PM - 01:00 PM (Lunch)",
+  "01:00 PM - 01:30 PM (Lunch)",
+  "06:30 PM - 07:00 PM (Dinner)",
+  "07:30 PM - 08:00 PM (Dinner)",
 ];
 
 function Marketplace() {
+  const [items] = useState(initialFoodItems);
+  const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [search, setSearch] = useState("");
-  const [cartCount, setCartCount] = useState(0);
-  const [favorites, setFavorites] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(timeSlots[0]);
+  const [orderConfirmed, setOrderConfirmed] = useState(null);
 
-  const filteredFoods = foods.filter((food) => {
-    const matchesCategory =
-      selectedCategory === "All" || food.category === selectedCategory;
+  // Cart Handlers
+  const addToCart = (item) => {
+    const existing = cart.find((i) => i.id === item.id);
+    if (existing) {
+      setCart(
+        cart.map((i) =>
+          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
+        ),
+      );
+    } else {
+      setCart([...cart, { ...item, quantity: 1 }]);
+    }
+    setIsCartOpen(true);
+  };
 
-    const matchesSearch =
-      food.name.toLowerCase().includes(search.toLowerCase()) ||
-      food.vendor.toLowerCase().includes(search.toLowerCase());
-
-    return matchesCategory && matchesSearch;
-  });
-
-  const toggleFavorite = (id) => {
-    setFavorites((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
+  const updateQuantity = (id, delta) => {
+    setCart(
+      cart
+        .map((i) => {
+          if (i.id === id) {
+            const newQty = i.quantity + delta;
+            return newQty > 0 ? { ...i, quantity: newQty } : null;
+          }
+          return i;
+        })
+        .filter(Boolean),
     );
   };
 
-  return (
-    <div className="mx-auto max-w-7xl">
-      {/* Header */}
-      <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-        <div>
-          <p className="text-sm font-semibold text-smart-blue">
-            SmartStay Marketplace
-          </p>
+  const cartTotal = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
 
-          <h1 className="mt-1 text-3xl font-bold text-smart-primary">
+  const handleCheckout = (e) => {
+    e.preventDefault();
+    if (cart.length === 0) return;
+
+    const orderNo = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+
+    setOrderConfirmed({
+      orderNo: orderNo,
+      items: cart,
+      total: cartTotal,
+      slot: selectedSlot,
+      vendor: cart[0]?.vendor || "Approved Vendor",
+    });
+
+    setCart([]);
+    setIsCartOpen(false);
+  };
+
+  const filteredItems = items.filter((item) => {
+    const matchesCategory =
+      selectedCategory === "All" || item.category === selectedCategory;
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.vendor.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Food Marketplace
           </h1>
-
-          <p className="mt-2 text-smart-secondary">
-            Discover delicious food from approved campus vendors.
+          <p className="mt-1 text-sm text-slate-500">
+            Order meals from approved local vendors for scheduled campus gate
+            delivery.
           </p>
         </div>
 
-        {/* Cart */}
-        <button className="relative flex items-center gap-3 self-start rounded-xl bg-smart-primary px-5 py-3 font-semibold text-white transition hover:bg-smart-blue md:self-auto">
-          <ShoppingCart size={20} />
-
+        {/* Cart Button */}
+        <button
+          onClick={() => setIsCartOpen(true)}
+          className="relative flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800 transition"
+        >
+          <ShoppingCart size={18} />
           <span>Cart</span>
-
-          {cartCount > 0 && (
-            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-smart-accent px-1 text-xs">
-              {cartCount}
+          {cart.length > 0 && (
+            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
+              {cart.reduce((sum, i) => sum + i.quantity, 0)}
             </span>
           )}
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative mt-8">
-        <Search
-          size={20}
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-smart-secondary"
-        />
-
-        <input
-          type="text"
-          placeholder="Search food or vendors..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="w-full rounded-xl border border-black/10 bg-white py-4 pl-12 pr-4 outline-none transition focus:border-smart-blue focus:ring-4 focus:ring-smart-blue/10"
-        />
-      </div>
-
-      {/* Categories */}
-      <div className="mt-6 flex gap-3 overflow-x-auto pb-2">
-        {categories.map((category) => {
-          const active = selectedCategory === category;
-
-          return (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-semibold transition ${
-                active
-                  ? "bg-smart-blue text-white shadow-sm"
-                  : "bg-white text-smart-secondary hover:bg-smart-blue/10 hover:text-smart-blue"
-              }`}
-            >
-              {category}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Popular section */}
-      {selectedCategory === "All" && !search && (
-        <section className="mt-8">
-          <div className="mb-5 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-smart-primary">
-                Popular Near You
-              </h2>
-
-              <p className="mt-1 text-sm text-smart-secondary">
-                Student favorites this week
-              </p>
+      {/* Order Confirmation Banner */}
+      {orderConfirmed && (
+        <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/90 p-5 shadow-xs transition-all">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+                <CheckCircle2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-emerald-950">
+                  Order Placed Successfully! #{orderConfirmed.orderNo}
+                </h3>
+                <p className="mt-0.5 text-xs text-emerald-800">
+                  Your order from <strong>{orderConfirmed.vendor}</strong> has
+                  been sent. Collect at gate during slot:{" "}
+                  <strong>{orderConfirmed.slot}</strong>.
+                </p>
+                <div className="mt-2 text-xs font-bold text-emerald-900">
+                  Total Paid: LKR {orderConfirmed.total.toLocaleString()}
+                </div>
+              </div>
             </div>
+            <button
+              onClick={() => setOrderConfirmed(null)}
+              className="rounded-lg p-1 text-emerald-700 hover:bg-emerald-100"
+            >
+              <X size={18} />
+            </button>
           </div>
-
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {foods
-              .filter((food) => food.popular)
-              .map((food) => (
-                <FoodCard
-                  key={food.id}
-                  food={food}
-                  isFavorite={favorites.includes(food.id)}
-                  onFavorite={() => toggleFavorite(food.id)}
-                  onAdd={() => setCartCount((count) => count + 1)}
-                />
-              ))}
-          </div>
-        </section>
+        </div>
       )}
 
-      {/* All foods */}
-      <section className="mt-10">
-        <div className="mb-5">
-          <h2 className="text-xl font-bold text-smart-primary">
-            {selectedCategory === "All" ? "All Food" : selectedCategory}
-          </h2>
-
-          <p className="mt-1 text-sm text-smart-secondary">
-            {filteredFoods.length} items available
-          </p>
-        </div>
-
-        {filteredFoods.length === 0 ? (
-          <Card>
-            <div className="py-10 text-center">
-              <p className="font-semibold text-smart-primary">No food found</p>
-
-              <p className="mt-2 text-sm text-smart-secondary">
-                Try another search or category.
-              </p>
-            </div>
-          </Card>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredFoods.map((food) => (
-              <FoodCard
-                key={food.id}
-                food={food}
-                isFavorite={favorites.includes(food.id)}
-                onFavorite={() => toggleFavorite(food.id)}
-                onAdd={() => setCartCount((count) => count + 1)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
-
-function FoodCard({ food, isFavorite, onFavorite, onAdd }) {
-  return (
-    <Card padding="p-0" className="group overflow-hidden">
-      {/* Image */}
-      <div className="relative h-52 overflow-hidden">
-        <img
-          src={food.image}
-          alt={food.name}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
-
-        <button
-          onClick={onFavorite}
-          className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-smart-secondary shadow-sm backdrop-blur transition hover:text-smart-danger"
-        >
-          <Heart
-            size={19}
-            fill={isFavorite ? "currentColor" : "none"}
-            className={isFavorite ? "text-smart-danger" : ""}
+      {/* Search & Categories Bar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+        <div className="relative flex-1">
+          <Search
+            size={18}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
-        </button>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search food items or vendor name..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+          />
+        </div>
 
-        {food.popular && (
-          <div className="absolute left-3 top-3">
-            <Badge variant="teal">Popular</Badge>
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedCategory === cat
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="font-bold text-smart-primary">{food.name}</h3>
-
-            <p className="mt-1 text-sm text-smart-secondary">{food.vendor}</p>
-          </div>
-
-          <div className="flex items-center gap-1 text-sm font-semibold text-smart-warning">
-            <Star size={15} fill="currentColor" />
-            {food.rating}
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center gap-4 text-xs text-smart-secondary">
-          <span className="flex items-center gap-1">
-            <Clock3 size={14} />
-            {food.time}
-          </span>
-
-          <span className="flex items-center gap-1">
-            <MapPin size={14} />
-            Campus
-          </span>
-        </div>
-
-        <div className="mt-5 flex items-center justify-between border-t border-black/5 pt-4">
-          <div>
-            <span className="text-xs text-smart-secondary">Price</span>
-
-            <p className="text-lg font-bold text-smart-primary">
-              Rs. {food.price}
-            </p>
-          </div>
-
-          <Button
-            size="sm"
-            onClick={onAdd}
-            className="inline-flex items-center gap-2"
+      {/* Food Items Catalog Grid */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredItems.map((item) => (
+          <div
+            key={item.id}
+            className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs transition-all hover:border-slate-300 hover:shadow-md"
           >
-            <Plus size={16} />
-            Add
-          </Button>
-        </div>
+            <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="absolute top-3 left-3 rounded-lg bg-slate-900/80 backdrop-blur-xs px-2.5 py-1 text-[11px] font-semibold text-white">
+                ★ {item.rating}
+              </span>
+              {!item.available && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs text-xs font-bold text-white">
+                  Sold Out
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-1 flex-col justify-between p-4">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                  <Store size={14} className="text-blue-600" />
+                  <span>{item.vendor}</span>
+                </div>
+                <h3 className="mt-1 text-base font-bold text-slate-900">
+                  {item.name}
+                </h3>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                <div>
+                  <span className="text-[10px] text-slate-400">Price</span>
+                  <p className="text-base font-bold text-slate-900">
+                    LKR {item.price}
+                  </p>
+                </div>
+
+                <button
+                  disabled={!item.available}
+                  onClick={() => addToCart(item)}
+                  className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                    item.available
+                      ? "bg-blue-600 text-white shadow-xs hover:bg-blue-500"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  <Plus size={16} />
+                  <span>Add to Cart</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
-    </Card>
+
+      {/* SHOPPING CART DRAWER */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/50 backdrop-blur-xs">
+          <div className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <ShoppingCart size={20} className="text-blue-600" />
+                <h2 className="text-base font-bold text-slate-900">
+                  Your Cart
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Cart Items List */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {cart.length > 0 ? (
+                cart.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between rounded-xl border border-slate-100 p-3 bg-slate-50/50"
+                  >
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">
+                        {item.name}
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        {item.vendor}
+                      </p>
+                      <p className="mt-1 text-xs font-bold text-blue-600">
+                        LKR {item.price * item.quantity}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-1">
+                      <button
+                        onClick={() => updateQuantity(item.id, -1)}
+                        className="p-1 text-slate-500 hover:bg-slate-100 rounded"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <span className="text-xs font-bold text-slate-800 px-1">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item.id, 1)}
+                        className="p-1 text-slate-500 hover:bg-slate-100 rounded"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  Your food cart is currently empty.
+                </div>
+              )}
+
+              {/* Delivery Slot Selection */}
+              {cart.length > 0 && (
+                <div className="mt-6 border-t border-slate-100 pt-4 space-y-2">
+                  <label className="block text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                    <Clock size={14} className="text-blue-600" />
+                    <span>Select Campus Delivery Time Slot</span>
+                  </label>
+                  <select
+                    value={selectedSlot}
+                    onChange={(e) => setSelectedSlot(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs font-medium text-slate-800 outline-none focus:border-blue-500"
+                  >
+                    {timeSlots.map((slot) => (
+                      <option key={slot} value={slot}>
+                        {slot}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Drawer Footer / Checkout */}
+            {cart.length > 0 && (
+              <div className="border-t border-slate-100 p-6 space-y-3 bg-slate-50/50">
+                <div className="flex justify-between text-xs font-bold text-slate-900">
+                  <span>Total Amount</span>
+                  <span>LKR {cartTotal.toLocaleString()}</span>
+                </div>
+
+                <button
+                  onClick={handleCheckout}
+                  className="w-full rounded-xl bg-blue-600 py-3 text-xs font-semibold text-white shadow-md hover:bg-blue-500 transition"
+                >
+                  Place Food Order
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
