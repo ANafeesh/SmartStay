@@ -1,359 +1,295 @@
 import { useState } from "react";
 import {
-  Search,
-  ShoppingBag,
   Clock,
-  CheckCircle,
-  ChefHat,
-  PackageCheck,
+  CheckCircle2,
+  Package,
+  Bike,
+  Search,
+  Filter,
+  User,
+  MapPin,
+  ChevronRight,
+  AlertCircle,
 } from "lucide-react";
 
-import Card from "../../components/ui/Card";
-import Badge from "../../components/ui/Badge";
+const initialOrders = [
+  {
+    id: "ORD-9041",
+    studentName: "Ahamed Nafeesh",
+    regNo: "SEU/IS/22/ICT/090",
+    timeSlot: "12:30 PM - 01:00 PM (Lunch)",
+    totalAmount: 1500,
+    status: "Placed",
+    createdAt: "12:10 PM",
+    items: [
+      { name: "Chicken Kottu Roti (Full)", qty: 1, price: 850 },
+      { name: "Egg Fried Rice", qty: 1, price: 650 },
+    ],
+  },
+  {
+    id: "ORD-9038",
+    studentName: "M.I.M Izni",
+    regNo: "SEU/IS/22/ICT/112",
+    timeSlot: "12:30 PM - 01:00 PM (Lunch)",
+    totalAmount: 950,
+    status: "Preparing",
+    createdAt: "11:55 AM",
+    items: [{ name: "Crispy Chicken Burger & Fries", qty: 1, price: 950 }],
+  },
+  {
+    id: "ORD-9025",
+    studentName: "A. Kanesalingam",
+    regNo: "SEU/IS/22/ICT/069",
+    timeSlot: "01:00 PM - 01:30 PM (Lunch)",
+    totalAmount: 350,
+    status: "Out for Delivery",
+    createdAt: "11:40 AM",
+    items: [{ name: "Iced Milk Coffee (500ml)", qty: 1, price: 350 }],
+  },
+  {
+    id: "ORD-9011",
+    studentName: "M.H.U Hafrath",
+    regNo: "SEU/IS/22/ICT/102",
+    timeSlot: "11:30 AM - 12:00 PM",
+    totalAmount: 850,
+    status: "Delivered",
+    createdAt: "11:15 AM",
+    items: [{ name: "Chicken Kottu Roti (Full)", qty: 1, price: 850 }],
+  },
+];
+
+const statusSteps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
 
 function VendorOrders() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [orders, setOrders] = useState(initialOrders);
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [orders, setOrders] = useState([
-    {
-      id: "#ORD-1024",
-      customer: "Kamal Perera",
-      item: "Chicken Rice & Curry",
-      quantity: 2,
-      amount: 900,
-      date: "Sep 25, 2026",
-      status: "Pending",
-    },
-    {
-      id: "#ORD-1023",
-      customer: "Ahamed Nafeesh",
-      item: "Chicken Burger",
-      quantity: 1,
-      amount: 650,
-      date: "Sep 25, 2026",
-      status: "Preparing",
-    },
-    {
-      id: "#ORD-1022",
-      customer: "Mohamed Rizwan",
-      item: "Cheese Pizza",
-      quantity: 1,
-      amount: 850,
-      date: "Sep 24, 2026",
-      status: "Ready",
-    },
-    {
-      id: "#ORD-1021",
-      customer: "Fathima Azeez",
-      item: "Fresh Fruit Juice",
-      quantity: 2,
-      amount: 500,
-      date: "Sep 24, 2026",
-      status: "Completed",
-    },
-    {
-      id: "#ORD-1020",
-      customer: "Irfan Mohamed",
-      item: "Vegetable Roti",
-      quantity: 3,
-      amount: 540,
-      date: "Sep 23, 2026",
-      status: "Completed",
-    },
-  ]);
-
-  const statusOptions = ["All", "Pending", "Preparing", "Ready", "Completed"];
-
-  const statusVariant = {
-    Pending: "info",
-    Preparing: "warning",
-    Ready: "teal",
-    Completed: "success",
-  };
-
-  const statusIcon = {
-    Pending: Clock,
-    Preparing: ChefHat,
-    Ready: PackageCheck,
-    Completed: CheckCircle,
-  };
-
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(search.toLowerCase()) ||
-      order.customer.toLowerCase().includes(search.toLowerCase()) ||
-      order.item.toLowerCase().includes(search.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "All" || order.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const updateOrderStatus = (id, newStatus) => {
-    setOrders((previousOrders) =>
-      previousOrders.map((order) =>
-        order.id === id ? { ...order, status: newStatus } : order,
-      ),
+  const handleUpdateStatus = (orderId, newStatus) => {
+    setOrders(
+      orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
     );
   };
 
-  const counts = {
-    All: orders.length,
-    Pending: orders.filter((order) => order.status === "Pending").length,
-    Preparing: orders.filter((order) => order.status === "Preparing").length,
-    Ready: orders.filter((order) => order.status === "Ready").length,
-    Completed: orders.filter((order) => order.status === "Completed").length,
+  const filteredOrders = orders.filter((o) => {
+    const matchesStatus =
+      selectedStatus === "All" || o.status === selectedStatus;
+    const matchesSearch =
+      o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.regNo.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Placed":
+        return "bg-amber-50 text-amber-700 border-amber-200/80";
+      case "Preparing":
+        return "bg-blue-50 text-blue-700 border-blue-200/80";
+      case "Out for Delivery":
+        return "bg-purple-50 text-purple-700 border-purple-200/80";
+      case "Delivered":
+        return "bg-emerald-50 text-emerald-700 border-emerald-200/80";
+      default:
+        return "bg-slate-50 text-slate-700 border-slate-200";
+    }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
       {/* Header */}
-      <div>
-        <p className="text-sm font-medium text-smart-teal">Vendor Management</p>
-
-        <h1 className="mt-1 text-2xl font-bold text-smart-primary sm:text-3xl">
-          Orders
-        </h1>
-
-        <p className="mt-2 text-sm text-smart-secondary">
-          View and manage orders placed by students.
-        </p>
-      </div>
-
-      {/* Order Statistics */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-              <ShoppingBag size={21} />
-            </div>
-
-            <div>
-              <p className="text-sm text-smart-secondary">Total Orders</p>
-
-              <p className="text-2xl font-bold text-smart-primary">
-                {counts.All}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-warning/10 text-smart-warning">
-              <Clock size={21} />
-            </div>
-
-            <div>
-              <p className="text-sm text-smart-secondary">Pending</p>
-
-              <p className="text-2xl font-bold text-smart-primary">
-                {counts.Pending}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-teal/10 text-smart-teal">
-              <ChefHat size={21} />
-            </div>
-
-            <div>
-              <p className="text-sm text-smart-secondary">Preparing</p>
-
-              <p className="text-2xl font-bold text-smart-primary">
-                {counts.Preparing}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-success/10 text-smart-success">
-              <CheckCircle size={21} />
-            </div>
-
-            <div>
-              <p className="text-sm text-smart-secondary">Completed</p>
-
-              <p className="text-2xl font-bold text-smart-primary">
-                {counts.Completed}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Search */}
-      <Card padding="p-4">
-        <div className="relative">
-          <Search
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-smart-secondary"
-          />
-
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search order ID, customer, or food..."
-            className="w-full rounded-xl bg-smart-background py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-smart-blue/20"
-          />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Live Food Orders Queue
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Track incoming student food orders and update status for campus gate
+            delivery.
+          </p>
         </div>
-      </Card>
+      </div>
 
-      {/* Status Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {statusOptions.map((status) => (
-          <button
-            key={status}
-            onClick={() => setStatusFilter(status)}
-            className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
-              statusFilter === status
-                ? "bg-smart-primary text-white"
-                : "bg-white text-smart-secondary hover:bg-smart-background"
-            }`}
+      {/* Summary Cards */}
+      <div className="grid gap-4 sm:grid-cols-4">
+        {[
+          {
+            label: "New Orders",
+            count: orders.filter((o) => o.status === "Placed").length,
+            color: "bg-amber-50 text-amber-600",
+          },
+          {
+            label: "In Kitchen",
+            count: orders.filter((o) => o.status === "Preparing").length,
+            color: "bg-blue-50 text-blue-600",
+          },
+          {
+            label: "On the Way",
+            count: orders.filter((o) => o.status === "Out for Delivery").length,
+            color: "bg-purple-50 text-purple-600",
+          },
+          {
+            label: "Delivered Today",
+            count: orders.filter((o) => o.status === "Delivered").length,
+            color: "bg-emerald-50 text-emerald-600",
+          },
+        ].map((s, idx) => (
+          <div
+            key={idx}
+            className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs"
           >
-            {status}
-
-            <span className="ml-2 opacity-70">{counts[status]}</span>
-          </button>
+            <span className="text-xs font-semibold text-slate-400">
+              {s.label}
+            </span>
+            <h3 className="mt-1 text-2xl font-bold text-slate-900">
+              {s.count} Orders
+            </h3>
+          </div>
         ))}
       </div>
 
-      {/* Orders Table */}
-      <Card>
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-smart-primary">Order List</h2>
-
-          <p className="mt-1 text-sm text-smart-secondary">
-            {filteredOrders.length} order
-            {filteredOrders.length !== 1 ? "s" : ""} found
-          </p>
+      {/* Search & Status Filter */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+        <div className="relative flex-1">
+          <Search
+            size={18}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search Order ID or Student Name..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
+          />
         </div>
 
-        {filteredOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-smart-blue/10 text-smart-blue">
-              <ShoppingBag size={26} />
-            </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          {["All", ...statusSteps].map((st) => (
+            <button
+              key={st}
+              onClick={() => setSelectedStatus(st)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                selectedStatus === st
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            <h3 className="mt-4 font-bold text-smart-primary">
-              No orders found
-            </h3>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Try changing your search or status filter.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[950px]">
-              <thead>
-                <tr className="border-b border-black/5 text-left">
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Order
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Customer
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Food Item
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Qty
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Amount
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Date
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Status
-                  </th>
-
-                  <th className="pb-3 text-right text-xs font-semibold uppercase text-smart-secondary">
-                    Update
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredOrders.map((order) => {
-                  const StatusIcon = statusIcon[order.status];
-
-                  return (
-                    <tr
-                      key={order.id}
-                      className="border-b border-black/5 last:border-0"
-                    >
-                      <td className="py-4 text-sm font-bold text-smart-primary">
+      {/* Orders List */}
+      <div className="space-y-4">
+        {filteredOrders.length > 0 ? (
+          filteredOrders.map((order) => (
+            <div
+              key={order.id}
+              className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition hover:border-slate-300"
+            >
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 font-bold text-slate-800 text-xs">
+                    {order.id.split("-")[1]}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-slate-900">
                         {order.id}
-                      </td>
+                      </h3>
+                      <span
+                        className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${getStatusBadge(order.status)}`}
+                      >
+                        {order.status}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                      <User size={13} />
+                      <span>
+                        {order.studentName} ({order.regNo})
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-                      <td className="py-4 text-sm text-smart-secondary">
-                        {order.customer}
-                      </td>
+                <div className="flex items-center gap-4 text-xs font-medium text-slate-600">
+                  <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                    <Clock size={14} className="text-blue-600" />
+                    <span>
+                      Slot: <strong>{order.timeSlot}</strong>
+                    </span>
+                  </div>
+                  <span className="text-base font-bold text-slate-900">
+                    LKR {order.totalAmount.toLocaleString()}
+                  </span>
+                </div>
+              </div>
 
-                      <td className="py-4 text-sm font-medium text-smart-primary">
-                        {order.item}
-                      </td>
+              {/* Order Items & Status Actions */}
+              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  {order.items.map((item, i) => (
+                    <div
+                      key={i}
+                      className="text-xs text-slate-700 flex items-center gap-2"
+                    >
+                      <span className="font-bold text-slate-900">
+                        {item.qty}x
+                      </span>
+                      <span>{item.name}</span>
+                      <span className="text-slate-400">
+                        — LKR {item.price * item.qty}
+                      </span>
+                    </div>
+                  ))}
+                </div>
 
-                      <td className="py-4 text-sm text-smart-secondary">
-                        {order.quantity}
-                      </td>
-
-                      <td className="py-4 text-sm font-semibold text-smart-primary">
-                        Rs. {order.amount.toLocaleString()}
-                      </td>
-
-                      <td className="py-4 text-sm text-smart-secondary">
-                        {order.date}
-                      </td>
-
-                      <td className="py-4">
-                        <Badge variant={statusVariant[order.status]}>
-                          <span className="flex items-center gap-1.5">
-                            <StatusIcon size={13} />
-                            {order.status}
-                          </span>
-                        </Badge>
-                      </td>
-
-                      <td className="py-4 text-right">
-                        <select
-                          value={order.status}
-                          onChange={(e) =>
-                            updateOrderStatus(order.id, e.target.value)
-                          }
-                          className="rounded-lg border border-black/10 bg-white px-2.5 py-2 text-xs font-medium text-smart-primary outline-none focus:border-smart-blue"
-                        >
-                          <option>Pending</option>
-                          <option>Preparing</option>
-                          <option>Ready</option>
-                          <option>Completed</option>
-                        </select>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                {/* Status Update Button */}
+                <div className="flex items-center gap-2">
+                  {order.status === "Placed" && (
+                    <button
+                      onClick={() => handleUpdateStatus(order.id, "Preparing")}
+                      className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-500"
+                    >
+                      Start Preparing
+                    </button>
+                  )}
+                  {order.status === "Preparing" && (
+                    <button
+                      onClick={() =>
+                        handleUpdateStatus(order.id, "Out for Delivery")
+                      }
+                      className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-purple-500"
+                    >
+                      Dispatch to Gate
+                    </button>
+                  )}
+                  {order.status === "Out for Delivery" && (
+                    <button
+                      onClick={() => handleUpdateStatus(order.id, "Delivered")}
+                      className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
+                    >
+                      Mark Delivered
+                    </button>
+                  )}
+                  {order.status === "Delivered" && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                      <CheckCircle2 size={16} /> Order Completed
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-8 text-center text-xs text-slate-500">
+            No active orders match your search filter.
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
