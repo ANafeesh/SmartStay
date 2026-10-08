@@ -37,6 +37,12 @@ import UtilitiesAnalytics from "./pages/analytics/UtilitiesAnalytics";
 import SmartMonitoring from "./pages/analytics/SmartMonitoring";
 import NotificationsCenter from "./pages/analytics/NotificationsCenter";
 
+//Maintanace
+import MaintenanceHome from "./pages/maintance/MaintenanceHome";
+
+//Miantance/students
+import SubmitComplaint from "./pages/maintance/Student/SubmitComplaint";
+
 function App() {
   return (
     <BrowserRouter>
@@ -69,6 +75,15 @@ function App() {
           <Route path="/hostel/allocations" element={<Allocations />} />
           <Route path="/hostel/transfers" element={<Transfers />} />
           <Route path="/hostel/occupancy" element={<Occupancy />} />
+
+          {/*Maintanace*/}
+          
+        
+
+      
+          <Route path="/maintenance" element={<MaintenanceHome />}/>
+          <Route path="/maintenance/submit-complaint" element={<SubmitComplaint />} />
+      
 
           {/* Analytics Routes */}
           <Route path="/analytics" element={<AnalyticsDashboard />} />
