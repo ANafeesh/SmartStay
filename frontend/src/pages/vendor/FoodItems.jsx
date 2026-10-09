@@ -1,389 +1,197 @@
 import { useState } from "react";
 import {
-  Plus,
   Search,
-  Pencil,
+  Plus,
+  UtensilsCrossed,
+  Tag,
+  Edit2,
   Trash2,
-  Eye,
-  EyeOff,
-  Utensils,
+  CheckCircle,
+  XCircle,
+  Filter,
 } from "lucide-react";
 
-import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
-import Badge from "../../components/ui/Badge";
+const initialItems = [
+  {
+    id: "ITEM-01",
+    name: "Chicken Kottu Roti (Full)",
+    category: "Main Dishes",
+    price: 850,
+    available: true,
+    description:
+      "Chopped flatbread mixed with spiced chicken, eggs, and gravy.",
+  },
+  {
+    id: "ITEM-02",
+    name: "Egg Fried Rice",
+    category: "Main Dishes",
+    price: 650,
+    available: true,
+    description: "Basmati rice wok-tossed with fresh eggs and spring onions.",
+  },
+  {
+    id: "ITEM-03",
+    name: "Crispy Chicken Burger & Fries",
+    category: "Fast Food",
+    price: 950,
+    available: true,
+    description:
+      "Fried chicken patty with lettuce, spicy mayo, and golden fries.",
+  },
+  {
+    id: "ITEM-04",
+    name: "Iced Milk Coffee (500ml)",
+    category: "Beverages",
+    price: 350,
+    available: false,
+    description: "Cold brewed espresso blended with sweetened milk and ice.",
+  },
+];
 
 function FoodItems() {
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const [items, setItems] = useState(initialItems);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const [foodItems, setFoodItems] = useState([
-    {
-      id: 1,
-      name: "Chicken Rice & Curry",
-      category: "Rice & Curry",
-      price: 450,
-      status: "Available",
-      orders: 42,
-    },
-    {
-      id: 2,
-      name: "Chicken Burger",
-      category: "Burgers",
-      price: 650,
-      status: "Available",
-      orders: 31,
-    },
-    {
-      id: 3,
-      name: "Cheese Pizza",
-      category: "Pizza",
-      price: 850,
-      status: "Available",
-      orders: 25,
-    },
-    {
-      id: 4,
-      name: "Vegetable Roti",
-      category: "Short Eats",
-      price: 180,
-      status: "Unavailable",
-      orders: 18,
-    },
-  ]);
-
-  const [newItem, setNewItem] = useState({
-    name: "",
-    category: "Rice & Curry",
-    price: "",
-  });
-
-  const filteredItems = foodItems.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-
-    setNewItem((previous) => ({
-      ...previous,
-      [name]: value,
-    }));
-  };
-
-  const handleAddItem = (e) => {
-    e.preventDefault();
-
-    if (!newItem.name || !newItem.price) {
-      alert("Please enter food name and price.");
-      return;
-    }
-
-    const item = {
-      id: Date.now(),
-      name: newItem.name,
-      category: newItem.category,
-      price: Number(newItem.price),
-      status: "Available",
-      orders: 0,
-    };
-
-    setFoodItems((previous) => [...previous, item]);
-
-    setNewItem({
-      name: "",
-      category: "Rice & Curry",
-      price: "",
-    });
-
-    setShowForm(false);
-  };
+  const categories = ["All", "Main Dishes", "Fast Food", "Beverages"];
 
   const toggleAvailability = (id) => {
-    setFoodItems((previous) =>
-      previous.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: item.status === "Available" ? "Unavailable" : "Available",
-            }
-          : item,
+    setItems(
+      items.map((item) =>
+        item.id === id ? { ...item, available: !item.available } : item,
       ),
     );
   };
 
-  const deleteItem = (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this food item?",
-    );
-
-    if (!confirmed) return;
-
-    setFoodItems((previous) => previous.filter((item) => item.id !== id));
-  };
+  const filteredItems = items.filter((item) => {
+    const matchesCat =
+      selectedCategory === "All" || item.category === selectedCategory;
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.id.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-smart-teal">
-            Vendor Management
-          </p>
-
-          <h1 className="mt-1 text-2xl font-bold text-smart-primary sm:text-3xl">
-            Food Items
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Food Items Inventory
           </h1>
-
-          <p className="mt-2 text-sm text-smart-secondary">
-            Manage the food items available in your marketplace.
+          <p className="mt-1 text-sm text-slate-500">
+            Manage menu offerings, update item pricing, and toggle instant stock
+            availability.
           </p>
         </div>
 
-        <Button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center justify-center gap-2"
-        >
-          <Plus size={18} />
-          Add Food Item
-        </Button>
+        <button className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-500 transition shrink-0">
+          <Plus size={16} />
+          <span>Add New Food Item</span>
+        </button>
       </div>
 
-      {/* Add Food Form */}
-      {showForm && (
-        <Card>
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-smart-primary">
-              Add New Food Item
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Enter the details of your new menu item.
-            </p>
-          </div>
-
-          <form onSubmit={handleAddItem} className="grid gap-5 md:grid-cols-3">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-smart-primary">
-                Food Name
-              </label>
-
-              <input
-                type="text"
-                name="name"
-                value={newItem.name}
-                onChange={handleInputChange}
-                placeholder="Example: Chicken Kottu"
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-smart-blue focus:ring-2 focus:ring-smart-blue/10"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-smart-primary">
-                Category
-              </label>
-
-              <select
-                name="category"
-                value={newItem.category}
-                onChange={handleInputChange}
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
-              >
-                <option>Rice & Curry</option>
-                <option>Short Eats</option>
-                <option>Burgers</option>
-                <option>Pizza</option>
-                <option>Drinks</option>
-                <option>Desserts</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-smart-primary">
-                Price (Rs.)
-              </label>
-
-              <input
-                type="number"
-                name="price"
-                value={newItem.price}
-                onChange={handleInputChange}
-                placeholder="450"
-                min="0"
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
-              />
-            </div>
-
-            <div className="flex gap-3 md:col-span-3">
-              <Button type="submit">Add Item</Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-
-      {/* Search */}
-      <Card padding="p-4">
-        <div className="relative">
+      {/* Search and Category Filters */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+        <div className="relative flex-1">
           <Search
-            size={20}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-smart-secondary"
+            size={18}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
           />
-
           <input
             type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search food items..."
-            className="w-full rounded-xl bg-smart-background py-3 pl-12 pr-4 text-sm outline-none focus:ring-2 focus:ring-smart-blue/20"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search food item name..."
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
           />
         </div>
-      </Card>
 
-      {/* Food Items */}
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-smart-primary">
-              My Food Items
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              {filteredItems.length} item
-              {filteredItems.length !== 1 ? "s" : ""} found
-            </p>
-          </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                selectedCategory === cat
+                  ? "bg-slate-900 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-smart-blue/10 text-smart-blue">
-              <Utensils size={26} />
+      {/* Inventory Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {filteredItems.map((item) => (
+          <div
+            key={item.id}
+            className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition hover:border-slate-300"
+          >
+            <div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <UtensilsCrossed size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      {item.name}
+                    </h3>
+                    <p className="text-[11px] font-semibold text-slate-400">
+                      {item.id}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                    item.available
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
+                      : "bg-rose-50 text-rose-700 border border-rose-200/60"
+                  }`}
+                >
+                  {item.available ? "In Stock" : "Out of Stock"}
+                </span>
+              </div>
+
+              <p className="mt-3 text-xs text-slate-500 leading-relaxed">
+                {item.description}
+              </p>
             </div>
 
-            <h3 className="mt-4 font-bold text-smart-primary">
-              No food items found
-            </h3>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Try another search term.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[750px]">
-              <thead>
-                <tr className="border-b border-black/5 text-left">
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Food Item
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Category
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase">
                     Price
-                  </th>
+                  </span>
+                  <p className="text-sm font-bold text-slate-900">
+                    Rs. {item.price}
+                  </p>
+                </div>
 
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Orders
-                  </th>
-
-                  <th className="pb-3 text-xs font-semibold uppercase text-smart-secondary">
-                    Status
-                  </th>
-
-                  <th className="pb-3 text-right text-xs font-semibold uppercase text-smart-secondary">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-black/5 last:border-0"
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleAvailability(item.id)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${
+                      item.available
+                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        : "bg-emerald-600 text-white hover:bg-emerald-500"
+                    }`}
                   >
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-                          <Utensils size={18} />
-                        </div>
-
-                        <span className="text-sm font-semibold text-smart-primary">
-                          {item.name}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="py-4 text-sm text-smart-secondary">
-                      {item.category}
-                    </td>
-
-                    <td className="py-4 text-sm font-semibold text-smart-primary">
-                      Rs. {item.price.toLocaleString()}
-                    </td>
-
-                    <td className="py-4 text-sm text-smart-secondary">
-                      {item.orders}
-                    </td>
-
-                    <td className="py-4">
-                      <Badge
-                        variant={
-                          item.status === "Available" ? "success" : "danger"
-                        }
-                      >
-                        {item.status}
-                      </Badge>
-                    </td>
-
-                    <td className="py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          title="Toggle availability"
-                          onClick={() => toggleAvailability(item.id)}
-                          className="rounded-lg p-2 text-smart-secondary transition hover:bg-smart-background hover:text-smart-blue"
-                        >
-                          {item.status === "Available" ? (
-                            <EyeOff size={17} />
-                          ) : (
-                            <Eye size={17} />
-                          )}
-                        </button>
-
-                        <button
-                          title="Edit item"
-                          className="rounded-lg p-2 text-smart-blue transition hover:bg-smart-blue/10"
-                        >
-                          <Pencil size={17} />
-                        </button>
-
-                        <button
-                          title="Delete item"
-                          onClick={() => deleteItem(item.id)}
-                          className="rounded-lg p-2 text-smart-danger transition hover:bg-smart-danger/10"
-                        >
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    {item.available ? "Mark Sold Out" : "Enable Item"}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </Card>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,298 +1,218 @@
+import { useState } from "react";
 import {
-  Wallet,
+  DollarSign,
   TrendingUp,
-  ShoppingBag,
-  CircleDollarSign,
+  CreditCard,
+  Calendar,
+  Download,
   ArrowUpRight,
-  CalendarDays,
+  Wallet,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 
-import Card from "../../components/ui/Card";
-import Badge from "../../components/ui/Badge";
-
-const revenueHistory = [
-  { month: "May", revenue: 18500 },
-  { month: "Jun", revenue: 21300 },
-  { month: "Jul", revenue: 24700 },
-  { month: "Aug", revenue: 26400 },
-  { month: "Sep", revenue: 24800 },
-];
-
-const recentTransactions = [
-  {
-    id: "#ORD-1024",
-    customer: "Kamal Perera",
-    item: "Chicken Rice & Curry",
-    amount: 900,
-    status: "Completed",
-    date: "Sep 25, 2026",
-  },
-  {
-    id: "#ORD-1023",
-    customer: "Ahamed Nafeesh",
-    item: "Chicken Burger",
-    amount: 650,
-    status: "Completed",
-    date: "Sep 25, 2026",
-  },
-  {
-    id: "#ORD-1022",
-    customer: "Mohamed Rizwan",
-    item: "Cheese Pizza",
-    amount: 850,
-    status: "Completed",
-    date: "Sep 24, 2026",
-  },
-  {
-    id: "#ORD-1021",
-    customer: "Fathima Azeez",
-    item: "Fresh Fruit Juice",
-    amount: 500,
-    status: "Completed",
-    date: "Sep 24, 2026",
-  },
-  {
-    id: "#ORD-1020",
-    customer: "Irfan Mohamed",
-    item: "Vegetable Roti",
-    amount: 540,
-    status: "Completed",
-    date: "Sep 23, 2026",
-  },
-];
-
-const statusVariant = {
-  Completed: "success",
-  Pending: "warning",
+const earningsSummary = {
+  todayEarnings: 14250,
+  thisWeekEarnings: 86400,
+  thisMonthEarnings: 312000,
+  pendingPayout: 18500,
 };
 
+const salesByCategory = [
+  { category: "Main Dishes", amount: 185000, percentage: 59 },
+  { category: "Fast Food", amount: 82000, percentage: 26 },
+  { category: "Beverages", amount: 45000, percentage: 15 },
+];
+
+const payoutHistory = [
+  {
+    id: "PAY-8012",
+    date: "28 Sep 2026",
+    amount: 42000,
+    method: "Bank Transfer (Commercial Bank)",
+    status: "Completed",
+  },
+  {
+    id: "PAY-7950",
+    date: "21 Sep 2026",
+    amount: 38500,
+    method: "Bank Transfer (Commercial Bank)",
+    status: "Completed",
+  },
+  {
+    id: "PAY-7891",
+    date: "14 Sep 2026",
+    amount: 45000,
+    method: "Bank Transfer (Commercial Bank)",
+    status: "Completed",
+  },
+];
+
 function VendorEarnings() {
-  const maxRevenue = Math.max(...revenueHistory.map((item) => item.revenue));
+  const [payouts] = useState(payoutHistory);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
       {/* Header */}
-      <div>
-        <p className="text-sm font-medium text-smart-blue">Vendor Management</p>
-
-        <h1 className="mt-1 text-3xl font-bold text-smart-primary">
-          Earnings & Revenue
-        </h1>
-
-        <p className="mt-2 text-sm text-smart-secondary">
-          Track your sales, revenue and completed transactions.
-        </p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-smart-secondary">Total Revenue</p>
-              <h2 className="mt-2 text-2xl font-bold text-smart-primary">
-                Rs. 84,500
-              </h2>
-
-              <div className="mt-2 flex items-center gap-1 text-xs font-medium text-smart-success">
-                <TrendingUp size={14} />
-                <span>12.5% this month</span>
-              </div>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-              <Wallet size={21} />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-smart-secondary">This Month</p>
-
-              <h2 className="mt-2 text-2xl font-bold text-smart-primary">
-                Rs. 24,800
-              </h2>
-
-              <p className="mt-2 text-xs text-smart-secondary">
-                September 2026
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-teal/10 text-smart-teal">
-              <CircleDollarSign size={21} />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-smart-secondary">Total Orders</p>
-
-              <h2 className="mt-2 text-2xl font-bold text-smart-primary">
-                128
-              </h2>
-
-              <p className="mt-2 text-xs text-smart-secondary">
-                Completed orders
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-warning/10 text-smart-warning">
-              <ShoppingBag size={21} />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-smart-secondary">Average Order</p>
-
-              <h2 className="mt-2 text-2xl font-bold text-smart-primary">
-                Rs. 660
-              </h2>
-
-              <p className="mt-2 text-xs text-smart-secondary">
-                Per completed order
-              </p>
-            </div>
-
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-success/10 text-smart-success">
-              <ArrowUpRight size={21} />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Revenue History */}
-      <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-smart-primary">
-              Revenue History
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Monthly revenue performance
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 rounded-xl bg-smart-background px-4 py-2 text-sm text-smart-secondary">
-            <CalendarDays size={17} />
-            <span>Last 5 months</span>
-          </div>
-        </div>
-
-        <div className="mt-8 space-y-5">
-          {revenueHistory.map((item) => {
-            const percentage = (item.revenue / maxRevenue) * 100;
-
-            return (
-              <div key={item.month}>
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="font-medium text-smart-primary">
-                    {item.month} 2026
-                  </span>
-
-                  <span className="font-semibold text-smart-primary">
-                    Rs. {item.revenue.toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="h-3 overflow-hidden rounded-full bg-smart-background">
-                  <div
-                    className="h-full rounded-full bg-smart-blue transition-all duration-500"
-                    style={{ width: `${percentage}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Recent Transactions */}
-      <Card padding="p-0">
-        <div className="border-b border-black/5 p-6">
-          <h2 className="text-lg font-bold text-smart-primary">
-            Recent Transactions
-          </h2>
-
-          <p className="mt-1 text-sm text-smart-secondary">
-            Your latest completed orders
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Vendor Earnings & Financial Analytics
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Track daily sales revenue, food category performance, and bank
+            payout logs.
           </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px]">
-            <thead>
-              <tr className="border-b border-black/5 bg-smart-background/50 text-left">
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Order
-                </th>
+        <button className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition shrink-0">
+          <Download size={16} />
+          <span>Export Financial Statement</span>
+        </button>
+      </div>
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Customer
-                </th>
-
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Item
-                </th>
-
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Date
-                </th>
-
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Amount
-                </th>
-
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Status
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {recentTransactions.map((transaction) => (
-                <tr
-                  key={transaction.id}
-                  className="border-b border-black/5 last:border-b-0 hover:bg-smart-background/30"
-                >
-                  <td className="px-6 py-4 text-sm font-semibold text-smart-primary">
-                    {transaction.id}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-smart-secondary">
-                    {transaction.customer}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-smart-secondary">
-                    {transaction.item}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-smart-secondary">
-                    {transaction.date}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm font-semibold text-smart-primary">
-                    Rs. {transaction.amount.toLocaleString()}
-                  </td>
-
-                  <td className="px-6 py-4">
-                    <Badge variant={statusVariant[transaction.status]}>
-                      {transaction.status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Overview Stat Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">Today's Revenue</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <DollarSign size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-bold text-slate-900">
+            Rs. {earningsSummary.todayEarnings.toLocaleString()}
+          </h3>
+          <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+            <TrendingUp size={12} /> +12.5% from yesterday
+          </p>
         </div>
-      </Card>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">This Week</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <Calendar size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-bold text-slate-900">
+            Rs. {earningsSummary.thisWeekEarnings.toLocaleString()}
+          </h3>
+          <p className="mt-1 text-[11px] font-medium text-slate-400">
+            7 active operational days
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">This Month</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+              <TrendingUp size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-bold text-slate-900">
+            Rs. {earningsSummary.thisMonthEarnings.toLocaleString()}
+          </h3>
+          <p className="mt-1 text-[11px] font-medium text-slate-400">
+            September 2026
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">Pending Withdrawal</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <Wallet size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-bold text-slate-900">
+            Rs. {earningsSummary.pendingPayout.toLocaleString()}
+          </h3>
+          <p className="mt-1 text-[11px] font-semibold text-amber-600">
+            Payout scheduled for Sunday
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Sales by Category Breakdown */}
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs">
+          <h2 className="text-base font-bold text-slate-900">
+            Revenue by Food Category
+          </h2>
+          <p className="text-xs text-slate-500">
+            Top earning food segments this month
+          </p>
+
+          <div className="mt-6 space-y-4">
+            {salesByCategory.map((cat, idx) => (
+              <div key={idx} className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-slate-700">{cat.category}</span>
+                  <span className="text-slate-900">
+                    Rs. {cat.amount.toLocaleString()} ({cat.percentage}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full bg-blue-600 rounded-full"
+                    style={{ width: `${cat.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Payout History Log */}
+        <div className="lg:col-span-2 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xs">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">
+                Payout & Settlement History
+              </h2>
+              <p className="text-xs text-slate-500">
+                Weekly vendor payouts disbursed to bank account
+              </p>
+            </div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/60">
+              Bank Account Verified
+            </span>
+          </div>
+
+          <div className="mt-4 divide-y divide-slate-100">
+            {payouts.map((pay) => (
+              <div
+                key={pay.id}
+                className="flex items-center justify-between py-3.5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-600">
+                    <CreditCard size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">
+                      {pay.id}
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      {pay.method} • {pay.date}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-xs font-bold text-slate-900">
+                    Rs. {pay.amount.toLocaleString()}
+                  </p>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                    <CheckCircle2 size={12} /> {pay.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

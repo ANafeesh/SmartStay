@@ -2,9 +2,9 @@
 
 @theme {
   /* SmartStay Brand Colors */
-  --color-smart-primary: #0f4c81;
-  --color-smart-blue: #1686d4;
-  --color-smart-teal: #06b6d4;
+  --color-smart-primary: #0f172a;
+  --color-smart-blue: #2563eb;
+  --color-smart-teal: #0891b2;
   --color-smart-accent: #06b6d4;
 
   /* SmartStay Status Colors */
@@ -15,8 +15,8 @@
   /* SmartStay Neutral Colors */
   --color-smart-background: #f8fafc;
   --color-smart-white: #ffffff;
-  --color-smart-text: #172033;
-  --color-smart-secondary: #6e7575;
+  --color-smart-text: #0f172a;
+  --color-smart-secondary: #64748b;
 }
 
 :root {
@@ -29,7 +29,7 @@
     "Segoe UI",
     sans-serif;
 
-  color: #172033;
+  color: #0f172a;
   background: #f8fafc;
 
   font-synthesis: none;
@@ -51,7 +51,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: #f8fafc;
-  color: #172033;
+  color: #0f172a;
 }
 
 button,
@@ -68,4 +68,14 @@ button {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Hide scrollbar helper for clean sidebar navigation */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
