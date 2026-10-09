@@ -1,330 +1,471 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
+  Download,
+  RotateCcw,
   Users,
   BedDouble,
   Wallet,
-  AlertCircle,
-  Download,
-  CalendarDays,
+  MessageSquareWarning,
+  Activity,
   TrendingUp,
-  UserPlus,
-  CreditCard,
-  MessageSquare,
-  Building2,
-  RefreshCw,
+  TrendingDown,
 } from "lucide-react";
 
 import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
 } from "recharts";
 
 import Card from "../../components/ui/Card";
-import Badge from "../../components/ui/Badge";
 
 import {
-  summaryStats,
-  occupancyData,
-  revenueData,
-  complaintData,
+  months,
+  overallMonthlyData,
+  blockData,
   recentActivity,
-  blockOccupancy,
-  blockAData,
-  blockBData,
-  blockCData,
 } from "../../data/analyticsData";
 
-
-const statIcons = {
-  blue: Users,
-  teal: BedDouble,
-  green: Wallet,
-  orange: AlertCircle,
-};
-
-const statStyles = {
-  blue: "bg-smart-blue/10 text-smart-blue",
-  teal: "bg-smart-teal/10 text-smart-teal",
-  green: "bg-smart-success/10 text-smart-success",
-  orange: "bg-smart-warning/10 text-smart-warning",
-};
-
-const activityIcons = {
-  student: UserPlus,
-  payment: CreditCard,
-  complaint: MessageSquare,
-  room: Building2,
-};
-
-const complaintColors = [
-  "#1686d4",
-  "#06b6d4",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
-];
-
-
 function AnalyticsDashboard() {
+  // =====================================================
+  // FILTER STATE
+  // =====================================================
+
   const [dateRange, setDateRange] = useState("6months");
-  const [selectedBlock, setSelectedBlock] = useState("all");
+  const [selectedBlock, setSelectedBlock] = useState("All");
 
+  // =====================================================
+  // SELECT DATA SOURCE
+  // =====================================================
 
-  const selectedBlockData =
-    selectedBlock === "Block A"
-      ? blockAData
-      : selectedBlock === "Block B"
-        ? blockBData
-        : selectedBlock === "Block C"
-          ? blockCData
-          : null;
+  const sourceData = useMemo(() => {
+    if (selectedBlock === "All") {
+      return overallMonthlyData;
+    }
 
-  // ===================================================
-  // Select current datasets
-  // ===================================================
+    return blockData[selectedBlock] || overallMonthlyData;
+  }, [selectedBlock]);
 
-  const currentOccupancyData =
-    selectedBlockData?.occupancy || occupancyData;
+  // =====================================================
+  // DATE RANGE FILTER
+  // =====================================================
 
-  const currentRevenueData =
-    selectedBlockData?.revenue || revenueData;
+  const filteredMonthlyData = useMemo(() => {
+    let numberOfMonths = 6;
 
-  const currentComplaintData =
-    selectedBlockData?.complaints || complaintData;
+    if (dateRange === "1month") {
+      numberOfMonths = 1;
+    }
 
+    if (dateRange === "3months") {
+      numberOfMonths = 3;
+    }
 
+    if (dateRange === "6months") {
+      numberOfMonths = 6;
+    }
 
-  const monthCount =
-    dateRange === "1month"
-      ? 1
-      : dateRange === "3months"
-        ? 3
-        : 6;
+    return sourceData.slice(-numberOfMonths);
+  }, [sourceData, dateRange]);
 
-  const filteredOccupancyData =
-    currentOccupancyData.slice(-monthCount);
+  // =====================================================
+  // HELPER - FORMAT RUPEES
+  // =====================================================
 
-  const filteredRevenueData =
-    currentRevenueData.slice(-monthCount);
+  function formatCurrency(value) {
+    return `Rs. ${Number(value || 0).toLocaleString()}`;
+  }
 
+  function formatShortCurrency(value) {
+    const number = Number(value || 0);
 
-  const filteredBlocks =
-    selectedBlock === "all"
-      ? blockOccupancy
-      : blockOccupancy.filter(
-          (item) => item.block === selectedBlock
+    if (number >= 1000000) {
+      return `Rs. ${(number / 1000000).toFixed(2)}M`;
+    }
+
+    if (number >= 1000) {
+      return `Rs. ${(number / 1000).toFixed(0)}K`;
+    }
+
+    return `Rs. ${number.toLocaleString()}`;
+  }
+
+  // =====================================================
+  // SUMMARY CALCULATIONS
+  // =====================================================
+
+  const summary = useMemo(() => {
+    const data = filteredMonthlyData;
+
+    if (data.length === 0) {
+      return {
+        totalStudents: 0,
+        averageOccupancy: 0,
+        totalRevenue: 0,
+        totalComplaints: 0,
+        totalOccupied: 0,
+        totalBeds: 0,
+      };
+    }
+
+    const averageStudents =
+      data.reduce((sum, item) => sum + item.students, 0) /
+      data.length;
+
+    const totalOccupied = data.reduce(
+      (sum, item) => sum + item.occupied,
+      0
+    );
+
+    const totalBeds = data.reduce(
+      (sum, item) => sum + item.totalBeds,
+      0
+    );
+
+    const averageOccupancy =
+      totalBeds > 0
+        ? (totalOccupied / totalBeds) * 100
+        : 0;
+
+    const totalRevenue = data.reduce(
+      (sum, item) => sum + item.revenue,
+      0
+    );
+
+    const totalComplaints = data.reduce(
+      (sum, item) => sum + item.openComplaints,
+      0
+    );
+
+    return {
+      totalStudents: Math.round(averageStudents),
+      averageOccupancy,
+      totalRevenue,
+      totalComplaints,
+      totalOccupied,
+      totalBeds,
+    };
+  }, [filteredMonthlyData]);
+
+  // =====================================================
+  // OCCUPANCY CHART DATA
+  // =====================================================
+
+  const occupancyChartData = useMemo(() => {
+    return filteredMonthlyData.map((item) => ({
+      month: item.month,
+      occupied: item.occupied,
+      available: Math.max(item.totalBeds - item.occupied, 0),
+    }));
+  }, [filteredMonthlyData]);
+
+  // =====================================================
+  // REVENUE CHART DATA
+  // =====================================================
+
+  const revenueChartData = useMemo(() => {
+    return filteredMonthlyData.map((item) => ({
+      month: item.month,
+      revenue: item.revenue,
+      expenses: item.expenses,
+    }));
+  }, [filteredMonthlyData]);
+
+  // =====================================================
+  // COMPLAINT CHART DATA
+  // =====================================================
+
+  const complaintChartData = useMemo(() => {
+    const totals = {
+      Maintenance: 0,
+      Cleaning: 0,
+      Internet: 0,
+      Water: 0,
+      Other: 0,
+    };
+
+    filteredMonthlyData.forEach((monthData) => {
+      Object.entries(monthData.complaints || {}).forEach(
+        ([category, count]) => {
+          if (totals[category] !== undefined) {
+            totals[category] += count;
+          }
+        }
+      );
+    });
+
+    return Object.entries(totals)
+      .map(([category, count]) => ({
+        category,
+        count,
+      }))
+      .filter((item) => item.count > 0);
+  }, [filteredMonthlyData]);
+
+  // =====================================================
+  // BLOCK-WISE OCCUPANCY
+  // =====================================================
+
+  const blockOccupancyChartData = useMemo(() => {
+    // If a specific block is selected,
+    // show that block for the selected period.
+    if (selectedBlock !== "All") {
+      const selectedData = blockData[selectedBlock] || [];
+
+      const selectedRange = selectedData.slice(
+        -filteredMonthlyData.length
+      );
+
+      const occupied =
+        selectedRange.length > 0
+          ? selectedRange[selectedRange.length - 1].occupied
+          : 0;
+
+      const total =
+        selectedRange.length > 0
+          ? selectedRange[selectedRange.length - 1].totalBeds
+          : 0;
+
+      return [
+        {
+          block: selectedBlock,
+          occupied,
+          available: Math.max(total - occupied, 0),
+          total,
+        },
+      ];
+    }
+
+    // All blocks selected
+    return Object.entries(blockData).map(
+      ([blockName, data]) => {
+        const selectedRange = data.slice(
+          -filteredMonthlyData.length
         );
 
+        const latest =
+          selectedRange[selectedRange.length - 1];
 
-  const totalOccupied = filteredBlocks.reduce(
-    (sum, item) => sum + item.occupied,
+        return {
+          block: blockName,
+          occupied: latest?.occupied || 0,
+          available: latest
+            ? Math.max(
+                latest.totalBeds - latest.occupied,
+                0
+              )
+            : 0,
+          total: latest?.totalBeds || 0,
+        };
+      }
+    );
+  }, [selectedBlock, filteredMonthlyData.length]);
+
+  // =====================================================
+  // TOTAL PROFIT
+  // =====================================================
+
+  const totalExpenses = useMemo(() => {
+    return filteredMonthlyData.reduce(
+      (sum, item) => sum + item.expenses,
+      0
+    );
+  }, [filteredMonthlyData]);
+
+  const totalProfit = summary.totalRevenue - totalExpenses;
+
+  // =====================================================
+  // COMPLAINT TOTAL
+  // =====================================================
+
+  const complaintTotal = complaintChartData.reduce(
+    (sum, item) => sum + item.count,
     0
   );
 
-  const totalBeds = filteredBlocks.reduce(
-    (sum, item) => sum + item.total,
-    0
-  );
+  // =====================================================
+  // CSV EXPORT
+  // =====================================================
 
-  const occupancyPercentage =
-    totalBeds > 0
-      ? ((totalOccupied / totalBeds) * 100).toFixed(1)
-      : "0.0";
+  function exportCSV() {
+    const rows = filteredMonthlyData.map((item) => [
+      item.month,
+      item.students,
+      item.totalBeds,
+      item.occupied,
+      item.totalBeds - item.occupied,
+      item.revenue,
+      item.expenses,
+      item.openComplaints,
+    ]);
 
-
-  const latestRevenue =
-    filteredRevenueData.length > 0
-      ? filteredRevenueData[
-          filteredRevenueData.length - 1
-        ].revenue
-      : 0;
-
-  const formattedRevenue =
-    `Rs. ${(latestRevenue / 1000000).toFixed(2)}M`;
-
-  const displayedStudents = selectedBlockData
-    ? selectedBlockData.students
-    : 248;
-
-
-  const displayedComplaints = selectedBlockData
-    ? selectedBlockData.openComplaints
-    : 18;
-
-
-  function handleExport() {
-    const rows = [
-      ["SmartStay Analytics Report"],
-      [],
-      ["Selected Period", dateRange],
-      ["Selected Block", selectedBlock],
-      [],
-      ["Metric", "Value"],
-      ["Total Students", displayedStudents],
-      ["Occupancy Rate", `${occupancyPercentage}%`],
-      [
-        "Monthly Revenue",
-        selectedBlockData
-          ? formattedRevenue
-          : "Rs. 1.85M",
-      ],
-      ["Open Complaints", displayedComplaints],
-      [],
-      [
-        "Block",
-        "Occupied Beds",
-        "Total Beds",
-        "Occupancy",
-      ],
-      ...filteredBlocks.map((item) => [
-        item.block,
-        item.occupied,
-        item.total,
-        `${(
-          (item.occupied / item.total) *
-          100
-        ).toFixed(1)}%`,
-      ]),
-      [],
-      ["Month", "Occupied", "Available"],
-      ...filteredOccupancyData.map((item) => [
-        item.month,
-        item.occupied,
-        item.available,
-      ]),
-      [],
-      ["Month", "Revenue", "Expenses"],
-      ...filteredRevenueData.map((item) => [
-        item.month,
-        item.revenue,
-        item.expenses,
-      ]),
-      [],
-      ["Complaint Category", "Count"],
-      ...currentComplaintData.map((item) => [
-        item.category,
-        item.count,
-      ]),
+    const headers = [
+      "Month",
+      "Students",
+      "Total Beds",
+      "Occupied Beds",
+      "Available Beds",
+      "Revenue",
+      "Expenses",
+      "Open Complaints",
     ];
 
-    const csv = rows
+    const csv = [headers, ...rows]
       .map((row) =>
         row
-          .map(
-            (value) =>
-              `"${String(value ?? "").replaceAll(
-                '"',
-                '""'
-              )}"`
+          .map((value) =>
+            `"${String(value).replaceAll('"', '""')}"`
           )
           .join(",")
       )
       .join("\n");
 
-    const blob = new Blob(
-      ["\uFEFF" + csv],
-      {
-        type: "text/csv;charset=utf-8;",
-      }
-    );
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
 
     link.href = url;
-    link.download =
-      "smartstay-analytics.csv";
+
+    link.download = `smartstay-${selectedBlock
+      .toLowerCase()
+      .replaceAll(" ", "-")}-analytics.csv`;
 
     document.body.appendChild(link);
-
     link.click();
-
-    link.remove();
+    document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
   }
 
+  // =====================================================
+  // RESET FILTERS
+  // =====================================================
 
-
-  function handleReset() {
+  function resetFilters() {
     setDateRange("6months");
-    setSelectedBlock("all");
+    setSelectedBlock("All");
   }
 
+  // =====================================================
+  // PIE CHART COLORS
+  // =====================================================
 
+  const complaintColors = [
+    "#0ea5e9",
+    "#14b8a6",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+  ];
+
+  // =====================================================
+  // CUSTOM TOOLTIP
+  // =====================================================
+
+  function CurrencyTooltip({ active, payload, label }) {
+    if (!active || !payload || payload.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="rounded-xl border border-black/10 bg-white p-3 shadow-lg">
+        <p className="mb-2 font-semibold text-smart-primary">
+          {label}
+        </p>
+
+        {payload.map((entry) => (
+          <p
+            key={entry.dataKey}
+            className="text-sm text-smart-secondary"
+          >
+            {entry.name}:{" "}
+            <span className="font-semibold text-smart-primary">
+              {formatCurrency(entry.value)}
+            </span>
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  // =====================================================
+  // PAGE
+  // =====================================================
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-8">
 
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-smart-primary">
+            Smart Analytics
+          </h1>
 
-        <div className="flex items-center gap-3">
-
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-            <TrendingUp size={24} />
-          </div>
-
-          <div>
-
-            <h1 className="text-2xl font-bold text-smart-primary sm:text-3xl">
-              Smart Monitoring & Analytics
-            </h1>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Monitor hostel performance, occupancy,
-              revenue, and student services.
-            </p>
-
-          </div>
-
+          <p className="mt-2 text-smart-secondary">
+            Monitor hostel occupancy, revenue, complaints,
+            and operational performance.
+          </p>
         </div>
 
-        <button
-          onClick={handleExport}
-          className="flex items-center justify-center gap-2 rounded-xl bg-smart-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-smart-blue"
-        >
-          <Download size={18} />
-          Export Report
-        </button>
+        <div className="flex flex-wrap gap-3">
 
+          <button
+            onClick={resetFilters}
+            className="flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-smart-primary transition hover:border-smart-blue hover:text-smart-blue"
+          >
+            <RotateCcw size={17} />
+            Reset
+          </button>
+
+          <button
+            onClick={exportCSV}
+            className="flex items-center gap-2 rounded-xl bg-smart-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-smart-blue"
+          >
+            <Download size={17} />
+            Export CSV
+          </button>
+
+        </div>
       </div>
 
+      {/* =================================================
+          FILTERS
+      ================================================= */}
 
-      <Card padding="p-4">
+      <Card>
+        <div className="grid gap-4 md:grid-cols-2">
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-          <div className="flex items-center gap-2 text-sm font-semibold text-smart-primary">
-            <CalendarDays size={19} />
-            Report Filters
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-
+          {/* Date Range */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-smart-primary">
+              Date Range
+            </label>
 
             <select
               value={dateRange}
-              onChange={(e) =>
-                setDateRange(e.target.value)
-              }
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
+              onChange={(e) => setDateRange(e.target.value)}
+              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-smart-blue focus:ring-2 focus:ring-smart-blue/10"
             >
               <option value="1month">
-                Last Month
+                Last 1 Month
               </option>
 
               <option value="3months">
@@ -335,16 +476,22 @@ function AnalyticsDashboard() {
                 Last 6 Months
               </option>
             </select>
+          </div>
 
+          {/* Block */}
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-smart-primary">
+              Hostel Block
+            </label>
 
             <select
               value={selectedBlock}
               onChange={(e) =>
                 setSelectedBlock(e.target.value)
               }
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
+              className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-smart-blue focus:ring-2 focus:ring-smart-blue/10"
             >
-              <option value="all">
+              <option value="All">
                 All Blocks
               </option>
 
@@ -360,143 +507,187 @@ function AnalyticsDashboard() {
                 Block C
               </option>
             </select>
-
-            <button
-              onClick={handleReset}
-              className="flex items-center justify-center gap-2 rounded-xl border border-black/10 px-4 py-3 text-sm font-medium text-smart-secondary hover:bg-smart-background"
-            >
-              <RefreshCw size={16} />
-              Reset
-            </button>
-
           </div>
 
         </div>
 
+        <div className="mt-4 flex flex-wrap gap-2 text-xs text-smart-secondary">
+          <span className="rounded-full bg-smart-background px-3 py-1.5">
+            Block:{" "}
+            <strong className="text-smart-primary">
+              {selectedBlock}
+            </strong>
+          </span>
+
+          <span className="rounded-full bg-smart-background px-3 py-1.5">
+            Period:{" "}
+            <strong className="text-smart-primary">
+              {filteredMonthlyData.length} month
+              {filteredMonthlyData.length !== 1
+                ? "s"
+                : ""}
+            </strong>
+          </span>
+        </div>
       </Card>
 
+      {/* =================================================
+          SUMMARY CARDS
+      ================================================= */}
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
 
-        {summaryStats.map((stat) => {
-
-          const Icon = statIcons[stat.color];
-
-          let displayedValue = stat.value;
-
-          if (stat.title === "Total Students") {
-            displayedValue =
-              displayedStudents;
-          }
-
-          if (stat.title === "Occupancy Rate") {
-            displayedValue =
-              `${occupancyPercentage}%`;
-          }
-
-          if (stat.title === "Monthly Revenue") {
-            displayedValue =
-              selectedBlockData
-                ? formattedRevenue
-                : stat.value;
-          }
-
-          if (stat.title === "Open Complaints") {
-            displayedValue =
-              displayedComplaints;
-          }
-
-          return (
-            <Card
-              key={stat.title}
-              padding="p-5"
-            >
-
-              <div className="flex items-start justify-between">
-
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl ${statStyles[stat.color]}`}
-                >
-                  <Icon size={23} />
-                </div>
-
-                <Badge variant="success">
-
-                  <span className="flex items-center gap-1">
-                    <TrendingUp size={13} />
-                    Active
-                  </span>
-
-                </Badge>
-
-              </div>
-
-              <p className="mt-5 text-sm text-smart-secondary">
-                {stat.title}
+        {/* Students */}
+        <Card>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-smart-secondary">
+                Average Students
               </p>
 
-              <h2 className="mt-1 text-2xl font-bold text-smart-primary">
-                {displayedValue}
+              <h2 className="mt-2 text-3xl font-bold text-smart-primary">
+                {summary.totalStudents}
               </h2>
 
-              <p className="mt-2 text-xs font-medium text-smart-secondary">
+              <p className="mt-1 text-xs text-smart-secondary">
+                Selected period
+              </p>
+            </div>
 
-                {stat.title === "Total Students" &&
-                selectedBlockData
-                  ? `Students in ${selectedBlock}`
-                  : stat.title === "Occupancy Rate" &&
-                      selectedBlockData
-                    ? `${totalOccupied} of ${totalBeds} beds`
-                    : stat.change}
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-blue/10">
+              <Users
+                size={21}
+                className="text-smart-blue"
+              />
+            </div>
+          </div>
+        </Card>
 
+        {/* Occupancy */}
+        <Card>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-smart-secondary">
+                Average Occupancy
               </p>
 
-            </Card>
-          );
-        })}
+              <h2 className="mt-2 text-3xl font-bold text-smart-primary">
+                {summary.averageOccupancy.toFixed(1)}%
+              </h2>
+
+              <p className="mt-1 text-xs text-smart-secondary">
+                {summary.totalOccupied} occupied bed records
+              </p>
+            </div>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-teal/10">
+              <BedDouble
+                size={21}
+                className="text-smart-teal"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Revenue */}
+        <Card>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-smart-secondary">
+                Period Revenue
+              </p>
+
+              <h2 className="mt-2 text-2xl font-bold text-smart-primary">
+                {formatShortCurrency(summary.totalRevenue)}
+              </h2>
+
+              <p className="mt-1 text-xs text-smart-secondary">
+                {filteredMonthlyData.length} month
+                {filteredMonthlyData.length !== 1
+                  ? "s"
+                  : ""} total
+              </p>
+            </div>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-success/10">
+              <Wallet
+                size={21}
+                className="text-smart-success"
+              />
+            </div>
+          </div>
+        </Card>
+
+        {/* Complaints */}
+        <Card>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm text-smart-secondary">
+                Complaint Reports
+              </p>
+
+              <h2 className="mt-2 text-3xl font-bold text-smart-primary">
+                {complaintTotal}
+              </h2>
+
+              <p className="mt-1 text-xs text-smart-secondary">
+                Selected period
+              </p>
+            </div>
+
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-smart-warning/10">
+              <MessageSquareWarning
+                size={21}
+                className="text-smart-warning"
+              />
+            </div>
+          </div>
+        </Card>
 
       </div>
 
+      {/* =================================================
+          OCCUPANCY + REVENUE
+      ================================================= */}
 
       <div className="grid gap-6 xl:grid-cols-2">
 
-        {/* Occupancy Chart */}
-
+        {/* Occupancy */}
         <Card>
-
-          <div className="mb-6 flex items-start justify-between">
-
-            <div>
+          <div className="mb-6">
+            <div className="flex items-center gap-2">
+              <Activity
+                size={20}
+                className="text-smart-blue"
+              />
 
               <h2 className="text-lg font-bold text-smart-primary">
                 Hostel Occupancy
               </h2>
-
-              <p className="mt-1 text-sm text-smart-secondary">
-                {selectedBlock === "all"
-                  ? "Overall occupied and available beds"
-                  : `${selectedBlock} occupied and available beds`}
-              </p>
-
             </div>
 
-            <div className="rounded-xl bg-smart-teal/10 p-3 text-smart-teal">
-              <BedDouble size={22} />
-            </div>
-
+            <p className="mt-1 text-sm text-smart-secondary">
+              {selectedBlock === "All"
+                ? "All blocks"
+                : selectedBlock}{" "}
+              occupancy for the selected period
+            </p>
           </div>
 
-          <div className="h-72 w-full">
-
+          <div className="h-[320px] w-full">
             <ResponsiveContainer
               width="100%"
               height="100%"
             >
-
               <BarChart
-                data={filteredOccupancyData}
+                data={occupancyChartData}
+                margin={{
+                  top: 10,
+                  right: 10,
+                  left: 0,
+                  bottom: 5,
+                }}
               >
-
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -519,63 +710,55 @@ function AnalyticsDashboard() {
 
                 <Bar
                   dataKey="occupied"
-                  name="Occupied Beds"
-                  fill="#1686d4"
-                  radius={[5, 5, 0, 0]}
+                  name="Occupied"
+                  fill="#0f6fff"
+                  radius={[6, 6, 0, 0]}
                 />
 
                 <Bar
                   dataKey="available"
-                  name="Available Beds"
-                  fill="#06b6d4"
-                  radius={[5, 5, 0, 0]}
+                  name="Available"
+                  fill="#dbeafe"
+                  radius={[6, 6, 0, 0]}
                 />
-
               </BarChart>
-
             </ResponsiveContainer>
-
           </div>
-
         </Card>
 
-        {/* Revenue Chart */}
-
+        {/* Revenue */}
         <Card>
-
-          <div className="mb-6 flex items-start justify-between">
-
-            <div>
+          <div className="mb-6">
+            <div className="flex items-center gap-2">
+              <TrendingUp
+                size={20}
+                className="text-smart-success"
+              />
 
               <h2 className="text-lg font-bold text-smart-primary">
                 Revenue & Expenses
               </h2>
-
-              <p className="mt-1 text-sm text-smart-secondary">
-                {selectedBlock === "all"
-                  ? "Overall financial performance"
-                  : `${selectedBlock} financial performance`}
-              </p>
-
             </div>
 
-            <div className="rounded-xl bg-smart-success/10 p-3 text-smart-success">
-              <Wallet size={22} />
-            </div>
-
+            <p className="mt-1 text-sm text-smart-secondary">
+              Financial performance for the selected period
+            </p>
           </div>
 
-          <div className="h-72 w-full">
-
+          <div className="h-[320px] w-full">
             <ResponsiveContainer
               width="100%"
               height="100%"
             >
-
               <LineChart
-                data={filteredRevenueData}
+                data={revenueChartData}
+                margin={{
+                  top: 10,
+                  right: 10,
+                  left: 10,
+                  bottom: 5,
+                }}
               >
-
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -591,18 +774,12 @@ function AnalyticsDashboard() {
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) =>
-                    `${(
-                      value / 1000000
-                    ).toFixed(1)}M`
+                    `${(value / 1000000).toFixed(1)}M`
                   }
                 />
 
                 <Tooltip
-                  formatter={(value) =>
-                    `Rs. ${Number(
-                      value
-                    ).toLocaleString()}`
-                  }
+                  content={<CurrencyTooltip />}
                 />
 
                 <Legend />
@@ -611,9 +788,10 @@ function AnalyticsDashboard() {
                   type="monotone"
                   dataKey="revenue"
                   name="Revenue"
-                  stroke="#1686d4"
+                  stroke="#16a34a"
                   strokeWidth={3}
                   dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
 
                 <Line
@@ -623,64 +801,95 @@ function AnalyticsDashboard() {
                   stroke="#f59e0b"
                   strokeWidth={3}
                   dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
-
               </LineChart>
-
             </ResponsiveContainer>
-
           </div>
 
+          <div className="mt-4 flex items-center justify-between border-t border-black/5 pt-4">
+            <div>
+              <p className="text-xs text-smart-secondary">
+                Net Profit
+              </p>
+
+              <p className="font-bold text-smart-primary">
+                {formatShortCurrency(totalProfit)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1 text-sm">
+              {totalProfit >= 0 ? (
+                <>
+                  <TrendingUp
+                    size={16}
+                    className="text-smart-success"
+                  />
+
+                  <span className="font-semibold text-smart-success">
+                    Positive
+                  </span>
+                </>
+              ) : (
+                <>
+                  <TrendingDown
+                    size={16}
+                    className="text-smart-danger"
+                  />
+
+                  <span className="font-semibold text-smart-danger">
+                    Negative
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
         </Card>
 
       </div>
 
+      {/* =================================================
+          COMPLAINT ANALYSIS
+      ================================================= */}
 
+      <Card>
+        <div className="mb-5">
+          <h2 className="text-lg font-bold text-smart-primary">
+            Complaint Analysis
+          </h2>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+          <p className="mt-1 text-sm text-smart-secondary">
+            {selectedBlock === "All"
+              ? "All blocks"
+              : selectedBlock}{" "}
+            complaints by service category
+          </p>
+        </div>
 
+        <div className="grid items-center gap-6 lg:grid-cols-2">
 
-
-        <Card>
-
-          <div className="mb-4">
-
-            <h2 className="text-lg font-bold text-smart-primary">
-              Complaint Analysis
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              {selectedBlock === "all"
-                ? "Complaints by service category"
-                : `${selectedBlock} complaints by service category`}
-            </p>
-
-          </div>
-
-          <div className="h-72 w-full">
-
+          {/* Donut Chart */}
+          <div className="h-[330px] w-full">
             <ResponsiveContainer
               width="100%"
               height="100%"
             >
-
               <PieChart>
-
                 <Pie
-                  data={currentComplaintData}
+                  data={complaintChartData}
                   dataKey="count"
                   nameKey="category"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  innerRadius={55}
+                  innerRadius={75}
+                  outerRadius={120}
                   paddingAngle={3}
+                  labelLine={false}
                 >
-
-                  {currentComplaintData.map(
+                  {complaintChartData.map(
                     (entry, index) => (
                       <Cell
-                        key={entry.category}
+                        key={`cell-${entry.category}`}
                         fill={
                           complaintColors[
                             index %
@@ -690,191 +899,262 @@ function AnalyticsDashboard() {
                       />
                     )
                   )}
-
                 </Pie>
 
                 <Tooltip />
 
                 <Legend />
-
               </PieChart>
-
             </ResponsiveContainer>
-
           </div>
 
-        </Card>
+          {/* Complaint Details */}
+          <div className="space-y-3">
 
+            <div className="rounded-xl bg-smart-background p-4">
+              <p className="text-sm text-smart-secondary">
+                Total Complaints
+              </p>
 
-        <Card>
-
-          <div className="mb-6">
-
-            <h2 className="text-lg font-bold text-smart-primary">
-              Block-wise Occupancy
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Bed utilization by hostel block
-            </p>
-
-          </div>
-
-          <div className="mb-6 rounded-xl bg-smart-background p-4">
-
-            <p className="text-sm text-smart-secondary">
-
-              {selectedBlock === "all"
-                ? "Overall occupancy"
-                : `${selectedBlock} occupancy`}
-
-            </p>
-
-            <div className="mt-1 flex items-end justify-between">
-
-              <h3 className="text-3xl font-bold text-smart-primary">
-                {occupancyPercentage}%
-              </h3>
-
-              <Badge variant="teal">
-                {totalOccupied}/{totalBeds} beds
-              </Badge>
-
+              <p className="mt-1 text-2xl font-bold text-smart-primary">
+                {complaintTotal}
+              </p>
             </div>
 
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-black/5">
-
-              <div
-                className="h-full rounded-full bg-smart-blue transition-all"
-                style={{
-                  width: `${occupancyPercentage}%`,
-                }}
-              />
-
-            </div>
-
-          </div>
-
-          <div className="space-y-5">
-
-            {filteredBlocks.map(
-              (block) => {
-
-                const percentage = (
-                  (block.occupied /
-                    block.total) *
-                  100
-                ).toFixed(1);
+            {complaintChartData.map(
+              (item, index) => {
+                const percentage =
+                  complaintTotal > 0
+                    ? (item.count /
+                        complaintTotal) *
+                      100
+                    : 0;
 
                 return (
-                  <div key={block.block}>
-
+                  <div
+                    key={item.category}
+                    className="rounded-xl border border-black/5 p-4"
+                  >
                     <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-3 w-3 rounded-full"
+                          style={{
+                            backgroundColor:
+                              complaintColors[
+                                index %
+                                  complaintColors.length
+                              ],
+                          }}
+                        />
 
-                      <span className="text-sm font-semibold text-smart-primary">
-                        {block.block}
+                        <span className="text-sm font-semibold text-smart-primary">
+                          {item.category}
+                        </span>
+                      </div>
+
+                      <span className="text-sm font-bold text-smart-primary">
+                        {item.count}
                       </span>
-
-                      <span className="text-sm text-smart-secondary">
-                        {block.occupied}/
-                        {block.total} beds
-                      </span>
-
                     </div>
 
-                    <div className="h-2.5 overflow-hidden rounded-full bg-black/5">
-
+                    <div className="h-2 overflow-hidden rounded-full bg-smart-background">
                       <div
-                        className="h-full rounded-full bg-smart-teal transition-all"
+                        className="h-full rounded-full"
                         style={{
                           width: `${percentage}%`,
+                          backgroundColor:
+                            complaintColors[
+                              index %
+                                complaintColors.length
+                            ],
                         }}
                       />
-
                     </div>
 
                     <p className="mt-1 text-right text-xs text-smart-secondary">
-                      {percentage}% occupied
+                      {percentage.toFixed(1)}%
                     </p>
-
                   </div>
                 );
               }
             )}
 
           </div>
+        </div>
+      </Card>
 
+      {/* =================================================
+          BLOCK-WISE OCCUPANCY
+      ================================================= */}
+
+      <Card>
+        <div className="mb-5">
+          <h2 className="text-lg font-bold text-smart-primary">
+            Block-wise Occupancy
+          </h2>
+
+          <p className="mt-1 text-sm text-smart-secondary">
+            Latest occupancy within the selected date range
+          </p>
+        </div>
+
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer
+            width="100%"
+            height="100%"
+          >
+            <BarChart
+              data={blockOccupancyChartData}
+              margin={{
+                top: 10,
+                right: 10,
+                left: 0,
+                bottom: 5,
+              }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+              />
+
+              <XAxis
+                dataKey="block"
+                tickLine={false}
+                axisLine={false}
+              />
+
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+              />
+
+              <Tooltip />
+
+              <Legend />
+
+              <Bar
+                dataKey="occupied"
+                name="Occupied"
+                fill="#0f6fff"
+                radius={[6, 6, 0, 0]}
+              />
+
+              <Bar
+                dataKey="available"
+                name="Available"
+                fill="#dbeafe"
+                radius={[6, 6, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* =================================================
+          FINANCIAL SUMMARY
+      ================================================= */}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+
+        {/* Revenue Summary */}
+        <Card>
+          <div className="mb-5 flex items-center gap-2">
+            <Wallet
+              size={20}
+              className="text-smart-success"
+            />
+
+            <h2 className="font-bold text-smart-primary">
+              Financial Summary
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-smart-secondary">
+                Total Revenue
+              </span>
+
+              <span className="font-bold text-smart-primary">
+                {formatCurrency(summary.totalRevenue)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-smart-secondary">
+                Total Expenses
+              </span>
+
+              <span className="font-bold text-smart-primary">
+                {formatCurrency(totalExpenses)}
+              </span>
+            </div>
+
+            <div className="border-t border-black/5 pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-smart-secondary">
+                  Net Profit
+                </span>
+
+                <span
+                  className={`font-bold ${
+                    totalProfit >= 0
+                      ? "text-smart-success"
+                      : "text-smart-danger"
+                  }`}
+                >
+                  {formatCurrency(totalProfit)}
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <div className="mb-5 flex items-center gap-2">
+            <Activity
+              size={20}
+              className="text-smart-blue"
+            />
+
+            <h2 className="font-bold text-smart-primary">
+              Recent Activity
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+
+            {recentActivity.map((activity) => (
+              <div
+                key={`${activity.title}-${activity.time}`}
+                className="flex gap-3"
+              >
+                <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-smart-blue" />
+
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-smart-primary">
+                    {activity.title}
+                  </p>
+
+                  <p className="mt-0.5 text-xs text-smart-secondary">
+                    {activity.description}
+                  </p>
+
+                  <p className="mt-1 text-xs text-smart-secondary">
+                    {activity.time}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+          </div>
         </Card>
 
       </div>
-
-
-      <Card>
-
-        <div className="mb-6 flex items-center justify-between">
-
-          <div>
-
-            <h2 className="text-lg font-bold text-smart-primary">
-              Recent Activity
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Latest hostel management updates
-            </p>
-
-          </div>
-
-          <Badge variant="info">
-            Demo Data
-          </Badge>
-
-        </div>
-
-        <div className="divide-y divide-black/5">
-
-          {recentActivity.map(
-            (activity, index) => {
-
-              const Icon =
-                activityIcons[
-                  activity.type
-                ];
-
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 py-4"
-                >
-
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-                    <Icon size={20} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-
-                    <p className="font-semibold text-smart-primary">
-                      {activity.title}
-                    </p>
-
-                    <p className="mt-1 text-sm text-smart-secondary">
-                      {activity.description}
-                    </p>
-
-                  </div>
-
-                  <span className="shrink-0 text-xs text-smart-secondary">
-                    {activity.time}
-                  </span>
-
-                </div>
-              );
-            }
-          )}
-
-        </div>
-
-      </Card>
 
     </div>
   );
