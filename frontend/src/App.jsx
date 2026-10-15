@@ -58,6 +58,13 @@ function RouteLoading() {
   );
 }
 
+const MaintenanceHome = lazy(
+  () => import("./pages/maintance/MaintenanceHome"),
+);
+const SubmitComplaint = lazy(
+  () => import("./pages/maintance/Student/SubmitComplaint"),
+);
+
 function App() {
   return (
     <BrowserRouter>
@@ -86,6 +93,12 @@ function App() {
             <Route path="/hostel/allocations" element={<Allocations />} />
             <Route path="/hostel/transfers" element={<Transfers />} />
             <Route path="/hostel/occupancy" element={<Occupancy />} />
+
+            <Route path="/maintenance" element={<MaintenanceHome />} />
+            <Route
+              path="/maintenance/submit-complaint"
+              element={<SubmitComplaint />}
+            />
 
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/reports" element={<Reports />} />
