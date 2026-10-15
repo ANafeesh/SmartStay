@@ -1,0 +1,90 @@
+
+const Building = require("../models/Building");
+
+// Create a building
+const createBuilding = async (req, res) => {
+  try {
+    const { name, code, address, floors, description } = req.body;
+
+    const building = await Building.create({
+      name,
+      code,
+      address,
+      floors,
+      description,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Building created successfully",
+      data: building,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Building code already exists",
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to create building",
+    });
+  }
+};
+
+// Get all buildings
+const getAllBuildings = async (req, res) => {
+  try {
+    const buildings = await Building.find().sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: buildings.length,
+      data: buildings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch buildings",
+    });
+  }
+};
+
+// Get one building
+const getBuildingById = async (req, res) => {
+  try {
+    const building = await Building.findById(req.params.id);
+
+    if (!building) {
+      return res.status(404).json({
+        success: false,
+        message: "Building not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: building,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid building ID",
+    });
+  }
+};
+
+module.exports = {
+  createBuilding,
+  getAllBuildings,
+  getBuildingById,
+};
