@@ -4,7 +4,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const billRoutes = require("./routes/billRoutes");
 const buildingRoutes = require("./routes/buildingRoutes");
-
+const roomRoutes = require("./routes/roomRoutes");
 dotenv.config();
 
 const app = express();
@@ -19,6 +19,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/bills", billRoutes);
 app.use("/api/buildings", buildingRoutes);
+app.use("/api/rooms", roomRoutes);
 
 // Test route
 app.get("/", (req, res) => {
