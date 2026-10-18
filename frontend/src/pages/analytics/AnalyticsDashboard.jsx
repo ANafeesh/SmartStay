@@ -1,881 +1,1034 @@
-import { useState } from "react";
 
+import { useMemo, useState } from "react";
 import {
-  Users,
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
   BedDouble,
-  Wallet,
-  AlertCircle,
+  CheckCircle2,
   Download,
-  CalendarDays,
+  Filter,
+  MessageSquareWarning,
+  RotateCcw,
   TrendingUp,
-  UserPlus,
-  CreditCard,
-  MessageSquare,
+  Users,
+  Wallet,
+  CalendarDays,
   Building2,
-  RefreshCw,
+  CircleDollarSign,
 } from "lucide-react";
 
 import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
 } from "recharts";
 
 import Card from "../../components/ui/Card";
-import Badge from "../../components/ui/Badge";
 
 import {
-  summaryStats,
-  occupancyData,
-  revenueData,
-  complaintData,
+  overallMonthlyData,
+  blockData,
   recentActivity,
-  blockOccupancy,
-  blockAData,
-  blockBData,
-  blockCData,
 } from "../../data/analyticsData";
 
-
-const statIcons = {
-  blue: Users,
-  teal: BedDouble,
-  green: Wallet,
-  orange: AlertCircle,
-};
-
-const statStyles = {
-  blue: "bg-smart-blue/10 text-smart-blue",
-  teal: "bg-smart-teal/10 text-smart-teal",
-  green: "bg-smart-success/10 text-smart-success",
-  orange: "bg-smart-warning/10 text-smart-warning",
-};
-
-const activityIcons = {
-  student: UserPlus,
-  payment: CreditCard,
-  complaint: MessageSquare,
-  room: Building2,
-};
-
-const complaintColors = [
-  "#1686d4",
-  "#06b6d4",
+const COLORS = [
+  "#2563eb",
+  "#14b8a6",
   "#f59e0b",
-  "#10b981",
-  "#ef4444",
+  "#f43f5e",
+  "#8b5cf6",
 ];
 
+const BLOCKS = ["All", "Block A", "Block B", "Block C"];
+
+const PERIODS = [
+  { label: "Last month", value: "1month", count: 1 },
+  { label: "Last 3 months", value: "3months", count: 3 },
+  { label: "Last 6 months", value: "6months", count: 6 },
+];
+
+const formatCurrency = (value) =>
+  `Rs. ${Number(value || 0).toLocaleString("en-LK")}`;
+
+const formatShortCurrency = (value) => {
+  const amount = Number(value || 0);
+
+  if (amount >= 1000000) {
+    return `Rs. ${(amount / 1000000).toFixed(2)}M`;
+  }
+
+  if (amount >= 1000) {
+    return `Rs. ${(amount / 1000).toFixed(0)}K`;
+  }
+
+  return `Rs. ${amount.toLocaleString("en-LK")}`;
+};
+
+const getPercentage = (value, total) =>
+  total > 0 ? (value / total) * 100 : 0;
 
 function AnalyticsDashboard() {
   const [dateRange, setDateRange] = useState("6months");
-  const [selectedBlock, setSelectedBlock] = useState("all");
+  const [selectedBlock, setSelectedBlock] = useState("All");
 
+  const sourceData = useMemo(() => {
+    if (selectedBlock === "All") {
+      return overallMonthlyData;
+    }
 
-  const selectedBlockData =
-    selectedBlock === "Block A"
-      ? blockAData
-      : selectedBlock === "Block B"
-        ? blockBData
-        : selectedBlock === "Block C"
-          ? blockCData
-          : null;
+    return blockData[selectedBlock] || overallMonthlyData;
+  }, [selectedBlock]);
 
-  // ===================================================
-  // Select current datasets
-  // ===================================================
+  const filteredMonthlyData = useMemo(() => {
+    const selectedPeriod =
+      PERIODS.find((period) => period.value === dateRange) ||
+      PERIODS[2];
 
-  const currentOccupancyData =
-    selectedBlockData?.occupancy || occupancyData;
+    return sourceData.slice(-selectedPeriod.count);
+  }, [sourceData, dateRange]);
 
-  const currentRevenueData =
-    selectedBlockData?.revenue || revenueData;
+  const summary = useMemo(() => {
+    const data = filteredMonthlyData;
 
-  const currentComplaintData =
-    selectedBlockData?.complaints || complaintData;
+    if (!data.length) {
+      return {
+        averageStudents: 0,
+        averageOccupancy: 0,
+        totalRevenue: 0,
+        totalExpenses: 0,
+        totalOpenComplaints: 0,
+        totalOccupied: 0,
+        totalBeds: 0,
+        totalAvailable: 0,
+      };
+    }
 
+    const totalRevenue = data.reduce(
+      (sum, item) => sum + item.revenue,
+      0
+    );
 
+    const totalExpenses = data.reduce(
+      (sum, item) => sum + item.expenses,
+      0
+    );
 
-  const monthCount =
-    dateRange === "1month"
-      ? 1
-      : dateRange === "3months"
-        ? 3
-        : 6;
+    const totalOccupied = data.reduce(
+      (sum, item) => sum + item.occupied,
+      0
+    );
 
-  const filteredOccupancyData =
-    currentOccupancyData.slice(-monthCount);
+    const totalBeds = data.reduce(
+      (sum, item) => sum + item.totalBeds,
+      0
+    );
 
-  const filteredRevenueData =
-    currentRevenueData.slice(-monthCount);
+    const averageStudents =
+      data.reduce((sum, item) => sum + item.students, 0) /
+      data.length;
 
+    const totalOpenComplaints = data.reduce(
+      (sum, item) => sum + item.openComplaints,
+      0
+    );
 
-  const filteredBlocks =
-    selectedBlock === "all"
-      ? blockOccupancy
-      : blockOccupancy.filter(
-          (item) => item.block === selectedBlock
-        );
+    return {
+      averageStudents: Math.round(averageStudents),
+      averageOccupancy: getPercentage(totalOccupied, totalBeds),
+      totalRevenue,
+      totalExpenses,
+      totalOpenComplaints,
+      totalOccupied,
+      totalBeds,
+      totalAvailable: Math.max(totalBeds - totalOccupied, 0),
+    };
+  }, [filteredMonthlyData]);
 
+  const occupancyChartData = useMemo(
+    () =>
+      filteredMonthlyData.map((item) => ({
+        month: item.month,
+        occupied: item.occupied,
+        available: Math.max(item.totalBeds - item.occupied, 0),
+        occupancyRate: getPercentage(item.occupied, item.totalBeds),
+      })),
+    [filteredMonthlyData]
+  );
 
-  const totalOccupied = filteredBlocks.reduce(
-    (sum, item) => sum + item.occupied,
+  const revenueChartData = useMemo(
+    () =>
+      filteredMonthlyData.map((item) => ({
+        month: item.month,
+        revenue: item.revenue,
+        expenses: item.expenses,
+        profit: item.revenue - item.expenses,
+      })),
+    [filteredMonthlyData]
+  );
+
+  const complaintChartData = useMemo(() => {
+    const totals = {};
+
+    filteredMonthlyData.forEach((item) => {
+      Object.entries(item.complaints || {}).forEach(
+        ([category, count]) => {
+          totals[category] = (totals[category] || 0) + count;
+        }
+      );
+    });
+
+    return Object.entries(totals)
+      .map(([category, count]) => ({ category, count }))
+      .filter((item) => item.count > 0);
+  }, [filteredMonthlyData]);
+
+  const complaintCategoryTotal = complaintChartData.reduce(
+    (sum, item) => sum + item.count,
     0
   );
 
-  const totalBeds = filteredBlocks.reduce(
-    (sum, item) => sum + item.total,
-    0
+  const blockOccupancyChartData = useMemo(() => {
+    const blocks =
+      selectedBlock === "All"
+        ? Object.entries(blockData)
+        : [[selectedBlock, blockData[selectedBlock] || []]];
+
+    return blocks.map(([block, monthlyData]) => {
+      const latest = monthlyData[monthlyData.length - 1];
+      const occupied = latest?.occupied || 0;
+      const total = latest?.totalBeds || 0;
+
+      return {
+        block,
+        occupied,
+        available: Math.max(total - occupied, 0),
+        total,
+        rate: getPercentage(occupied, total),
+      };
+    });
+  }, [selectedBlock]);
+
+  const totalProfit = summary.totalRevenue - summary.totalExpenses;
+  const profitMargin = getPercentage(
+    totalProfit,
+    summary.totalRevenue
   );
 
-  const occupancyPercentage =
-    totalBeds > 0
-      ? ((totalOccupied / totalBeds) * 100).toFixed(1)
-      : "0.0";
+  const firstMonth = filteredMonthlyData[0];
+  const lastMonth =
+    filteredMonthlyData[filteredMonthlyData.length - 1];
 
-
-  const latestRevenue =
-    filteredRevenueData.length > 0
-      ? filteredRevenueData[
-          filteredRevenueData.length - 1
-        ].revenue
+  const revenueChange =
+    firstMonth && lastMonth && firstMonth.revenue > 0
+      ? ((lastMonth.revenue - firstMonth.revenue) /
+          firstMonth.revenue) *
+        100
       : 0;
 
-  const formattedRevenue =
-    `Rs. ${(latestRevenue / 1000000).toFixed(2)}M`;
+  function resetFilters() {
+    setDateRange("6months");
+    setSelectedBlock("All");
+  }
 
-  const displayedStudents = selectedBlockData
-    ? selectedBlockData.students
-    : 248;
-
-
-  const displayedComplaints = selectedBlockData
-    ? selectedBlockData.openComplaints
-    : 18;
-
-
-  function handleExport() {
-    const rows = [
-      ["SmartStay Analytics Report"],
-      [],
-      ["Selected Period", dateRange],
-      ["Selected Block", selectedBlock],
-      [],
-      ["Metric", "Value"],
-      ["Total Students", displayedStudents],
-      ["Occupancy Rate", `${occupancyPercentage}%`],
-      [
-        "Monthly Revenue",
-        selectedBlockData
-          ? formattedRevenue
-          : "Rs. 1.85M",
-      ],
-      ["Open Complaints", displayedComplaints],
-      [],
-      [
-        "Block",
-        "Occupied Beds",
-        "Total Beds",
-        "Occupancy",
-      ],
-      ...filteredBlocks.map((item) => [
-        item.block,
-        item.occupied,
-        item.total,
-        `${(
-          (item.occupied / item.total) *
-          100
-        ).toFixed(1)}%`,
-      ]),
-      [],
-      ["Month", "Occupied", "Available"],
-      ...filteredOccupancyData.map((item) => [
-        item.month,
-        item.occupied,
-        item.available,
-      ]),
-      [],
-      ["Month", "Revenue", "Expenses"],
-      ...filteredRevenueData.map((item) => [
-        item.month,
-        item.revenue,
-        item.expenses,
-      ]),
-      [],
-      ["Complaint Category", "Count"],
-      ...currentComplaintData.map((item) => [
-        item.category,
-        item.count,
-      ]),
+  function exportCSV() {
+    const headers = [
+      "Month",
+      "Block",
+      "Students",
+      "Total Beds",
+      "Occupied Beds",
+      "Available Beds",
+      "Occupancy Percentage",
+      "Revenue (LKR)",
+      "Expenses (LKR)",
+      "Net Profit (LKR)",
+      "Open Complaints",
     ];
 
-    const csv = rows
+    const rows = filteredMonthlyData.map((item) => [
+      item.month,
+      selectedBlock,
+      item.students,
+      item.totalBeds,
+      item.occupied,
+      Math.max(item.totalBeds - item.occupied, 0),
+      getPercentage(item.occupied, item.totalBeds).toFixed(2),
+      item.revenue,
+      item.expenses,
+      item.revenue - item.expenses,
+      item.openComplaints,
+    ]);
+
+    const csv = [headers, ...rows]
       .map((row) =>
         row
           .map(
             (value) =>
-              `"${String(value ?? "").replaceAll(
-                '"',
-                '""'
-              )}"`
+              `"${String(value ?? "").replaceAll('"', '""')}"`
           )
           .join(",")
       )
-      .join("\n");
+      .join("\r\n");
 
-    const blob = new Blob(
-      ["\uFEFF" + csv],
-      {
-        type: "text/csv;charset=utf-8;",
-      }
-    );
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
 
     link.href = url;
-    link.download =
-      "smartstay-analytics.csv";
+    link.download = `smartstay-${selectedBlock
+      .toLowerCase()
+      .replaceAll(" ", "-")}-analytics.csv`;
 
     document.body.appendChild(link);
-
     link.click();
-
     link.remove();
-
     URL.revokeObjectURL(url);
   }
 
+  function CurrencyTooltip({ active, payload, label }) {
+    if (!active || !payload?.length) return null;
 
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+        <p className="mb-2 text-sm font-bold text-slate-800">
+          {label}
+        </p>
 
-  function handleReset() {
-    setDateRange("6months");
-    setSelectedBlock("all");
+        {payload.map((entry) => (
+          <div
+            key={entry.dataKey}
+            className="flex items-center justify-between gap-5 py-1 text-sm"
+          >
+            <span className="text-slate-500">{entry.name}</span>
+            <span className="font-semibold text-slate-800">
+              {formatCurrency(entry.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
   }
 
+  function MetricCard({
+    title,
+    value,
+    subtitle,
+    icon: Icon,
+    iconStyle,
+    trend,
+  }) {
+    return (
+      <Card>
+        <div className="flex h-full items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-smart-secondary">
+              {title}
+            </p>
 
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-smart-primary sm:text-3xl">
+              {value}
+            </h2>
+
+            <p className="mt-2 text-xs text-smart-secondary">
+              {subtitle}
+            </p>
+
+            {trend !== undefined && (
+              <div
+                className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
+                  trend >= 0
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-rose-50 text-rose-700"
+                }`}
+              >
+                {trend >= 0 ? (
+                  <ArrowUpRight size={14} />
+                ) : (
+                  <ArrowDownRight size={14} />
+                )}
+                {Math.abs(trend).toFixed(1)}% vs first month
+              </div>
+            )}
+          </div>
+
+          <div
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconStyle}`}
+          >
+            <Icon size={23} />
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  const chartHeading =
+    selectedBlock === "All" ? "All hostel blocks" : selectedBlock;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-10">
+      {/* Page heading */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 p-6 text-white shadow-lg sm:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-blue-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 right-1/3 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
 
-
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-
-        <div className="flex items-center gap-3">
-
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-            <TrendingUp size={24} />
-          </div>
-
+        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100">
+              <Activity size={14} />
+              SMARTSTAY · MODULE 05
+            </div>
 
-            <h1 className="text-2xl font-bold text-smart-primary sm:text-3xl">
-              Smart Monitoring & Analytics
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Smart Analytics
             </h1>
 
-            <p className="mt-1 text-sm text-smart-secondary">
-              Monitor hostel performance, occupancy,
-              revenue, and student services.
+            <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100 sm:text-base">
+              Understand hostel occupancy, financial performance,
+              and service issues from one clear dashboard.
             </p>
-
           </div>
 
-        </div>
-
-        <button
-          onClick={handleExport}
-          className="flex items-center justify-center gap-2 rounded-xl bg-smart-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-smart-blue"
-        >
-          <Download size={18} />
-          Export Report
-        </button>
-
-      </div>
-
-
-      <Card padding="p-4">
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-          <div className="flex items-center gap-2 text-sm font-semibold text-smart-primary">
-            <CalendarDays size={19} />
-            Report Filters
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-
-
-            <select
-              value={dateRange}
-              onChange={(e) =>
-                setDateRange(e.target.value)
-              }
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
-            >
-              <option value="1month">
-                Last Month
-              </option>
-
-              <option value="3months">
-                Last 3 Months
-              </option>
-
-              <option value="6months">
-                Last 6 Months
-              </option>
-            </select>
-
-
-            <select
-              value={selectedBlock}
-              onChange={(e) =>
-                setSelectedBlock(e.target.value)
-              }
-              className="rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
-            >
-              <option value="all">
-                All Blocks
-              </option>
-
-              <option value="Block A">
-                Block A
-              </option>
-
-              <option value="Block B">
-                Block B
-              </option>
-
-              <option value="Block C">
-                Block C
-              </option>
-            </select>
-
+          <div className="flex flex-wrap gap-3">
             <button
-              onClick={handleReset}
-              className="flex items-center justify-center gap-2 rounded-xl border border-black/10 px-4 py-3 text-sm font-medium text-smart-secondary hover:bg-smart-background"
+              onClick={resetFilters}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
             >
-              <RefreshCw size={16} />
-              Reset
+              <RotateCcw size={16} />
+              Reset filters
             </button>
 
+            <button
+              onClick={exportCSV}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-blue-950 shadow-sm transition hover:bg-blue-50"
+            >
+              <Download size={17} />
+              Export CSV
+            </button>
           </div>
-
         </div>
 
+        <div className="relative mt-7 flex flex-wrap gap-3 border-t border-white/15 pt-5 text-xs text-blue-100">
+          <span className="inline-flex items-center gap-2">
+            <CalendarDays size={14} />
+            {filteredMonthlyData.length} month
+            {filteredMonthlyData.length === 1 ? "" : "s"} selected
+          </span>
+          <span className="text-blue-200/60">•</span>
+          <span className="inline-flex items-center gap-2">
+            <Building2 size={14} />
+            {selectedBlock === "All" ? "All blocks" : selectedBlock}
+          </span>
+          <span className="text-blue-200/60">•</span>
+          <span className="inline-flex items-center gap-2">
+            <CheckCircle2 size={14} />
+            Sample dashboard data
+          </span>
+        </div>
+      </section>
+
+      {/* Filters */}
+      <Card>
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+            <Filter size={17} />
+          </div>
+          <div>
+            <h2 className="font-bold text-smart-primary">
+              Dashboard filters
+            </h2>
+            <p className="text-xs text-smart-secondary">
+              Choose the reporting period and hostel block
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-smart-primary">
+              Reporting period
+            </span>
+            <select
+              value={dateRange}
+              onChange={(event) => setDateRange(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+            >
+              {PERIODS.map((period) => (
+                <option key={period.value} value={period.value}>
+                  {period.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-smart-primary">
+              Hostel block
+            </span>
+            <select
+              value={selectedBlock}
+              onChange={(event) => setSelectedBlock(event.target.value)}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+            >
+              {BLOCKS.map((block) => (
+                <option key={block} value={block}>
+                  {block === "All" ? "All hostel blocks" : block}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
       </Card>
 
+      {/* KPI cards */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-smart-primary">
+            Performance overview
+          </h2>
+          <p className="mt-1 text-sm text-smart-secondary">
+            Key indicators for {chartHeading.toLowerCase()}.
+          </p>
+        </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            title="Average students"
+            value={summary.averageStudents.toLocaleString()}
+            subtitle="Average per month"
+            icon={Users}
+            iconStyle="bg-blue-50 text-blue-700"
+          />
 
-        {summaryStats.map((stat) => {
+          <MetricCard
+            title="Average occupancy"
+            value={`${summary.averageOccupancy.toFixed(1)}%`}
+            subtitle={`${summary.totalOccupied.toLocaleString()} occupied bed-months`}
+            icon={BedDouble}
+            iconStyle="bg-teal-50 text-teal-700"
+          />
 
-          const Icon = statIcons[stat.color];
+          <MetricCard
+            title="Total revenue"
+            value={formatShortCurrency(summary.totalRevenue)}
+            subtitle={`${filteredMonthlyData.length} month reporting total`}
+            icon={Wallet}
+            iconStyle="bg-emerald-50 text-emerald-700"
+            trend={revenueChange}
+          />
 
-          let displayedValue = stat.value;
+          <MetricCard
+            title="Open complaint records"
+            value={summary.totalOpenComplaints.toLocaleString()}
+            subtitle="Sum of monthly open-complaint figures"
+            icon={MessageSquareWarning}
+            iconStyle="bg-amber-50 text-amber-700"
+          />
+        </div>
+      </section>
 
-          if (stat.title === "Total Students") {
-            displayedValue =
-              displayedStudents;
-          }
+      {/* Occupancy and revenue charts */}
+      <section className="grid gap-5 xl:grid-cols-2">
+        <Card>
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                  <BedDouble size={18} />
+                </div>
+                <h2 className="text-lg font-bold text-smart-primary">
+                  Occupancy trends
+                </h2>
+              </div>
+              <p className="mt-2 text-sm text-smart-secondary">
+                Occupied and available beds by month
+              </p>
+            </div>
 
-          if (stat.title === "Occupancy Rate") {
-            displayedValue =
-              `${occupancyPercentage}%`;
-          }
+            <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+              {chartHeading}
+            </span>
+          </div>
 
-          if (stat.title === "Monthly Revenue") {
-            displayedValue =
-              selectedBlockData
-                ? formattedRevenue
-                : stat.value;
-          }
-
-          if (stat.title === "Open Complaints") {
-            displayedValue =
-              displayedComplaints;
-          }
-
-          return (
-            <Card
-              key={stat.title}
-              padding="p-5"
-            >
-
-              <div className="flex items-start justify-between">
-
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-xl ${statStyles[stat.color]}`}
+          <div className="h-[300px] w-full">
+            {occupancyChartData.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={occupancyChartData}
+                  barGap={5}
+                  margin={{ top: 10, right: 4, left: -18, bottom: 0 }}
                 >
-                  <Icon size={23} />
+                  <CartesianGrid
+                    stroke="#e2e8f0"
+                    strokeDasharray="4 4"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "#64748b", fontSize: 12 }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "#64748b", fontSize: 12 }}
+                  />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="occupied"
+                    name="Occupied beds"
+                    fill="#2563eb"
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={34}
+                  />
+                  <Bar
+                    dataKey="available"
+                    name="Available beds"
+                    fill="#bfdbfe"
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={34}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState />
+            )}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Occupied records</p>
+              <p className="mt-1 text-lg font-bold text-slate-800">
+                {summary.totalOccupied.toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-xs text-slate-500">Available records</p>
+              <p className="mt-1 text-lg font-bold text-slate-800">
+                {summary.totalAvailable.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <TrendingUp size={18} />
+                </div>
+                <h2 className="text-lg font-bold text-smart-primary">
+                  Revenue & expenses
+                </h2>
+              </div>
+              <p className="mt-2 text-sm text-smart-secondary">
+                Monthly financial performance in LKR
+              </p>
+            </div>
+
+            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+              {totalProfit >= 0 ? "Positive balance" : "Negative balance"}
+            </span>
+          </div>
+
+          <div className="h-[300px] w-full">
+            {revenueChartData.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={revenueChartData}
+                  margin={{ top: 10, right: 8, left: 8, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    stroke="#e2e8f0"
+                    strokeDasharray="4 4"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "#64748b", fontSize: 12 }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "#64748b", fontSize: 11 }}
+                    tickFormatter={(value) =>
+                      `${(value / 1000000).toFixed(1)}M`
+                    }
+                  />
+                  <Tooltip content={<CurrencyTooltip />} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue"
+                    stroke="#059669"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#059669" }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="expenses"
+                    name="Expenses"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#f59e0b" }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState />
+            )}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
+            <div className="rounded-xl bg-emerald-50 p-3">
+              <p className="text-xs text-emerald-700">Net profit</p>
+              <p className="mt-1 text-lg font-bold text-emerald-800">
+                {formatShortCurrency(totalProfit)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-amber-50 p-3">
+              <p className="text-xs text-amber-700">Total expenses</p>
+              <p className="mt-1 text-lg font-bold text-amber-800">
+                {formatShortCurrency(summary.totalExpenses)}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      {/* Complaints */}
+      <section className="grid gap-5 xl:grid-cols-5">
+        <div className="xl:col-span-3">
+          <Card>
+            <div className="mb-5">
+              <h2 className="text-lg font-bold text-smart-primary">
+                Complaint analysis
+              </h2>
+              <p className="mt-1 text-sm text-smart-secondary">
+                Reported issues grouped by service category
+              </p>
+            </div>
+
+            {complaintCategoryTotal > 0 ? (
+              <div className="grid items-center gap-4 md:grid-cols-2">
+                <div className="h-[270px] min-w-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={complaintChartData}
+                        dataKey="count"
+                        nameKey="category"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={100}
+                        paddingAngle={4}
+                      >
+                        {complaintChartData.map((entry, index) => (
+                          <Cell
+                            key={entry.category}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
 
-                <Badge variant="success">
+                <div className="space-y-4">
+                  <div className="rounded-2xl bg-slate-50 p-4">
+                    <p className="text-sm text-slate-500">
+                      Categorized complaint entries
+                    </p>
+                    <p className="mt-1 text-3xl font-bold text-slate-900">
+                      {complaintCategoryTotal.toLocaleString()}
+                    </p>
+                  </div>
 
-                  <span className="flex items-center gap-1">
-                    <TrendingUp size={13} />
-                    Active
-                  </span>
+                  {complaintChartData.map((item, index) => {
+                    const percentage = getPercentage(
+                      item.count,
+                      complaintCategoryTotal
+                    );
 
-                </Badge>
+                    return (
+                      <div key={item.category}>
+                        <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{
+                                backgroundColor:
+                                  COLORS[index % COLORS.length],
+                              }}
+                            />
+                            <span className="font-medium text-slate-700">
+                              {item.category}
+                            </span>
+                          </div>
+                          <span className="font-bold text-slate-900">
+                            {item.count}
+                          </span>
+                        </div>
 
+                        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${percentage}%`,
+                              backgroundColor:
+                                COLORS[index % COLORS.length],
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+            ) : (
+              <EmptyState message="No categorized complaints in this period." />
+            )}
+          </Card>
+        </div>
 
-              <p className="mt-5 text-sm text-smart-secondary">
-                {stat.title}
+        {/* Block comparison */}
+        <div className="xl:col-span-2">
+          <Card>
+            <div className="mb-5">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
+                  <Building2 size={18} />
+                </div>
+                <h2 className="text-lg font-bold text-smart-primary">
+                  Block occupancy
+                </h2>
+              </div>
+              <p className="mt-2 text-sm text-smart-secondary">
+                Latest occupancy snapshot by block
               </p>
+            </div>
 
-              <h2 className="mt-1 text-2xl font-bold text-smart-primary">
-                {displayedValue}
-              </h2>
+            <div className="space-y-5">
+              {blockOccupancyChartData.map((item, index) => (
+                <div key={item.block}>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-slate-700">
+                      {item.block}
+                    </span>
+                    <span className="text-sm font-bold text-slate-900">
+                      {item.rate.toFixed(1)}%
+                    </span>
+                  </div>
 
-              <p className="mt-2 text-xs font-medium text-smart-secondary">
+                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(item.rate, 100)}%`,
+                        backgroundColor:
+                          COLORS[index % COLORS.length],
+                      }}
+                    />
+                  </div>
 
-                {stat.title === "Total Students" &&
-                selectedBlockData
-                  ? `Students in ${selectedBlock}`
-                  : stat.title === "Occupancy Rate" &&
-                      selectedBlockData
-                    ? `${totalOccupied} of ${totalBeds} beds`
-                    : stat.change}
+                  <p className="mt-2 text-xs text-slate-500">
+                    {item.occupied} occupied / {item.total} beds
+                    {item.total > 0 &&
+                      ` · ${Math.max(item.total - item.occupied, 0)} available`}
+                  </p>
+                </div>
+              ))}
+            </div>
 
+            <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4">
+              <p className="text-sm font-semibold text-blue-900">
+                Occupancy insight
               </p>
+              <p className="mt-1 text-xs leading-5 text-blue-800">
+                {blockOccupancyChartData.length
+                  ? `${blockOccupancyChartData.reduce(
+                      (best, item) => (item.rate > best.rate ? item : best),
+                      blockOccupancyChartData[0]
+                    ).block} has the highest occupancy in the displayed snapshot.`
+                  : "No block occupancy data available."}
+              </p>
+            </div>
+          </Card>
+        </div>
+      </section>
 
-            </Card>
-          );
-        })}
-
-      </div>
-
-
-      <div className="grid gap-6 xl:grid-cols-2">
-
-        {/* Occupancy Chart */}
-
+      {/* Financial summary and activity */}
+      <section className="grid gap-5 lg:grid-cols-2">
         <Card>
-
-          <div className="mb-6 flex items-start justify-between">
-
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+              <CircleDollarSign size={21} />
+            </div>
             <div>
-
               <h2 className="text-lg font-bold text-smart-primary">
-                Hostel Occupancy
+                Financial summary
               </h2>
-
-              <p className="mt-1 text-sm text-smart-secondary">
-                {selectedBlock === "all"
-                  ? "Overall occupied and available beds"
-                  : `${selectedBlock} occupied and available beds`}
+              <p className="text-sm text-smart-secondary">
+                Income and spending overview
               </p>
-
             </div>
-
-            <div className="rounded-xl bg-smart-teal/10 p-3 text-smart-teal">
-              <BedDouble size={22} />
-            </div>
-
           </div>
 
-          <div className="h-72 w-full">
-
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-
-              <BarChart
-                data={filteredOccupancyData}
-              >
-
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                />
-
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                />
-
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                />
-
-                <Tooltip />
-
-                <Legend />
-
-                <Bar
-                  dataKey="occupied"
-                  name="Occupied Beds"
-                  fill="#1686d4"
-                  radius={[5, 5, 0, 0]}
-                />
-
-                <Bar
-                  dataKey="available"
-                  name="Available Beds"
-                  fill="#06b6d4"
-                  radius={[5, 5, 0, 0]}
-                />
-
-              </BarChart>
-
-            </ResponsiveContainer>
-
+          <div className="space-y-4">
+            <FinancialRow
+              label="Total revenue"
+              value={formatCurrency(summary.totalRevenue)}
+            />
+            <FinancialRow
+              label="Total expenses"
+              value={formatCurrency(summary.totalExpenses)}
+            />
+            <FinancialRow
+              label="Net profit"
+              value={formatCurrency(totalProfit)}
+              highlight
+              positive={totalProfit >= 0}
+            />
+            <FinancialRow
+              label="Profit margin"
+              value={`${profitMargin.toFixed(1)}%`}
+            />
           </div>
-
         </Card>
 
-        {/* Revenue Chart */}
-
         <Card>
-
-          <div className="mb-6 flex items-start justify-between">
-
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+              <Activity size={21} />
+            </div>
             <div>
-
               <h2 className="text-lg font-bold text-smart-primary">
-                Revenue & Expenses
+                Recent activity
               </h2>
-
-              <p className="mt-1 text-sm text-smart-secondary">
-                {selectedBlock === "all"
-                  ? "Overall financial performance"
-                  : `${selectedBlock} financial performance`}
+              <p className="text-sm text-smart-secondary">
+                Latest sample system activity
               </p>
-
             </div>
-
-            <div className="rounded-xl bg-smart-success/10 p-3 text-smart-success">
-              <Wallet size={22} />
-            </div>
-
-          </div>
-
-          <div className="h-72 w-full">
-
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-
-              <LineChart
-                data={filteredRevenueData}
-              >
-
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                />
-
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                />
-
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    `${(
-                      value / 1000000
-                    ).toFixed(1)}M`
-                  }
-                />
-
-                <Tooltip
-                  formatter={(value) =>
-                    `Rs. ${Number(
-                      value
-                    ).toLocaleString()}`
-                  }
-                />
-
-                <Legend />
-
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  name="Revenue"
-                  stroke="#1686d4"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                />
-
-                <Line
-                  type="monotone"
-                  dataKey="expenses"
-                  name="Expenses"
-                  stroke="#f59e0b"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                />
-
-              </LineChart>
-
-            </ResponsiveContainer>
-
-          </div>
-
-        </Card>
-
-      </div>
-
-
-
-      <div className="grid gap-6 xl:grid-cols-2">
-
-
-
-        <Card>
-
-          <div className="mb-4">
-
-            <h2 className="text-lg font-bold text-smart-primary">
-              Complaint Analysis
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              {selectedBlock === "all"
-                ? "Complaints by service category"
-                : `${selectedBlock} complaints by service category`}
-            </p>
-
-          </div>
-
-          <div className="h-72 w-full">
-
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-            >
-
-              <PieChart>
-
-                <Pie
-                  data={currentComplaintData}
-                  dataKey="count"
-                  nameKey="category"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  innerRadius={55}
-                  paddingAngle={3}
-                >
-
-                  {currentComplaintData.map(
-                    (entry, index) => (
-                      <Cell
-                        key={entry.category}
-                        fill={
-                          complaintColors[
-                            index %
-                              complaintColors.length
-                          ]
-                        }
-                      />
-                    )
-                  )}
-
-                </Pie>
-
-                <Tooltip />
-
-                <Legend />
-
-              </PieChart>
-
-            </ResponsiveContainer>
-
-          </div>
-
-        </Card>
-
-
-        <Card>
-
-          <div className="mb-6">
-
-            <h2 className="text-lg font-bold text-smart-primary">
-              Block-wise Occupancy
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Bed utilization by hostel block
-            </p>
-
-          </div>
-
-          <div className="mb-6 rounded-xl bg-smart-background p-4">
-
-            <p className="text-sm text-smart-secondary">
-
-              {selectedBlock === "all"
-                ? "Overall occupancy"
-                : `${selectedBlock} occupancy`}
-
-            </p>
-
-            <div className="mt-1 flex items-end justify-between">
-
-              <h3 className="text-3xl font-bold text-smart-primary">
-                {occupancyPercentage}%
-              </h3>
-
-              <Badge variant="teal">
-                {totalOccupied}/{totalBeds} beds
-              </Badge>
-
-            </div>
-
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-black/5">
-
-              <div
-                className="h-full rounded-full bg-smart-blue transition-all"
-                style={{
-                  width: `${occupancyPercentage}%`,
-                }}
-              />
-
-            </div>
-
           </div>
 
           <div className="space-y-5">
-
-            {filteredBlocks.map(
-              (block) => {
-
-                const percentage = (
-                  (block.occupied /
-                    block.total) *
-                  100
-                ).toFixed(1);
-
-                return (
-                  <div key={block.block}>
-
-                    <div className="mb-2 flex items-center justify-between">
-
-                      <span className="text-sm font-semibold text-smart-primary">
-                        {block.block}
-                      </span>
-
-                      <span className="text-sm text-smart-secondary">
-                        {block.occupied}/
-                        {block.total} beds
-                      </span>
-
-                    </div>
-
-                    <div className="h-2.5 overflow-hidden rounded-full bg-black/5">
-
-                      <div
-                        className="h-full rounded-full bg-smart-teal transition-all"
-                        style={{
-                          width: `${percentage}%`,
-                        }}
-                      />
-
-                    </div>
-
-                    <p className="mt-1 text-right text-xs text-smart-secondary">
-                      {percentage}% occupied
-                    </p>
-
+            {recentActivity.map((activity, index) => (
+              <div
+                key={`${activity.title}-${activity.time}`}
+                className="flex gap-3"
+              >
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                      index % 2 === 0
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    <Activity size={17} />
                   </div>
-                );
-              }
-            )}
+                  {index < recentActivity.length - 1 && (
+                    <div className="mt-2 min-h-5 w-px flex-1 bg-slate-200" />
+                  )}
+                </div>
 
-          </div>
-
-        </Card>
-
-      </div>
-
-
-      <Card>
-
-        <div className="mb-6 flex items-center justify-between">
-
-          <div>
-
-            <h2 className="text-lg font-bold text-smart-primary">
-              Recent Activity
-            </h2>
-
-            <p className="mt-1 text-sm text-smart-secondary">
-              Latest hostel management updates
-            </p>
-
-          </div>
-
-          <Badge variant="info">
-            Demo Data
-          </Badge>
-
-        </div>
-
-        <div className="divide-y divide-black/5">
-
-          {recentActivity.map(
-            (activity, index) => {
-
-              const Icon =
-                activityIcons[
-                  activity.type
-                ];
-
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-4 py-4"
-                >
-
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-                    <Icon size={20} />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-
-                    <p className="font-semibold text-smart-primary">
+                <div className="min-w-0 flex-1 pb-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-800">
                       {activity.title}
                     </p>
-
-                    <p className="mt-1 text-sm text-smart-secondary">
-                      {activity.description}
-                    </p>
-
+                    <span className="text-xs text-slate-400">
+                      {activity.time}
+                    </span>
                   </div>
-
-                  <span className="shrink-0 text-xs text-smart-secondary">
-                    {activity.time}
+                  <p className="mt-1 text-sm leading-5 text-slate-500">
+                    {activity.description}
+                  </p>
+                  <span className="mt-2 inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-600">
+                    {activity.type}
                   </span>
-
                 </div>
-              );
-            }
-          )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
 
-        </div>
+      <p className="px-1 text-center text-xs text-smart-secondary">
+        SmartStay Analytics · Figures are based on the project's current
+        sample data and are not live backend records.
+      </p>
+    </div>
+  );
+}
 
-      </Card>
+function FinancialRow({ label, value, highlight, positive = true }) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 ${
+        highlight ? "border-t border-slate-100 pt-4" : ""
+      }`}
+    >
+      <span
+        className={`text-sm ${
+          highlight
+            ? "font-semibold text-slate-800"
+            : "text-slate-500"
+        }`}
+      >
+        {label}
+      </span>
 
+      <span
+        className={`text-right text-sm font-bold ${
+          highlight
+            ? positive
+              ? "text-emerald-700"
+              : "text-rose-700"
+            : "text-slate-800"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function EmptyState({
+  message = "No data available for the selected filters.",
+}) {
+  return (
+    <div className="flex h-full min-h-48 flex-col items-center justify-center text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+        <Activity size={23} />
+      </div>
+      <p className="text-sm font-semibold text-slate-700">
+        Nothing to display
+      </p>
+      <p className="mt-1 text-xs text-slate-500">{message}</p>
     </div>
   );
 }

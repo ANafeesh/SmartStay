@@ -1,84 +1,167 @@
 
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Building2,
   DoorOpen,
   BedDouble,
   Users,
-  Plus,
-  ArrowUpRight,
+  RefreshCw,
 } from "lucide-react";
 
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 
-const buildingStats = [
-  {
-    label: "Total Buildings",
-    value: "04",
-    icon: Building2,
-  },
-  {
-    label: "Total Rooms",
-    value: "128",
-    icon: DoorOpen,
-  },
-  {
-    label: "Total Beds",
-    value: "512",
-    icon: BedDouble,
-  },
-  {
-    label: "Occupied Beds",
-    value: "438",
-    icon: Users,
-  },
-];
+const API_URL = "http://localhost:5000/api";
 
-const buildings = [
-  {
-    id: 1,
-    name: "A Block",
-    code: "A",
-    floors: 3,
-    rooms: 42,
-    beds: 168,
-    occupied: 151,
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "B Block",
-    code: "B",
-    floors: 4,
-    rooms: 48,
-    beds: 192,
-    occupied: 165,
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "C Block",
-    code: "C",
-    floors: 3,
-    rooms: 38,
-    beds: 152,
-    occupied: 122,
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "D Block",
-    code: "D",
-    floors: 2,
-    rooms: 24,
-    beds: 96,
-    occupied: 0,
-    status: "Maintenance",
-  },
-];
+async function fetchList(endpoint) {
+  const response = await fetch(`${API_URL}${endpoint}`);
+  const result = await response.json();
+
+  if (!response.ok || result.success === false) {
+    throw new Error(result.message || `Failed to load ${endpoint}`);
+  }
+
+  const list = Array.isArray(result)
+    ? result
+    : result.data ??
+      result.buildings ??
+      result.rooms ??
+      result.beds;
+
+  if (!Array.isArray(list)) {
+    throw new Error(`Unexpected response from ${endpoint}`);
+  }
+
+  return list;
+}
+
+function getId(value) {
+  if (!value) return "";
+  if (typeof value === "object") {
+    return String(value._id ?? value.id ?? "");
+  }
+  return String(value);
+}
+
+function isOccupied(status) {
+  return String(status ?? "").toLowerCase() === "occupied";
+}
+
+function isMaintenance(building) {
+  return (
+    building.isActive === false ||
+    String(building.status ?? "").toLowerCase() === "maintenance"
+  );
+}
 
 function Buildings() {
+  const [buildings, setBuildings] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [beds, setBeds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const [buildingList, roomList, bedList] = await Promise.all([
+        fetchList("/buildings"),
+        fetchList("/rooms"),
+        fetchList("/beds"),
+      ]);
+
+      setBuildings(buildingList);
+      setRooms(roomList);
+      setBeds(bedList);
+    } catch (err) {
+      setError(
+        `${err.message}. Check that your backend is running on port 5000.`
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const buildingData = useMemo(() => {
+    return buildings.map((building) => {
+      const buildingId = getId(building);
+      const buildingRooms = rooms.filter(
+        (room) => getId(room.buildingId) === buildingId
+      );
+
+      const roomIds = new Set(buildingRooms.map((room) => getId(room)));
+
+      const buildingBeds = beds.filter((bed) =>
+        roomIds.has(getId(bed.roomId))
+      );
+
+      const occupied = buildingBeds.filter((bed) =>
+        isOccupied(bed.status)
+      ).length;
+
+      const maintenance = isMaintenance(building);
+
+      return {
+        id: buildingId,
+        name: building.name ?? building.buildingName ?? "Unnamed Building",
+        code: building.code ?? building.buildingCode ?? "—",
+        floors: Number(building.floors ?? 0),
+        rooms: buildingRooms.length,
+        beds: buildingBeds.length,
+        occupied,
+        status: maintenance ? "Maintenance" : "Active",
+        address: building.address ?? "",
+      };
+    });
+  }, [buildings, rooms, beds]);
+
+  const buildingStats = useMemo(() => {
+    const totalRooms = buildingData.reduce(
+      (sum, building) => sum + building.rooms,
+      0
+    );
+
+    const totalBeds = buildingData.reduce(
+      (sum, building) => sum + building.beds,
+      0
+    );
+
+    const occupiedBeds = buildingData.reduce(
+      (sum, building) => sum + building.occupied,
+      0
+    );
+
+    return [
+      {
+        label: "Total Buildings",
+        value: buildingData.length,
+        icon: Building2,
+      },
+      {
+        label: "Total Rooms",
+        value: totalRooms,
+        icon: DoorOpen,
+      },
+      {
+        label: "Total Beds",
+        value: totalBeds,
+        icon: BedDouble,
+      },
+      {
+        label: "Occupied Beds",
+        value: occupiedBeds,
+        icon: Users,
+      },
+    ];
+  }, [buildingData]);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -97,11 +180,33 @@ function Buildings() {
           </p>
         </div>
 
-        <Button variant="primary" size="md">
-          <Plus size={18} />
-          Add Building
+        <Button
+          variant="primary"
+          size="md"
+          onClick={fetchData}
+          disabled={loading}
+        >
+          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          {loading ? "Loading..." : "Refresh Data"}
         </Button>
       </div>
+
+      {/* API Error */}
+      {error && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={fetchData}
+            className="mt-2 font-semibold underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -117,7 +222,7 @@ function Buildings() {
                   </p>
 
                   <p className="mt-2 text-2xl font-bold text-smart-primary">
-                    {stat.value}
+                    {loading ? "—" : stat.value}
                   </p>
                 </div>
 
@@ -144,47 +249,135 @@ function Buildings() {
           </div>
 
           <span className="text-sm font-medium text-smart-secondary">
-            {buildings.length} buildings
+            {loading ? "Loading..." : `${buildingData.length} buildings`}
           </span>
         </div>
 
-        {/* Desktop Table */}
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-black/5 bg-smart-background text-left">
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Building
-                </th>
+        {loading ? (
+          <div className="p-10 text-center text-sm text-smart-secondary">
+            Loading buildings from the database...
+          </div>
+        ) : error ? (
+          <div className="p-10 text-center text-sm text-smart-secondary">
+            Building data could not be loaded. Use Refresh Data to try again.
+          </div>
+        ) : buildingData.length === 0 ? (
+          <div className="p-10 text-center text-sm text-smart-secondary">
+            No buildings found in the database.
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-black/5 bg-smart-background text-left">
+                    {[
+                      "Building",
+                      "Floors",
+                      "Rooms",
+                      "Beds",
+                      "Occupancy",
+                      "Status",
+                    ].map((heading) => (
+                      <th
+                        key={heading}
+                        className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary"
+                      >
+                        {heading}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Floors
-                </th>
+                <tbody>
+                  {buildingData.map((building) => {
+                    const occupancy =
+                      building.beds === 0
+                        ? 0
+                        : Math.round(
+                            (building.occupied / building.beds) * 100
+                          );
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Rooms
-                </th>
+                    return (
+                      <tr
+                        key={building.id}
+                        className="border-b border-black/5 last:border-b-0"
+                      >
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
+                              <Building2 size={20} />
+                            </div>
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Beds
-                </th>
+                            <div>
+                              <p className="font-semibold text-smart-primary">
+                                {building.name}
+                              </p>
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Occupancy
-                </th>
+                              <p className="text-xs text-smart-secondary">
+                                Building {building.code}
+                              </p>
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Status
-                </th>
+                              {building.address && (
+                                <p className="mt-1 text-xs text-smart-secondary">
+                                  {building.address}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
 
-                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wide text-smart-secondary">
-                  Action
-                </th>
-              </tr>
-            </thead>
+                        <td className="px-6 py-5 text-sm text-smart-secondary">
+                          {building.floors}
+                        </td>
 
-            <tbody>
-              {buildings.map((building) => {
+                        <td className="px-6 py-5 text-sm text-smart-secondary">
+                          {building.rooms}
+                        </td>
+
+                        <td className="px-6 py-5">
+                          <p className="text-sm font-medium text-smart-primary">
+                            {building.occupied} / {building.beds}
+                          </p>
+
+                          <p className="text-xs text-smart-secondary">
+                            {building.beds - building.occupied} available
+                          </p>
+                        </td>
+
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-black/5">
+                              <div
+                                className="h-full rounded-full bg-smart-blue"
+                                style={{ width: `${occupancy}%` }}
+                              />
+                            </div>
+
+                            <span className="text-sm font-medium text-smart-primary">
+                              {occupancy}%
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-5">
+                          {building.status === "Active" ? (
+                            <Badge variant="success">Active</Badge>
+                          ) : (
+                            <Badge variant="warning">Maintenance</Badge>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="space-y-4 p-4 md:hidden">
+              {buildingData.map((building) => {
                 const occupancy =
                   building.beds === 0
                     ? 0
@@ -193,11 +386,11 @@ function Buildings() {
                       );
 
                 return (
-                  <tr
+                  <div
                     key={building.id}
-                    className="border-b border-black/5 last:border-b-0"
+                    className="rounded-xl border border-black/5 p-4"
                   >
-                    <td className="px-6 py-5">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
                           <Building2 size={20} />
@@ -213,157 +406,67 @@ function Buildings() {
                           </p>
                         </div>
                       </div>
-                    </td>
 
-                    <td className="px-6 py-5 text-sm text-smart-secondary">
-                      {building.floors}
-                    </td>
-
-                    <td className="px-6 py-5 text-sm text-smart-secondary">
-                      {building.rooms}
-                    </td>
-
-                    <td className="px-6 py-5">
-                      <p className="text-sm font-medium text-smart-primary">
-                        {building.occupied} / {building.beds}
-                      </p>
-
-                      <p className="text-xs text-smart-secondary">
-                        {building.beds - building.occupied} available
-                      </p>
-                    </td>
-
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-24 overflow-hidden rounded-full bg-black/5">
-                          <div
-                            className="h-full rounded-full bg-smart-blue"
-                            style={{ width: `${occupancy}%` }}
-                          />
-                        </div>
-
-                        <span className="text-sm font-medium text-smart-primary">
-                          {occupancy}%
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-5">
                       {building.status === "Active" ? (
                         <Badge variant="success">Active</Badge>
                       ) : (
                         <Badge variant="warning">Maintenance</Badge>
                       )}
-                    </td>
+                    </div>
 
-                    <td className="px-6 py-5">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 text-sm font-medium text-smart-blue transition hover:underline"
-                      >
-                        View
-                        <ArrowUpRight size={16} />
-                      </button>
-                    </td>
-                  </tr>
+                    {building.address && (
+                      <p className="mt-3 text-sm text-smart-secondary">
+                        {building.address}
+                      </p>
+                    )}
+
+                    <div className="mt-4 grid grid-cols-3 gap-3">
+                      <div>
+                        <p className="text-xs text-smart-secondary">Floors</p>
+                        <p className="mt-1 font-semibold text-smart-primary">
+                          {building.floors}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-smart-secondary">Rooms</p>
+                        <p className="mt-1 font-semibold text-smart-primary">
+                          {building.rooms}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-smart-secondary">Beds</p>
+                        <p className="mt-1 font-semibold text-smart-primary">
+                          {building.beds}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-smart-secondary">
+                          Occupancy
+                        </span>
+
+                        <span className="font-medium text-smart-primary">
+                          {building.occupied} / {building.beds} ({occupancy}%)
+                        </span>
+                      </div>
+
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/5">
+                        <div
+                          className="h-full rounded-full bg-smart-blue"
+                          style={{ width: `${occupancy}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="space-y-4 p-4 md:hidden">
-          {buildings.map((building) => {
-            const occupancy =
-              building.beds === 0
-                ? 0
-                : Math.round(
-                    (building.occupied / building.beds) * 100
-                  );
-
-            return (
-              <div
-                key={building.id}
-                className="rounded-xl border border-black/5 p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-smart-blue/10 text-smart-blue">
-                      <Building2 size={20} />
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-smart-primary">
-                        {building.name}
-                      </p>
-
-                      <p className="text-xs text-smart-secondary">
-                        Building {building.code}
-                      </p>
-                    </div>
-                  </div>
-
-                  {building.status === "Active" ? (
-                    <Badge variant="success">Active</Badge>
-                  ) : (
-                    <Badge variant="warning">Maintenance</Badge>
-                  )}
-                </div>
-
-                <div className="mt-4 grid grid-cols-3 gap-3">
-                  <div>
-                    <p className="text-xs text-smart-secondary">Floors</p>
-                    <p className="mt-1 font-semibold text-smart-primary">
-                      {building.floors}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-smart-secondary">Rooms</p>
-                    <p className="mt-1 font-semibold text-smart-primary">
-                      {building.rooms}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-smart-secondary">Beds</p>
-                    <p className="mt-1 font-semibold text-smart-primary">
-                      {building.beds}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-smart-secondary">
-                      Occupancy
-                    </span>
-
-                    <span className="font-medium text-smart-primary">
-                      {building.occupied} / {building.beds} ({occupancy}%)
-                    </span>
-                  </div>
-
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/5">
-                    <div
-                      className="h-full rounded-full bg-smart-blue"
-                      style={{ width: `${occupancy}%` }}
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-smart-blue"
-                >
-                  View details
-                  <ArrowUpRight size={16} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );
