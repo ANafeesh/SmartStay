@@ -1,3 +1,4 @@
+
 export const utilitySummary = [
   {
     title: "Water Consumption",
@@ -25,6 +26,7 @@ export const utilitySummary = [
   },
 ];
 
+// Demonstration data for all 12 months.
 export const utilityData = [
   { month: "Apr", water: 9800, electricity: 6500 },
   { month: "May", water: 10500, electricity: 7200 },
@@ -32,6 +34,12 @@ export const utilityData = [
   { month: "Jul", water: 10800, electricity: 7100 },
   { month: "Aug", water: 11900, electricity: 7900 },
   { month: "Sep", water: 12450, electricity: 8240 },
+  { month: "Oct", water: 12100, electricity: 8050 },
+  { month: "Nov", water: 11800, electricity: 7900 },
+  { month: "Dec", water: 11000, electricity: 7600 },
+  { month: "Jan", water: 11500, electricity: 7800 },
+  { month: "Feb", water: 12200, electricity: 8100 },
+  { month: "Mar", water: 12700, electricity: 8350 },
 ];
 
 export const foodOrderData = [
@@ -41,6 +49,12 @@ export const foodOrderData = [
   { month: "Jul", orders: 980, revenue: 196000 },
   { month: "Aug", orders: 1180, revenue: 236000 },
   { month: "Sep", orders: 1248, revenue: 249600 },
+  { month: "Oct", orders: 1210, revenue: 242000 },
+  { month: "Nov", orders: 1160, revenue: 232000 },
+  { month: "Dec", orders: 1300, revenue: 260000 },
+  { month: "Jan", orders: 1250, revenue: 250000 },
+  { month: "Feb", orders: 1340, revenue: 268000 },
+  { month: "Mar", orders: 1400, revenue: 280000 },
 ];
 
 export const popularMeals = [
