@@ -8,9 +8,6 @@ import {
   Clock,
   Store,
   CheckCircle2,
-  Utensils,
-  ChevronRight,
-  Sparkles,
 } from "lucide-react";
 
 const initialFoodItems = [
@@ -93,9 +90,18 @@ function Marketplace() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(timeSlots[0]);
   const [orderConfirmed, setOrderConfirmed] = useState(null);
+  const [cartMessage, setCartMessage] = useState("");
 
   // Cart Handlers
   const addToCart = (item) => {
+    if (cart.length > 0 && cart[0].vendorId !== item.vendorId) {
+      setCartMessage(
+        `Your cart contains food from ${cart[0].vendor}. Place that order or clear your cart before choosing another vendor.`,
+      );
+      setIsCartOpen(true);
+      return;
+    }
+    setCartMessage("");
     const existing = cart.find((i) => i.id === item.id);
     if (existing) {
       setCart(
@@ -132,18 +138,19 @@ function Marketplace() {
     e.preventDefault();
     if (cart.length === 0) return;
 
-    const orderNo = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+    const orderNo = `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     setOrderConfirmed({
       orderNo: orderNo,
       items: cart,
       total: cartTotal,
       slot: selectedSlot,
-      vendor: cart[0]?.vendor || "Approved Vendor",
+      vendor: cart[0].vendor,
     });
 
     setCart([]);
     setIsCartOpen(false);
+    setCartMessage("");
   };
 
   const filteredItems = items.filter((item) => {
@@ -202,7 +209,7 @@ function Marketplace() {
                   <strong>{orderConfirmed.slot}</strong>.
                 </p>
                 <div className="mt-2 text-xs font-bold text-emerald-900">
-                  Total Paid: LKR {orderConfirmed.total.toLocaleString()}
+                  Order total: LKR {orderConfirmed.total.toLocaleString()}. Payment is collected at delivery.
                 </div>
               </div>
             </div>
@@ -331,6 +338,14 @@ function Marketplace() {
 
             {/* Cart Items List */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {cartMessage && (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-800"
+                >
+                  {cartMessage}
+                </p>
+              )}
               {cart.length > 0 ? (
                 cart.map((item) => (
                   <div
@@ -408,7 +423,7 @@ function Marketplace() {
                   onClick={handleCheckout}
                   className="w-full rounded-xl bg-blue-600 py-3 text-xs font-semibold text-white shadow-md hover:bg-blue-500 transition"
                 >
-                  Place Food Order
+                  Place Order
                 </button>
               </div>
             )}

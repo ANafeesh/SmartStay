@@ -1,14 +1,9 @@
 import { useState } from "react";
 import {
-  QrCode,
   ShieldCheck,
   Building2,
-  User,
-  Clock,
   CheckCircle2,
   XCircle,
-  Truck,
-  FileCheck,
   Search,
 } from "lucide-react";
 
@@ -31,10 +26,7 @@ function VendorPass() {
   const handleVerifyPass = (e) => {
     e.preventDefault();
 
-    if (
-      scannedToken.trim() === pass.qrToken ||
-      scannedToken.trim() === "VND-2026-09"
-    ) {
+    if (scannedToken.trim() === pass.qrToken) {
       setVerificationResult({
         valid: true,
         message: "Vendor QR Pass Verified & Access Granted",

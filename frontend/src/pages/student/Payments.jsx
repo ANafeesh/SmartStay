@@ -9,7 +9,6 @@ import {
   X,
   Building2,
   FileText,
-  Bell,
   ArrowUpRight,
   ShieldCheck,
 } from "lucide-react";
@@ -46,6 +45,7 @@ const paymentHistory = [
     date: "02 Aug 2026",
     method: "Card Payment (Visa)",
     refNo: "TXN-88492019",
+    receiptNo: "RCT-90421",
     status: "Success",
   },
   {
@@ -56,6 +56,7 @@ const paymentHistory = [
     date: "01 Jul 2026",
     method: "Bank Transfer",
     refNo: "TXN-77310249",
+    receiptNo: "RCT-88210",
     status: "Success",
   },
 ];
@@ -66,11 +67,8 @@ function Payments() {
   const [selectedBill, setSelectedBill] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [paymentNotification, setPaymentNotification] = useState(null);
-
-  // Form Inputs
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [demoOutcome, setDemoOutcome] = useState("success");
+  const [receiptError, setReceiptError] = useState("");
 
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
@@ -78,9 +76,11 @@ function Payments() {
 
     const totalAmount = selectedBill.amount + selectedBill.lateFee;
     const txnRef = `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`;
-    const receiptNo = `RCT-${Math.floor(10000 + Math.random() * 90000)}`;
+    const isSuccessful = demoOutcome === "success";
+    const receiptNo = isSuccessful
+      ? `RCT-${Math.floor(10000 + Math.random() * 90000)}`
+      : null;
 
-    // Create New Payment History Record
     const newPayment = {
       id: `PAY-${Math.floor(10000 + Math.random() * 90000)}`,
       billId: selectedBill.id,
@@ -99,16 +99,18 @@ function Payments() {
             : "Cash Deposit",
       refNo: txnRef,
       receiptNo: receiptNo,
-      status: "Success",
+      status: isSuccessful ? "Success" : "Failed",
     };
 
-    // Update Bills state
-    setBills(bills.filter((b) => b.id !== selectedBill.id));
-    setHistory([newPayment, ...history]);
-
-    // Set Triggered Payment Notification
+    if (isSuccessful) {
+      setBills((currentBills) =>
+        currentBills.filter((bill) => bill.id !== selectedBill.id),
+      );
+    }
+    setHistory((currentHistory) => [newPayment, ...currentHistory]);
     setPaymentNotification({
-      title: "Payment Successful!",
+      title: isSuccessful ? "Payment Successful" : "Payment Failed",
+      status: newPayment.status,
       amount: totalAmount,
       date: newPayment.date,
       method: newPayment.method,
@@ -116,8 +118,68 @@ function Payments() {
       receiptNo: receiptNo,
       billTitle: selectedBill.title,
     });
-
+    setDemoOutcome("success");
     setSelectedBill(null);
+  };
+
+  const openReceipt = (transaction) => {
+    if (transaction.status !== "Success" || !transaction.receiptNo) return;
+
+    const escapeHtml = (value) =>
+      String(value).replace(/[&<>"']/g, (character) => {
+        const entities = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        };
+        return entities[character];
+      });
+    const receiptHtml = `<!doctype html>
+      <html lang="en">
+        <head>
+          <meta charset="utf-8" />
+          <title>SmartStay receipt ${escapeHtml(transaction.receiptNo)}</title>
+          <style>
+            body { font: 16px Arial, sans-serif; color: #0f172a; max-width: 680px; margin: 48px auto; padding: 24px; }
+            h1 { margin-bottom: 4px; } p { color: #475569; }
+            dl { border-top: 1px solid #cbd5e1; margin-top: 28px; }
+            dl div { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+            dt { color: #475569; } dd { margin: 0; font-weight: 700; text-align: right; }
+            @media print { body { margin: 0 auto; } }
+          </style>
+        </head>
+        <body>
+          <h1>SmartStay payment receipt</h1>
+          <p>Payment received successfully.</p>
+          <dl>
+            <div><dt>Receipt number</dt><dd>${escapeHtml(transaction.receiptNo)}</dd></div>
+            <div><dt>Transaction reference</dt><dd>${escapeHtml(transaction.refNo)}</dd></div>
+            <div><dt>Bill</dt><dd>${escapeHtml(transaction.title)}</dd></div>
+            <div><dt>Payment date</dt><dd>${escapeHtml(transaction.date)}</dd></div>
+            <div><dt>Payment method</dt><dd>${escapeHtml(transaction.method)}</dd></div>
+            <div><dt>Amount</dt><dd>LKR ${Number(transaction.amount).toLocaleString()}</dd></div>
+          </dl>
+          <p>This receipt is for the SmartStay payment demo.</p>
+        </body>
+      </html>`;
+    try {
+      const receiptUrl = URL.createObjectURL(
+        new Blob([receiptHtml], { type: "text/html;charset=utf-8" }),
+      );
+      const downloadLink = document.createElement("a");
+      downloadLink.href = receiptUrl;
+      downloadLink.download = `${transaction.receiptNo}.html`;
+      document.body.append(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.setTimeout(() => URL.revokeObjectURL(receiptUrl), 1000);
+      setReceiptError("");
+    } catch (error) {
+      console.error("Unable to create payment receipt.", error);
+      setReceiptError("Could not generate the receipt. Please try again.");
+    }
   };
 
   const totalOutstanding = bills.reduce(
@@ -142,36 +204,78 @@ function Payments() {
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 border border-blue-200/60">
             <ShieldCheck size={16} />
-            Secure Payment Gateway Active
+            Demo Checkout
           </span>
         </div>
       </div>
 
-      {/* Payment Success/Status Alert Banner */}
+      {/* Payment Status Notification */}
       {paymentNotification && (
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50/90 p-5 shadow-xs transition-all">
+        <div
+          role="status"
+          className={`relative overflow-hidden rounded-2xl border p-5 shadow-xs transition-all ${
+            paymentNotification.status === "Success"
+              ? "border-emerald-200 bg-emerald-50/90"
+              : "border-rose-200 bg-rose-50/90"
+          }`}
+        >
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
-                <CheckCircle2 size={20} />
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-xs ${
+                  paymentNotification.status === "Success"
+                    ? "bg-emerald-600"
+                    : "bg-rose-600"
+                }`}
+              >
+                {paymentNotification.status === "Success" ? (
+                  <CheckCircle2 size={20} />
+                ) : (
+                  <AlertTriangle size={20} />
+                )}
               </div>
               <div>
-                <h3 className="text-sm font-bold text-emerald-950">
+                <h3
+                  className={`text-sm font-bold ${
+                    paymentNotification.status === "Success"
+                      ? "text-emerald-950"
+                      : "text-rose-950"
+                  }`}
+                >
                   {paymentNotification.title}
                 </h3>
-                <p className="mt-0.5 text-xs text-emerald-800">
-                  Your payment for{" "}
+                <p
+                  className={`mt-0.5 text-xs ${
+                    paymentNotification.status === "Success"
+                      ? "text-emerald-800"
+                      : "text-rose-800"
+                  }`}
+                >
+                  {paymentNotification.status === "Success"
+                    ? "Your payment for "
+                    : "The payment for "}
                   <strong>{paymentNotification.billTitle}</strong> of LKR{" "}
-                  {paymentNotification.amount.toLocaleString()} has been
-                  processed.
+                  {paymentNotification.amount.toLocaleString()}{" "}
+                  {paymentNotification.status === "Success"
+                    ? "was processed."
+                    : "was declined. Your bill is still outstanding; you can retry."}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium text-emerald-900">
+                <div
+                  className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-medium ${
+                    paymentNotification.status === "Success"
+                      ? "text-emerald-900"
+                      : "text-rose-900"
+                  }`}
+                >
                   <span>
                     Ref: <strong>{paymentNotification.txnRef}</strong>
                   </span>
-                  <span>
-                    Receipt #: <strong>{paymentNotification.receiptNo}</strong>
-                  </span>
+                  {paymentNotification.receiptNo && (
+                    <span>
+                      Receipt #:{" "}
+                      <strong>{paymentNotification.receiptNo}</strong>
+                    </span>
+                  )}
                   <span>
                     Method: <strong>{paymentNotification.method}</strong>
                   </span>
@@ -183,11 +287,21 @@ function Payments() {
             </div>
             <button
               onClick={() => setPaymentNotification(null)}
-              className="rounded-lg p-1 text-emerald-700 hover:bg-emerald-100"
+              aria-label="Dismiss payment notification"
+              className="rounded-lg p-1 text-slate-600 hover:bg-white/70"
             >
               <X size={18} />
             </button>
           </div>
+        </div>
+      )}
+
+      {receiptError && (
+        <div
+          role="alert"
+          className="fixed bottom-5 right-5 z-[60] rounded-xl border border-rose-200 bg-white px-4 py-3 text-sm font-medium text-rose-700 shadow-lg"
+        >
+          {receiptError}
         </div>
       )}
 
@@ -240,7 +354,10 @@ function Payments() {
             Last Payment Amount
           </p>
           <h3 className="mt-0.5 text-2xl font-bold text-slate-900">
-            LKR {history[0]?.amount.toLocaleString() || 0}
+            LKR{" "}
+            {history
+              .find((transaction) => transaction.status === "Success")
+              ?.amount.toLocaleString() || 0}
           </h3>
         </div>
       </div>
@@ -339,7 +456,7 @@ function Payments() {
               Payment History & Receipts
             </h2>
             <p className="text-xs text-slate-500">
-              Review completed transactions and download receipts
+              Review successful and declined payment attempts
             </p>
           </div>
         </div>
@@ -353,6 +470,7 @@ function Payments() {
                 <th className="px-6 py-3.5">Payment Date</th>
                 <th className="px-6 py-3.5">Method</th>
                 <th className="px-6 py-3.5">Amount</th>
+                <th className="px-6 py-3.5">Status</th>
                 <th className="px-6 py-3.5 text-right">Receipt</th>
               </tr>
             </thead>
@@ -369,17 +487,28 @@ function Payments() {
                     LKR {tx.amount.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      onClick={() =>
-                        alert(
-                          `Downloading official receipt ${tx.receiptNo || tx.id}...`,
-                        )
-                      }
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50"
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                        tx.status === "Success"
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
                     >
-                      <Download size={14} />
-                      <span>PDF</span>
-                    </button>
+                      {tx.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {tx.status === "Success" ? (
+                      <button
+                        onClick={() => openReceipt(tx)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50"
+                      >
+                        <Download size={14} />
+                        <span>Receipt</span>
+                      </button>
+                    ) : (
+                      <span className="text-slate-400">Not available</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -473,70 +602,29 @@ function Payments() {
                 </div>
               </div>
 
-              {/* Card Form */}
-              {paymentMethod === "card" && (
-                <div className="space-y-3 pt-2">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="4532 •••• •••• 8892"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                    />
-                  </div>
+              <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-slate-600">
+                Demo checkout only. No card, bank, or cash transaction is sent
+                or processed. Choose a test result to preview the payment
+                success or failure notification.
+              </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="MM/YY"
-                        value={expiry}
-                        onChange={(e) => setExpiry(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        CVV
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        maxLength={4}
-                        placeholder="•••"
-                        value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Bank Transfer Instructions */}
-              {paymentMethod === "bank" && (
-                <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 text-xs text-slate-600 space-y-1">
-                  <p className="font-bold text-slate-800">
-                    Bank Transfer Details:
-                  </p>
-                  <p>Bank: Bank of Ceylon (BOC)</p>
-                  <p>Account Name: SmartStay Hostel Operations</p>
-                  <p>Account No: 7048291038</p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    *Please use bill ID ({selectedBill.id}) as payment
-                    reference.
-                  </p>
-                </div>
-              )}
+              <div>
+                <label
+                  htmlFor="demo-outcome"
+                  className="mb-1.5 block text-xs font-semibold text-slate-700"
+                >
+                  Demo gateway result
+                </label>
+                <select
+                  id="demo-outcome"
+                  value={demoOutcome}
+                  onChange={(e) => setDemoOutcome(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
+                >
+                  <option value="success">Approved (test)</option>
+                  <option value="failure">Declined (test)</option>
+                </select>
+              </div>
 
               {/* Modal Actions */}
               <div className="mt-6 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
@@ -551,7 +639,7 @@ function Payments() {
                   type="submit"
                   className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm shadow-blue-500/30 hover:bg-blue-500"
                 >
-                  Pay LKR{" "}
+                  Test LKR{" "}
                   {(
                     selectedBill.amount + selectedBill.lateFee
                   ).toLocaleString()}
