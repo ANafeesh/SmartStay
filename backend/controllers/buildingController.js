@@ -59,7 +59,7 @@ const getAllBuildings = async (req, res) => {
   }
 };
 
-// Get one building
+// Get one building by ID
 const getBuildingById = async (req, res) => {
   try {
     const building = await Building.findById(req.params.id);
@@ -83,8 +83,56 @@ const getBuildingById = async (req, res) => {
   }
 };
 
+// Update a building
+const updateBuilding = async (req, res) => {
+  try {
+    const building = await Building.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!building) {
+      return res.status(404).json({
+        success: false,
+        message: "Building not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Building updated successfully",
+      data: building,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Building code already exists",
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    res.status(400).json({
+      success: false,
+      message: "Failed to update building",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createBuilding,
   getAllBuildings,
   getBuildingById,
+  updateBuilding,
 };
