@@ -37,6 +37,7 @@ const createBuilding = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to create building",
+      error: error.message,
     });
   }
 };
@@ -55,6 +56,7 @@ const getAllBuildings = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch buildings",
+      error: error.message,
     });
   }
 };
@@ -130,9 +132,35 @@ const updateBuilding = async (req, res) => {
   }
 };
 
+// Delete a building
+const deleteBuilding = async (req, res) => {
+  try {
+    const building = await Building.findByIdAndDelete(req.params.id);
+
+    if (!building) {
+      return res.status(404).json({
+        success: false,
+        message: "Building not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Building deleted successfully",
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Failed to delete building",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createBuilding,
   getAllBuildings,
   getBuildingById,
   updateBuilding,
+  deleteBuilding,
 };
