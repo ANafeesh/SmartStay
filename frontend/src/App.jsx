@@ -17,10 +17,13 @@ const Complaints = lazy(() => import("./pages/student/Complaints"));
 const Notifications = lazy(() => import("./pages/student/Notifications"));
 const Profile = lazy(() => import("./pages/student/Profile"));
 
-const Payments = lazy(() => import("./pages/finance/Payments"));
+const Payments = lazy(() => import("./pages/student/Payments"));
 const Marketplace = lazy(() => import("./pages/marketplace/Marketplace"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
+const VendorApplications = lazy(
+  () => import("./pages/vendor/VendorApplications"),
+);
 const FoodItems = lazy(() => import("./pages/vendor/FoodItems"));
 const VendorOrders = lazy(() => import("./pages/vendor/VendorOrders"));
 const VendorPass = lazy(() => import("./pages/vendor/VendorPass"));
@@ -82,6 +85,10 @@ function App() {
             <Route path="/marketplace" element={<Marketplace />} />
 
             <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+            <Route
+              path="/vendor/applications"
+              element={<VendorApplications />}
+            />
             <Route path="/vendor/food-items" element={<FoodItems />} />
             <Route path="/vendor/orders" element={<VendorOrders />} />
             <Route path="/vendor/pass" element={<VendorPass />} />
