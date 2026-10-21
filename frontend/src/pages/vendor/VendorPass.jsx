@@ -4,17 +4,11 @@ import {
   Building2,
   CheckCircle2,
   XCircle,
-  Search,
   Printer,
-  Download,
   Clock,
   Scan,
-  Sparkles,
   AlertTriangle,
   Camera,
-  Car,
-  User,
-  Check,
 } from "lucide-react";
 
 const vendorPassDetails = {

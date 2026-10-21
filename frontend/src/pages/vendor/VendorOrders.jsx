@@ -1,17 +1,10 @@
 import { useState } from "react";
 import {
   Clock,
-  CheckCircle2,
   Search,
-  User,
   MapPin,
-  Truck,
-  PackageCheck,
   Printer,
   X,
-  AlertCircle,
-  Filter,
-  Sparkles,
 } from "lucide-react";
 import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 

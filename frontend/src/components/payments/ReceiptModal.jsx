@@ -4,12 +4,7 @@ import {
   Printer,
   Download,
   CheckCircle2,
-  Building2,
   ShieldCheck,
-  Calendar,
-  CreditCard,
-  Hash,
-  Share2,
 } from "lucide-react";
 
 export default function ReceiptModal({ receipt, onClose }) {

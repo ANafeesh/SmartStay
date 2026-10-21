@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   Upload,
-  ShieldCheck,
   Lock,
   ArrowRight,
   Loader2,

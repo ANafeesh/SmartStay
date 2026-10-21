@@ -9,21 +9,18 @@ import {
   Store,
   CheckCircle2,
   ClipboardList,
-  PackageCheck,
-  Truck,
-  Sparkles,
   MapPin,
-  ShieldCheck,
-  Flame,
-  Leaf,
-  Filter,
   ArrowRight,
-  Receipt,
   RotateCcw,
   AlertCircle,
-  Eye,
+  ChevronRight,
+  Check,
 } from "lucide-react";
 import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
+
+function createOrderId() {
+  return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+}
 
 const vendorsList = [
   {
@@ -32,8 +29,8 @@ const vendorsList = [
     rating: 4.8,
     deliveryTime: "20-25 mins",
     tags: ["Sri Lankan", "Rice & Kottu", "Halal"],
-    isOpen: true,
     hygieneGrade: "A+",
+    accentColor: "from-blue-600 to-indigo-600",
   },
   {
     id: "VND-02",
@@ -41,8 +38,8 @@ const vendorsList = [
     rating: 4.6,
     deliveryTime: "15-20 mins",
     tags: ["Burgers", "Snacks", "Quick Bites"],
-    isOpen: true,
     hygieneGrade: "A",
+    accentColor: "from-amber-600 to-orange-600",
   },
   {
     id: "VND-03",
@@ -50,8 +47,8 @@ const vendorsList = [
     rating: 4.9,
     deliveryTime: "10-15 mins",
     tags: ["Coffee", "Beverages", "Desserts"],
-    isOpen: true,
     hygieneGrade: "A+",
+    accentColor: "from-emerald-600 to-teal-600",
   },
 ];
 
@@ -64,14 +61,14 @@ const initialFoodItems = [
     price: 850,
     category: "Main Dishes",
     image:
-      "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&q=80&w=500",
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.8,
     isHalal: true,
     isSpicy: true,
     isVeg: false,
     prepTime: "15 mins",
-    description: "Chopped Godamba roti tossed with seasoned chicken, scrambled eggs, fresh leeks, carrots, and savory curry gravy.",
+    description: "Chopped Godamba flatbread stir-fried with seasoned chicken, scrambled eggs, fresh leeks, carrots, and savory curry gravy.",
   },
   {
     id: "FD-102",
@@ -81,31 +78,31 @@ const initialFoodItems = [
     price: 950,
     category: "Fast Food",
     image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=500",
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.6,
     isHalal: true,
     isSpicy: false,
     isVeg: false,
     prepTime: "12 mins",
-    description: "Golden fried chicken fillet layered with cheddar, crisp iceberg lettuce, special spicy sauce, and crispy fries.",
+    description: "Golden fried chicken fillet layered with melted cheddar, crisp iceberg lettuce, house spicy mayo, and salted fries.",
   },
   {
     id: "FD-103",
-    name: "Special Egg Fried Rice with Chili Paste",
+    name: "Special Egg Fried Rice & Chili Paste",
     vendor: "Campus Diner & Cafe",
     vendorId: "VND-01",
     price: 650,
     category: "Main Dishes",
     image:
-      "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=500",
+      "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.5,
     isHalal: true,
     isSpicy: true,
     isVeg: false,
     prepTime: "10 mins",
-    description: "Fragrant basmati wok-tossed with farm eggs, spring onions, and authentic homemade Sri Lankan chili paste.",
+    description: "Fragrant basmati rice wok-tossed with farm eggs, scallions, sweet soy, and authentic homemade chili paste.",
   },
   {
     id: "FD-104",
@@ -115,14 +112,14 @@ const initialFoodItems = [
     price: 450,
     category: "Beverages",
     image:
-      "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=500",
+      "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.9,
     isHalal: true,
     isSpicy: false,
     isVeg: true,
     prepTime: "5 mins",
-    description: "Double shot espresso over cold creamy milk, infused with vanilla syrup and topped with buttery caramel drizzle.",
+    description: "Double shot espresso poured over chilled creamy milk, vanilla infusion, and topped with rich salted caramel drizzle.",
   },
   {
     id: "FD-105",
@@ -132,14 +129,14 @@ const initialFoodItems = [
     price: 320,
     category: "Snacks",
     image:
-      "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&q=80&w=500",
+      "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.4,
     isHalal: true,
     isSpicy: true,
     isVeg: true,
     prepTime: "8 mins",
-    description: "Two freshly baked whole wheat vegetable rottis served with rich tempered coconut milk dhal and lunu miris.",
+    description: "Two freshly baked whole wheat vegetable rottis served with rich tempered coconut milk dhal and spicy lunu miris.",
   },
   {
     id: "FD-106",
@@ -149,14 +146,14 @@ const initialFoodItems = [
     price: 880,
     category: "Main Dishes",
     image:
-      "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&q=80&w=500",
+      "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.7,
     isHalal: true,
     isSpicy: true,
     isVeg: false,
     prepTime: "15 mins",
-    description: "Fiery wok-glazed chicken chunks with capsicum, tomatoes, and red onions served over fluffy steamed rice.",
+    description: "Fiery wok-glazed chicken chunks with sweet capsicums, tomatoes, and red onions served over steamed white rice.",
   },
 ];
 
@@ -225,13 +222,11 @@ export default function Marketplace() {
     } else {
       setCart([...cart, { ...item, quantity: 1 }]);
     }
-    setIsCartOpen(true);
   };
 
   const handleResolveConflict = (action) => {
     if (action === "replace" && cartConflictModal?.incomingItem) {
       setCart([{ ...cartConflictModal.incomingItem, quantity: 1 }]);
-      setIsCartOpen(true);
     }
     setCartConflictModal(null);
   };
@@ -254,12 +249,13 @@ export default function Marketplace() {
   const deliveryFee = subtotal > 1500 ? 0 : 80;
   const hostelConvenience = 20;
   const grandTotal = subtotal > 0 ? subtotal + deliveryFee + hostelConvenience : 0;
+  const totalCartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   const handleCheckout = (e) => {
     e.preventDefault();
     if (cart.length === 0) return;
 
-    const orderNo = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNo = createOrderId();
     const newOrder = {
       id: orderNo,
       studentId: "SEU/IS/22/ICT/090",
@@ -346,41 +342,44 @@ export default function Marketplace() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-16">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-7xl space-y-6 pb-24">
+      {/* Top Interactive Banner & Action Toolbar */}
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-              Campus Food Marketplace
-            </h1>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
-              Module 3 Dining
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
+              Lunch Delivery Slots Open Now
+            </span>
+            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+              Module 3
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-500">
-            Student: <strong className="text-slate-800">Ahamed Nafeesh</strong> (ID:{" "}
-            <span className="font-mono text-blue-600 font-semibold">SEU/IS/22/ICT/090</span>) · Scheduled Campus Gate Delivery
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
+            Campus Dining & Gate Delivery
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Student: <strong>Ahamed Nafeesh</strong> (ID:{" "}
+            <span className="font-mono text-blue-600 font-semibold">SEU/IS/22/ICT/090</span>) · Drop-off at Hostel Block B
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Primary View Action Switches */}
+        <div className="flex items-center gap-2 self-start md:self-center">
           <button
             onClick={() => setActiveView(activeView === "orders" ? "menu" : "orders")}
             className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition shadow-2xs cursor-pointer ${
               activeView === "orders"
                 ? "bg-blue-600 text-white shadow-blue-500/20"
-                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
             }`}
           >
             <ClipboardList size={16} />
-            <span>My Orders & Tracking</span>
+            <span>My Orders</span>
             {myOrders.length > 0 && (
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                  activeView === "orders"
-                    ? "bg-white text-blue-600"
-                    : "bg-blue-600 text-white"
+                  activeView === "orders" ? "bg-white text-blue-600" : "bg-blue-600 text-white"
                 }`}
               >
                 {myOrders.length}
@@ -393,19 +392,19 @@ export default function Marketplace() {
             className="flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 transition cursor-pointer"
           >
             <ShoppingCart size={16} />
-            <span>Cart</span>
-            {cart.length > 0 && (
+            <span>Basket</span>
+            {totalCartCount > 0 && (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
-                {cart.reduce((sum, i) => sum + i.quantity, 0)}
+                {totalCartCount}
               </span>
             )}
           </button>
         </div>
       </div>
 
-      {/* Order Confirmed Banner */}
+      {/* Order Confirmed Alert */}
       {orderConfirmed && (
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-300 bg-emerald-50/95 p-5 shadow-sm transition-all animate-in slide-in-from-top-2 duration-300">
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-50/95 p-5 shadow-sm transition-all animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xs">
@@ -416,8 +415,8 @@ export default function Marketplace() {
                   Food Order Confirmed! Order #{orderConfirmed.id}
                 </h3>
                 <p className="mt-1 text-xs text-emerald-900 leading-relaxed">
-                  Your order from <strong>{orderConfirmed.vendor}</strong> has been dispatched to the kitchen.
-                  Pickup during <strong>{orderConfirmed.timeSlot}</strong> at <strong>{orderConfirmed.deliveryLocation}</strong>.
+                  Your order from <strong>{orderConfirmed.vendor}</strong> has been transmitted to kitchen dispatch.
+                  Collect during <strong>{orderConfirmed.timeSlot}</strong> at <strong>{orderConfirmed.deliveryLocation}</strong>.
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-950">
                   <span>Total: LKR {orderConfirmed.totalAmount.toLocaleString()}</span>
@@ -444,11 +443,11 @@ export default function Marketplace() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-900">
-                Active & Past Food Orders
-              </h2>
+              <h3 className="text-base font-bold text-slate-900">
+                Active Food Orders & Delivery Tracking
+              </h3>
               <p className="text-xs text-slate-500">
-                Track live preparation, delivery slot arrivals, and inspect digital order receipts.
+                Track live preparation, delivery slot arrivals, and gate authorization status.
               </p>
             </div>
             <button
@@ -467,13 +466,13 @@ export default function Marketplace() {
           </div>
 
           {myOrders.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-12 text-center shadow-2xs">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center shadow-2xs">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-3">
                 <ClipboardList size={28} />
               </div>
-              <h3 className="text-base font-bold text-slate-900">No Food Orders Yet</h3>
+              <h3 className="text-base font-bold text-slate-900">No Orders in Queue</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                Browse student favorites from verified campus vendors and reserve your lunch or dinner delivery slot.
+                Browse our approved campus vendors and reserve your lunch or dinner delivery slot.
               </p>
               <button
                 onClick={() => setActiveView("menu")}
@@ -492,7 +491,7 @@ export default function Marketplace() {
                 return (
                   <div
                     key={order.id}
-                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:shadow-xs transition"
+                    className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs space-y-4"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-4">
                       <div>
@@ -533,7 +532,7 @@ export default function Marketplace() {
                           <button
                             onClick={() => simulateStatusStep(order.id)}
                             className="rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer"
-                            title="Simulate vendor progressing this order"
+                            title="Simulate kitchen advancing this order status"
                           >
                             Advance Step
                           </button>
@@ -542,7 +541,7 @@ export default function Marketplace() {
                     </div>
 
                     {/* Progress Bar Stepper */}
-                    <div className="pt-4">
+                    <div className="pt-2">
                       <div className="grid grid-cols-4 gap-2">
                         {steps.map((step, idx) => {
                           const isDone = currentStep >= idx;
@@ -569,8 +568,7 @@ export default function Marketplace() {
                     {/* Items & Amount */}
                     <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                       <div className="text-slate-600">
-                        {order.items?.map((i) => `${i.qty}x ${i.name}`).join(", ") ||
-                          "Meals bundle"}
+                        {order.items?.map((i) => `${i.qty}x ${i.name}`).join(", ") || "Meals bundle"}
                       </div>
                       <div className="font-bold text-slate-900 text-sm">
                         Total: LKR {(order.totalAmount || 0).toLocaleString()}
@@ -585,7 +583,7 @@ export default function Marketplace() {
       ) : (
         /* VIEW: MENU CATALOG */
         <div className="space-y-6">
-          {/* Vendor Showcase Row */}
+          {/* Approved Campus Outlets Showcase */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -593,177 +591,273 @@ export default function Marketplace() {
               </h3>
               <span className="text-xs text-slate-400">Security Gate Authorized</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {vendorsList.map((v) => (
-                <div
-                  key={v.id}
-                  onClick={() =>
-                    setSelectedVendor(selectedVendor === v.name ? "All" : v.name)
-                  }
-                  className={`rounded-2xl border p-4 transition cursor-pointer flex flex-col justify-between ${
-                    selectedVendor === v.name
-                      ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-500/20 shadow-xs"
-                      : "border-slate-200/80 bg-white hover:border-slate-300 shadow-2xs"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <Store size={15} className="text-blue-600" />
-                        <h4 className="text-xs font-bold text-slate-900">{v.name}</h4>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        ⏱ {v.deliveryTime} · Grade {v.hygieneGrade}
-                      </p>
-                    </div>
-                    <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                      ★ {v.rating}
-                    </span>
-                  </div>
 
-                  <div className="mt-3 flex flex-wrap gap-1">
-                    {v.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
-                      >
-                        {t}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {vendorsList.map((v) => {
+                const isSelected = selectedVendor === v.name;
+                return (
+                  <div
+                    key={v.id}
+                    onClick={() => setSelectedVendor(isSelected ? "All" : v.name)}
+                    className={`rounded-3xl border p-5 transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? "border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/30 shadow-md shadow-blue-500/10"
+                        : "border-slate-200/80 bg-white hover:border-slate-300 shadow-2xs hover:shadow-xs"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                            <Store size={18} />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900">{v.name}</h4>
+                            <p className="text-[11px] text-slate-500">
+                              ⏱ {v.deliveryTime} · Grade {v.hygieneGrade}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
+                          ★ {v.rating}
+                        </span>
+                      </div>
+
+                      <div className="mt-3.5 flex flex-wrap gap-1.5">
+                        {v.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-[11px] text-slate-400">
+                        {isSelected ? "Filtering menu" : "Click to view outlet menu"}
                       </span>
-                    ))}
+                      {isSelected ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-blue-600">
+                          <Check size={14} /> Active Filter
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 group-hover:text-slate-700">
+                          <ChevronRight size={14} />
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Filter & Search Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
-            {/* Search Input */}
-            <div className="relative w-full md:w-72">
-              <Search
-                size={16}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search food item, vendor, spice..."
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none"
-              />
+          {/* Clean, Non-Cramped Search & Filter Toolbar */}
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4">
+            {/* Row 1: Search Bar + Dietary Preferences */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="relative flex-1">
+                <Search
+                  size={17}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search meals, kottu, burger, drinks, or ingredients..."
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 pl-10 pr-10 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none transition"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+
+              {/* Dietary Tags (Clean pill design with no scrollbar) */}
+              <div className="flex items-center gap-1.5 self-start sm:self-center">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                  Diet:
+                </span>
+                {["All", "Halal", "Veg", "Spicy"].map((diet) => (
+                  <button
+                    key={diet}
+                    onClick={() => setDietaryFilter(diet)}
+                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
+                      dietaryFilter === diet
+                        ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
+                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    {diet === "Veg" && "🌱 "}
+                    {diet === "Spicy" && "🌶️ "}
+                    {diet}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Category Pills */}
-            <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                    selectedCategory === cat
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+            {/* Row 2: Categories (Segmented Pills without scrollbar clutter) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                      selectedCategory === cat
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
 
-            {/* Dietary Tags Filter */}
-            <div className="flex items-center gap-1 self-start md:self-center">
-              {["All", "Halal", "Veg", "Spicy"].map((diet) => (
-                <button
-                  key={diet}
-                  onClick={() => setDietaryFilter(diet)}
-                  className={`rounded-xl px-2.5 py-1 text-[11px] font-bold transition cursor-pointer border ${
-                    dietaryFilter === diet
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                  }`}
-                >
-                  {diet === "Veg" && "🌱 "}
-                  {diet === "Spicy" && "🌶️ "}
-                  {diet}
-                </button>
-              ))}
+              <div className="text-xs text-slate-400 font-medium self-end sm:self-center">
+                Showing <strong className="text-slate-800">{filteredItems.length}</strong> offerings
+                {selectedVendor !== "All" && ` from ${selectedVendor}`}
+              </div>
             </div>
           </div>
 
           {/* Menu Items Grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredItems.map((item) => (
-              <div
-                key={item.id}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs hover:shadow-md transition-all duration-200 hover:border-slate-300"
-              >
-                {/* Image & Badges */}
-                <div className="relative h-44 w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute top-3 left-3 flex items-center gap-1">
-                    <span className="rounded-lg bg-slate-900/80 backdrop-blur-xs px-2 py-0.5 text-[11px] font-bold text-white">
-                      ★ {item.rating}
+            {filteredItems.map((item) => {
+              const inCartItem = cart.find((c) => c.id === item.id);
+              const qty = inCartItem?.quantity || 0;
+
+              return (
+                <div
+                  key={item.id}
+                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-2xs hover:shadow-md transition-all duration-200 hover:border-slate-300"
+                >
+                  {/* Image & Frosted Badges */}
+                  <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                      <span className="rounded-lg bg-slate-900/85 backdrop-blur-md px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
+                        ★ {item.rating}
+                      </span>
+                      {item.isHalal && (
+                        <span className="rounded-lg bg-emerald-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-emerald-200 shadow-xs">
+                          Halal
+                        </span>
+                      )}
+                      {item.isVeg && (
+                        <span className="rounded-lg bg-green-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-green-200 shadow-xs">
+                          Veg
+                        </span>
+                      )}
+                      {item.isSpicy && (
+                        <span className="rounded-lg bg-rose-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-rose-200 shadow-xs">
+                          🌶️ Spicy
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="absolute bottom-3 right-3 rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-xs">
+                      ⏱ {item.prepTime}
                     </span>
-                    {item.isHalal && (
-                      <span className="rounded-lg bg-emerald-900/80 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-emerald-200">
-                        Halal
-                      </span>
-                    )}
-                    {item.isVeg && (
-                      <span className="rounded-lg bg-green-900/80 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-green-200">
-                        Veg
-                      </span>
-                    )}
-                    {item.isSpicy && (
-                      <span className="rounded-lg bg-rose-900/80 backdrop-blur-xs px-1.5 py-0.5 text-[10px] font-bold text-rose-200">
-                        🌶️
-                      </span>
-                    )}
                   </div>
 
-                  <span className="absolute bottom-3 right-3 rounded-lg bg-white/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-semibold text-slate-700 shadow-2xs">
-                    Prep: {item.prepTime}
-                  </span>
-                </div>
-
-                {/* Details */}
-                <div className="flex flex-1 flex-col justify-between p-4 space-y-3">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-                      <Store size={13} className="text-blue-600" />
-                      <span>{item.vendor}</span>
-                    </div>
-                    <h3 className="mt-1 text-sm font-bold text-slate-900">
-                      {item.name}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  {/* Details */}
+                  <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-medium">Price</span>
-                      <span className="text-base font-black text-slate-900">
-                        LKR {item.price}
-                      </span>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
+                        <Store size={13} className="text-blue-600" />
+                        <span>{item.vendor}</span>
+                      </div>
+                      <h3 className="mt-1 text-sm font-bold text-slate-900 leading-snug">
+                        {item.name}
+                      </h3>
+                      <p className="mt-1.5 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
                     </div>
 
-                    <button
-                      onClick={() => addToCart(item)}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
-                    >
-                      <Plus size={15} />
-                      <span>Add to Cart</span>
-                    </button>
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block font-medium">Price</span>
+                        <span className="text-base font-black text-slate-900">
+                          LKR {item.price.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Interactive Add or Qty Stepper */}
+                      {qty === 0 ? (
+                        <button
+                          onClick={() => addToCart(item)}
+                          className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                        >
+                          <Plus size={15} />
+                          <span>Add</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/70 p-1">
+                          <button
+                            onClick={() => updateQuantity(item.id, -1)}
+                            className="flex h-7 w-7 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 transition cursor-pointer"
+                          >
+                            <Minus size={13} />
+                          </button>
+                          <span className="text-xs font-bold text-blue-900 px-1">
+                            {qty}
+                          </span>
+                          <button
+                            onClick={() => updateQuantity(item.id, 1)}
+                            className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs hover:bg-blue-500 transition cursor-pointer"
+                          >
+                            <Plus size={13} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bottom Cart Review Bar */}
+      {cart.length > 0 && !isCartOpen && (
+        <div className="fixed bottom-6 inset-x-4 max-w-xl mx-auto z-40 animate-in slide-in-from-bottom-4 duration-200">
+          <div className="flex items-center justify-between rounded-3xl bg-slate-900 text-white p-3.5 px-5 shadow-2xl border border-slate-800 backdrop-blur-md">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="text-xs font-bold text-white">
+                  {totalCartCount} {totalCartCount === 1 ? "item" : "items"} · {cart[0]?.vendor}
+                </span>
               </div>
-            ))}
+              <p className="text-[11px] text-slate-300 mt-0.5">
+                Total: <strong className="text-white text-xs">LKR {grandTotal.toLocaleString()}</strong>
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition cursor-pointer"
+            >
+              <span>Review Order</span>
+              <ArrowRight size={14} />
+            </button>
           </div>
         </div>
       )}
@@ -777,14 +871,14 @@ export default function Marketplace() {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                Different Food Vendor Detected
+                Single Vendor Order Rule
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Your cart currently contains food from <strong>{cartConflictModal.existingVendor}</strong>.
-                Each delivery slot is tied to a single vendor for gate security pass verification.
+                Your basket currently contains meals from <strong>{cartConflictModal.existingVendor}</strong>.
+                Each delivery slot is verified through a dedicated vendor QR pass.
               </p>
               <p className="text-xs text-slate-700 font-semibold mt-2">
-                Would you like to clear your cart and order from <strong>{cartConflictModal.newVendor}</strong> instead?
+                Would you like to clear existing items and order from <strong>{cartConflictModal.newVendor}</strong>?
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -814,7 +908,7 @@ export default function Marketplace() {
               <div className="flex items-center gap-2">
                 <ShoppingCart size={18} className="text-blue-600" />
                 <h2 className="text-sm font-bold text-slate-900">
-                  Food Order Basket
+                  Food Order Basket ({totalCartCount})
                 </h2>
               </div>
               <button
@@ -834,16 +928,16 @@ export default function Marketplace() {
                 </div>
               ) : (
                 <>
-                  <div className="rounded-xl bg-blue-50/70 border border-blue-100 p-3 flex items-center justify-between text-xs">
+                  <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 flex items-center justify-between text-xs">
                     <span className="text-blue-900 font-semibold flex items-center gap-1.5">
                       <Store size={14} className="text-blue-600" />
-                      Vendor: {cart[0]?.vendor}
+                      Vendor: <strong>{cart[0]?.vendor}</strong>
                     </span>
                     <button
                       onClick={() => setCart([])}
                       className="text-rose-600 font-bold hover:underline"
                     >
-                      Clear Cart
+                      Clear
                     </button>
                   </div>
 
@@ -851,7 +945,7 @@ export default function Marketplace() {
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/60 p-3"
+                        className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5"
                       >
                         <div className="flex-1 pr-3">
                           <h4 className="text-xs font-bold text-slate-900">

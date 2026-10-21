@@ -1,22 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Plus,
-  Trash2,
-  Edit2,
-  Store,
   DollarSign,
   Package,
-  Check,
-  X,
   ToggleLeft,
   ToggleRight,
-  Sparkles,
   Clock,
   ArrowRight,
   ShieldCheck,
   TrendingUp,
-  Truck,
   QrCode,
   UtensilsCrossed,
   ClipboardList,

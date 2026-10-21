@@ -3,12 +3,9 @@ import {
   CheckCircle2,
   XCircle,
   Play,
-  RotateCcw,
   ShieldCheck,
   FileCode,
   Download,
-  Clock,
-  Sparkles,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -40,7 +37,6 @@ const testSuiteDefinitions = [
     description:
       "Ensure an authorized payment transaction produces a valid receipt number (RCT-XXXXX) and clears the bill from outstanding ledger.",
     run: () => {
-      const billId = "BIL-2026-09";
       const txnRef = "TXN-88492019";
       const receiptNo = "RCT-90421";
       const isReceiptValid = receiptNo.startsWith("RCT-") && txnRef.startsWith("TXN-");
