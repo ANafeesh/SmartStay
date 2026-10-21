@@ -1,25 +1,30 @@
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 import {
   Droplets,
   Zap,
   Wallet,
-  Utensils,
-  Download,
-  Search,
+  UtensilsCrossed,
   TrendingUp,
   TrendingDown,
-  Filter,
+  Search,
+  RotateCcw,
+  Download,
+  AlertTriangle,
+  ShoppingBag,
 } from "lucide-react";
 
 import {
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
+  XAxis,
+  YAxis,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
   PieChart,
   Pie,
   Cell,
@@ -36,401 +41,598 @@ import {
   foodOrders,
 } from "../../data/utilitiesData";
 
-const COLORS = [
-  "#0f4c81",
-  "#1686d4",
-  "#06b6d4",
-  "#10b981",
-  "#f59e0b",
+const COLORS = ["#6366f1", "#06b6d4", "#f59e0b", "#10b981", "#f43f5e"];
+
+const PERIOD_OPTIONS = [
+  { value: "1", label: "Last month" },
+  { value: "3", label: "Last 3 months" },
+  { value: "6", label: "Last 6 months" },
+  { value: "12", label: "Last 1 year (12 months)" },
 ];
 
-function UtilitiesAnalytics() {
-  const [month, setMonth] = useState("All");
+const formatCurrency = (value) =>
+  `Rs. ${Number(value).toLocaleString("en-LK")}`;
+
+const downloadCSV = (filename, rows) => {
+  if (!rows || rows.length === 0) {
+    window.alert("No data available to export.");
+    return;
+  }
+
+  const headers = Object.keys(rows[0]);
+
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((row) =>
+      headers
+        .map((header) => {
+          const value = String(row[header] ?? "").replace(/"/g, '""');
+          return `"${value}"`;
+        })
+        .join(","),
+    ),
+  ].join("\n");
+
+  const blob = new Blob(["\uFEFF" + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  link.click();
+
+  URL.revokeObjectURL(url);
+};
+
+const StatCard = ({ title, value, change, status, icon: Icon }) => {
+  const isPositive = status === "success";
+
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm text-gray-500">{title}</p>
+          <h3 className="mt-2 text-2xl font-bold text-gray-900">{value}</h3>
+
+          <div className="mt-3 flex items-center gap-2">
+            {isPositive ? (
+              <TrendingDown size={16} className="text-emerald-600" />
+            ) : (
+              <TrendingUp size={16} className="text-amber-600" />
+            )}
+
+            <span
+              className={`text-sm font-medium ${
+                isPositive ? "text-emerald-600" : "text-amber-600"
+              }`}
+            >
+              {change}
+            </span>
+            <span className="text-xs text-gray-400">vs previous period</span>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-indigo-50 p-3 text-indigo-600">
+          <Icon size={23} />
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const ChartTooltip = ({ active, payload, label }) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-lg">
+      <p className="mb-2 font-semibold text-gray-800">{label}</p>
+
+      {payload.map((item, index) => (
+        <p key={index} className="text-sm" style={{ color: item.color }}>
+          {item.name}:{" "}
+          {typeof item.value === "number"
+            ? item.value.toLocaleString("en-LK")
+            : item.value}
+        </p>
+      ))}
+    </div>
+  );
+};
+
+export default function UtilitiesAnalytics() {
+  const [period, setPeriod] = useState("6");
   const [block, setBlock] = useState("All");
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
 
-  // Filter monthly utility data
-  const filteredUtilityData =
-    month === "All"
-      ? utilityData
-      : utilityData.filter((item) => item.month === month);
+  // Select the latest available months from the sample data.
+  const filteredUtilityData = useMemo(() => {
+    const count = Number(period);
 
-  // Filter food order data by month
-  const filteredFoodData =
-    month === "All"
-      ? foodOrderData
-      : foodOrderData.filter((item) => item.month === month);
+    return utilityData.slice(-count);
+  }, [period]);
 
-  // Filter orders by search, block and status
-  const filteredOrders = foodOrders.filter((order) => {
-    const matchesSearch =
-      order.student.toLowerCase().includes(search.toLowerCase()) ||
-      order.id.toLowerCase().includes(search.toLowerCase()) ||
-      order.meal.toLowerCase().includes(search.toLowerCase());
+  const filteredFoodData = useMemo(() => {
+    const count = Number(period);
 
-    const matchesBlock =
-      block === "All" || order.block === block;
+    return foodOrderData.slice(-count);
+  }, [period]);
 
-    const matchesStatus =
-      status === "All" || order.status === status;
+  // Apply the table filters to food orders.
+  const filteredOrders = useMemo(() => {
+    return foodOrders.filter((order) => {
+      const matchesBlock = block === "All" || order.block === block;
+      const matchesStatus = status === "All" || order.status === status;
 
-    return matchesSearch && matchesBlock && matchesStatus;
-  });
+      const searchText = search.trim().toLowerCase();
 
-  // Calculate filtered food order totals
-  const totalOrders = filteredFoodData.reduce(
-    (total, item) => total + item.orders,
-    0
-  );
+      const matchesSearch =
+        searchText === "" ||
+        order.id.toLowerCase().includes(searchText) ||
+        order.student.toLowerCase().includes(searchText) ||
+        order.meal.toLowerCase().includes(searchText);
 
-  const totalRevenue = filteredFoodData.reduce(
-    (total, item) => total + item.revenue,
-    0
-  );
+      return matchesBlock && matchesStatus && matchesSearch;
+    });
+  }, [block, status, search]);
 
   const totalWater = filteredUtilityData.reduce(
     (total, item) => total + item.water,
-    0
+    0,
   );
 
   const totalElectricity = filteredUtilityData.reduce(
     (total, item) => total + item.electricity,
-    0
+    0,
   );
 
-  // Export filtered orders as CSV
-  const exportCSV = () => {
-    const headers = [
-      "Order ID",
-      "Student",
-      "Meal",
-      "Block",
-      "Amount",
-      "Status",
-    ];
+  const totalFoodOrders = filteredFoodData.reduce(
+    (total, item) => total + item.orders,
+    0,
+  );
 
-    const rows = filteredOrders.map((order) => [
-      order.id,
-      order.student,
-      order.meal,
-      order.block,
-      order.amount,
-      order.status,
-    ]);
+  const totalFoodRevenue = filteredFoodData.reduce(
+    (total, item) => total + item.revenue,
+    0,
+  );
 
-    const csvContent = [
-      headers,
-      ...rows,
-    ]
-      .map((row) =>
-        row
-          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
-          .join(",")
-      )
-      .join("\n");
-
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "smartstay-food-orders.csv";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
+  const resetFilters = () => {
+    setPeriod("6");
+    setBlock("All");
+    setStatus("All");
+    setSearch("");
   };
 
-  const stats = [
-    {
-      title: "Water Consumption",
-      value: `${totalWater.toLocaleString()} L`,
-      icon: Droplets,
-      color: "text-cyan-600",
-      bg: "bg-cyan-50",
-    },
-    {
-      title: "Electricity Usage",
-      value: `${totalElectricity.toLocaleString()} kWh`,
-      icon: Zap,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-    },
-    {
-      title: "Food Orders",
-      value: totalOrders.toLocaleString(),
-      icon: Utensils,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-    },
-    {
-      title: "Food Revenue",
-      value: `Rs. ${totalRevenue.toLocaleString()}`,
-      icon: Wallet,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-  ];
+  const exportUtilities = () => {
+    downloadCSV("utility-analytics.csv", filteredUtilityData);
+  };
+
+  const exportFoodOrders = () => {
+    downloadCSV("food-orders.csv", filteredOrders);
+  };
+
+  const exportFoodAnalytics = () => {
+    downloadCSV("food-analytics.csv", filteredFoodData);
+  };
+
+  const selectedPeriodLabel =
+    PERIOD_OPTIONS.find((option) => option.value === period)?.label ??
+    "Last 6 months";
 
   return (
-    <div className="space-y-6">
-
-      {/* Page Header */}
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="space-y-6 p-4 sm:p-6">
+      {/* Page heading */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
             Utilities & Food Analytics
           </h1>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Monitor hostel utilities, food orders, and revenue.
+          <p className="mt-1 text-sm text-gray-500">
+            Monitor utility consumption, expenses, and food-order performance.
           </p>
         </div>
 
-        <button
-          onClick={exportCSV}
-          className="flex items-center justify-center gap-2 rounded-xl bg-smart-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-smart-blue"
-        >
-          <Download size={18} />
-          Export Orders
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-
-          return (
-            <Card key={stat.title}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">
-                    {stat.title}
-                  </p>
-
-                  <h2 className="mt-2 text-xl font-bold text-slate-800">
-                    {stat.value}
-                  </h2>
-                </div>
-
-                <div
-                  className={`rounded-xl p-3 ${stat.bg}`}
-                >
-                  <Icon
-                    size={23}
-                    className={stat.color}
-                  />
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Month Filter */}
-      <Card>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Filter size={18} className="text-slate-500" />
-
-            <span className="text-sm font-semibold text-slate-700">
-              Filter Analytics
-            </span>
-          </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <label htmlFor="reporting-period" className="text-sm font-medium text-gray-600">
+            Reporting period
+          </label>
 
           <select
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-smart-blue"
+            id="reporting-period"
+            aria-label="Select reporting period"
+            value={period}
+            onChange={(event) => setPeriod(event.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
           >
-            <option value="All">All Months</option>
-            {utilityData.map((item) => (
-              <option key={item.month} value={item.month}>
-                {item.month}
+            {PERIOD_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
+
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
         </div>
-      </Card>
+      </div>
 
-      {/* Utility Chart */}
-      <Card>
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-slate-800">
-            Utility Consumption
+      {/* Reporting period information */}
+      <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+        Showing data for <strong>{selectedPeriodLabel}</strong>. Results use the
+        latest available months in your sample dataset.
+      </div>
+
+      {/* Summary cards */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Utility Summary
           </h2>
-
-          <p className="mt-1 text-sm text-slate-500">
-            Water and electricity usage by month.
+          <p className="text-sm text-gray-500">
+            Key utility indicators and expenses.
           </p>
         </div>
 
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={filteredUtilityData}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-              />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            title="Water Consumption"
+            value={`${totalWater.toLocaleString("en-LK")} L`}
+            change={utilitySummary[0]?.change ?? "—"}
+            status={utilitySummary[0]?.status}
+            icon={Droplets}
+          />
 
-              <XAxis dataKey="month" />
+          <StatCard
+            title="Electricity Usage"
+            value={`${totalElectricity.toLocaleString("en-LK")} kWh`}
+            change={utilitySummary[1]?.change ?? "—"}
+            status={utilitySummary[1]?.status}
+            icon={Zap}
+          />
 
-              <YAxis />
+          <StatCard
+            title="Utility Expenses"
+            value={utilitySummary[2]?.value ?? "Rs. 0"}
+            change={utilitySummary[2]?.change ?? "—"}
+            status={utilitySummary[2]?.status}
+            icon={Wallet}
+          />
 
-              <Tooltip />
-
-              <Legend />
-
-              <Bar
-                dataKey="water"
-                name="Water (L)"
-                fill="#06b6d4"
-                radius={[5, 5, 0, 0]}
-              />
-
-              <Bar
-                dataKey="electricity"
-                name="Electricity (kWh)"
-                fill="#f59e0b"
-                radius={[5, 5, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <StatCard
+            title="Food Orders"
+            value={totalFoodOrders.toLocaleString("en-LK")}
+            change={utilitySummary[3]?.change ?? "—"}
+            status={utilitySummary[3]?.status}
+            icon={UtensilsCrossed}
+          />
         </div>
-      </Card>
+      </section>
 
-      {/* Food Analytics */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      {/* Utility charts */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Utility Consumption
+          </h2>
+          <p className="text-sm text-gray-500">
+            Water and electricity usage across the selected period.
+          </p>
+        </div>
 
-        {/* Orders and Revenue Chart */}
-        <Card>
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-800">
-              Food Order Trends
-            </h2>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Card>
+            <div className="mb-5">
+              <h3 className="font-semibold text-gray-900">
+                Water Consumption
+              </h3>
+              <p className="text-sm text-gray-500">Monthly usage in litres</p>
+            </div>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Monthly food orders and revenue.
-            </p>
-          </div>
-
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={filteredFoodData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                />
-
-                <XAxis dataKey="month" />
-
-                <YAxis />
-
-                <Tooltip />
-
-                <Legend />
-
-                <Bar
-                  dataKey="orders"
-                  name="Orders"
-                  fill="#1686d4"
-                  radius={[5, 5, 0, 0]}
-                />
-
-                <Bar
-                  dataKey="revenue"
-                  name="Revenue (Rs.)"
-                  fill="#10b981"
-                  radius={[5, 5, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-
-        {/* Popular Meals */}
-        <Card>
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-800">
-              Popular Meals
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Food preferences based on sample order counts.
-            </p>
-          </div>
-
-          <div className="h-72 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={popularMeals}
-                  dataKey="orders"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={filteredUtilityData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                 >
-                  {popularMeals.map((meal, index) => (
-                    <Cell
-                      key={meal.name}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} />
+                  <YAxis tickLine={false} width={55} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar
+                    dataKey="water"
+                    name="Water (L)"
+                    fill="#06b6d4"
+                    radius={[5, 5, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
 
-                <Tooltip />
+          <Card>
+            <div className="mb-5">
+              <h3 className="font-semibold text-gray-900">
+                Electricity Usage
+              </h3>
+              <p className="text-sm text-gray-500">Monthly usage in kWh</p>
+            </div>
 
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </div>
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={filteredUtilityData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} />
+                  <YAxis tickLine={false} width={55} />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="electricity"
+                    name="Electricity (kWh)"
+                    stroke="#6366f1"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
 
-      {/* Food Orders Table */}
-      <Card>
-        <div className="mb-5 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={exportUtilities}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+          >
+            <Download size={16} />
+            Export Utility Data
+          </button>
+        </div>
+      </section>
+
+      {/* Utility alerts */}
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+          Utility Monitoring Alerts
+        </h2>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Card>
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-amber-100 p-3 text-amber-700">
+                <AlertTriangle size={22} />
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  Water Consumption
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Review water usage and check for possible leaks or unnecessary
+                  consumption.
+                </p>
+                <p className="mt-2 text-sm font-medium text-amber-700">
+                  Sample alert: usage requires review
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-emerald-100 p-3 text-emerald-700">
+                <Zap size={22} />
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-900">
+                  Electricity Monitoring
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Track electricity usage and encourage energy-saving practices
+                  in hostel blocks.
+                </p>
+                <p className="mt-2 text-sm font-medium text-emerald-700">
+                  Monitor monthly usage trends
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Food analytics */}
+      <section>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
-              Food Order Management
+            <h2 className="text-lg font-semibold text-gray-900">
+              Food Order Analytics
             </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Search and filter hostel food orders.
+            <p className="text-sm text-gray-500">
+              Food-order volume and revenue for the selected period.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative">
+          <button
+            type="button"
+            onClick={exportFoodAnalytics}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <Download size={16} />
+            Export Food Analytics
+          </button>
+        </div>
+
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-orange-50 p-3 text-orange-600">
+                <ShoppingBag size={23} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Total Orders</p>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {totalFoodOrders.toLocaleString("en-LK")}
+                </h3>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+                <Wallet size={23} />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Food Revenue</p>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(totalFoodRevenue)}
+                </h3>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <Card>
+            <div className="mb-5">
+              <h3 className="font-semibold text-gray-900">
+                Food Orders and Revenue
+              </h3>
+              <p className="text-sm text-gray-500">
+                Compare order volume and revenue by month.
+              </p>
+            </div>
+
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={filteredFoodData}
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" tickLine={false} />
+                  <YAxis
+                    yAxisId="orders"
+                    tickLine={false}
+                    width={45}
+                  />
+                  <YAxis
+                    yAxisId="revenue"
+                    orientation="right"
+                    tickLine={false}
+                    width={60}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Legend />
+                  <Line
+                    yAxisId="orders"
+                    type="monotone"
+                    dataKey="orders"
+                    name="Orders"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    yAxisId="revenue"
+                    type="monotone"
+                    dataKey="revenue"
+                    name="Revenue (Rs.)"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="mb-5">
+              <h3 className="font-semibold text-gray-900">Popular Meals</h3>
+              <p className="text-sm text-gray-500">
+                Distribution of sample orders by meal.
+              </p>
+            </div>
+
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={popularMeals}
+                    dataKey="orders"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={95}
+                    innerRadius={48}
+                    paddingAngle={3}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {popularMeals.map((meal, index) => (
+                      <Cell
+                        key={meal.name}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ChartTooltip />} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* Food order table */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Food Order Records
+          </h2>
+          <p className="text-sm text-gray-500">
+            Search and filter the available sample food orders.
+          </p>
+        </div>
+
+        <Card>
+          <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
               <Search
                 size={18}
-                className="absolute left-3 top-3.5 text-slate-400"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
-
               <input
                 type="text"
-                placeholder="Search orders..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:border-smart-blue sm:w-48"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search order ID, student, or meal..."
+                className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
 
             <select
+              aria-label="Filter by block"
               value={block}
-              onChange={(e) => setBlock(e.target.value)}
-              className="rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none"
+              onChange={(event) => setBlock(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
             >
               <option value="All">All Blocks</option>
               <option value="A">Block A</option>
@@ -439,9 +641,10 @@ function UtilitiesAnalytics() {
             </select>
 
             <select
+              aria-label="Filter by order status"
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none"
+              onChange={(event) => setStatus(event.target.value)}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
             >
               <option value="All">All Statuses</option>
               <option value="Delivered">Delivered</option>
@@ -449,103 +652,95 @@ function UtilitiesAnalytics() {
               <option value="Pending">Pending</option>
               <option value="Cancelled">Cancelled</option>
             </select>
+
+            <button
+              type="button"
+              onClick={exportFoodOrders}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
           </div>
-        </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-slate-500">
-                <th className="px-4 py-4 font-semibold">
-                  Order ID
-                </th>
+          <div className="mb-3 text-sm text-gray-500">
+            Showing {filteredOrders.length} of {foodOrders.length} orders
+          </div>
 
-                <th className="px-4 py-4 font-semibold">
-                  Student
-                </th>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50 text-gray-600">
+                  <th className="px-4 py-3 font-semibold">Order ID</th>
+                  <th className="px-4 py-3 font-semibold">Student</th>
+                  <th className="px-4 py-3 font-semibold">Meal</th>
+                  <th className="px-4 py-3 font-semibold">Block</th>
+                  <th className="px-4 py-3 font-semibold">Amount</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
 
-                <th className="px-4 py-4 font-semibold">
-                  Meal
-                </th>
-
-                <th className="px-4 py-4 font-semibold">
-                  Block
-                </th>
-
-                <th className="px-4 py-4 font-semibold">
-                  Amount
-                </th>
-
-                <th className="px-4 py-4 font-semibold">
-                  Status
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredOrders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-b border-slate-100 transition hover:bg-slate-50"
-                >
-                  <td className="px-4 py-4 font-semibold text-smart-primary">
-                    {order.id}
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-4 text-slate-700">
-                    {order.student}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    {order.meal}
-                  </td>
-
-                  <td className="px-4 py-4 text-slate-600">
-                    Block {order.block}
-                  </td>
-
-                  <td className="whitespace-nowrap px-4 py-4 font-medium text-slate-700">
-                    Rs. {order.amount.toLocaleString()}
-                  </td>
-
-                  <td className="px-4 py-4">
-                    <Badge
-                      variant={
-                        order.status === "Delivered"
-                          ? "success"
-                          : order.status === "Preparing"
-                          ? "info"
-                          : order.status === "Pending"
-                          ? "warning"
-                          : "danger"
-                      }
+              <tbody>
+                {filteredOrders.length > 0 ? (
+                  filteredOrders.map((order) => (
+                    <tr
+                      key={order.id}
+                      className="border-b border-gray-100 transition hover:bg-gray-50"
                     >
-                      {order.status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {order.id}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {order.student}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {order.meal}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        Block {order.block}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {formatCurrency(order.amount)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          variant={
+                            order.status === "Delivered"
+                              ? "success"
+                              : order.status === "Preparing"
+                                ? "info"
+                                : order.status === "Pending"
+                                  ? "warning"
+                                  : "danger"
+                          }
+                        >
+                          {order.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-10 text-center text-gray-500"
+                    >
+                      No food orders match your filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </section>
 
-              {filteredOrders.length === 0 && (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-4 py-10 text-center text-slate-500"
-                  >
-                    No food orders found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4 text-sm text-slate-500">
-          Showing {filteredOrders.length} of {foodOrders.length} orders
-        </div>
-      </Card>
+      {/* Data note */}
+      <p className="text-xs leading-5 text-gray-400">
+        Note: This dashboard currently uses demonstration data from
+        utilitiesData.js. Summary percentages, expenses, alert messages, and
+        meal popularity are sample values, not live measurements.
+      </p>
     </div>
   );
 }
-
-export default UtilitiesAnalytics;
