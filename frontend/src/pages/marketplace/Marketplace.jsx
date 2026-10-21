@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search,
   ShoppingCart,
@@ -8,7 +8,11 @@ import {
   Clock,
   Store,
   CheckCircle2,
+  ClipboardList,
+  PackageCheck,
+  Truck,
 } from "lucide-react";
+import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 
 const initialFoodItems = [
   {
@@ -84,6 +88,11 @@ const timeSlots = [
 
 function Marketplace() {
   const [items] = useState(initialFoodItems);
+  const [myOrders, setMyOrders] = useState(() =>
+    readFoodOrders().filter(
+      (order) => order.studentId === "SEU/IS/22/ICT/090",
+    ),
+  );
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,6 +100,20 @@ function Marketplace() {
   const [selectedSlot, setSelectedSlot] = useState(timeSlots[0]);
   const [orderConfirmed, setOrderConfirmed] = useState(null);
   const [cartMessage, setCartMessage] = useState("");
+  const [storageMessage, setStorageMessage] = useState("");
+  const [activeView, setActiveView] = useState("menu");
+
+  useEffect(() => {
+    const refreshOrders = () => {
+      setMyOrders(
+        readFoodOrders().filter(
+          (order) => order.studentId === "SEU/IS/22/ICT/090",
+        ),
+      );
+    };
+    window.addEventListener("storage", refreshOrders);
+    return () => window.removeEventListener("storage", refreshOrders);
+  }, []);
 
   // Cart Handlers
   const addToCart = (item) => {
@@ -139,9 +162,46 @@ function Marketplace() {
     if (cart.length === 0) return;
 
     const orderNo = `ORD-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const newOrder = {
+      id: orderNo,
+      studentId: "SEU/IS/22/ICT/090",
+      studentName: "Ahamed Nafeesh",
+      regNo: "SEU/IS/22/ICT/090",
+      vendorId: cart[0].vendorId,
+      vendor: cart[0].vendor,
+      timeSlot: selectedSlot,
+      totalAmount: cartTotal,
+      status: "Placed",
+      createdAt: new Date().toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      items: cart.map((item) => ({
+        name: item.name,
+        qty: item.quantity,
+        price: item.price,
+      })),
+    };
+    const updatedOrders = [newOrder, ...readFoodOrders()];
+    setMyOrders(
+      updatedOrders.filter(
+        (order) => order.studentId === "SEU/IS/22/ICT/090",
+      ),
+    );
+    try {
+      saveFoodOrders(updatedOrders);
+      setStorageMessage("");
+    } catch (error) {
+      console.error("Unable to save the food order.", error);
+      setStorageMessage(
+        "The order is visible for this session but could not be saved for vendor tracking in this browser.",
+      );
+    }
 
     setOrderConfirmed({
-      orderNo: orderNo,
+      orderNo,
       items: cart,
       total: cartTotal,
       slot: selectedSlot,
@@ -178,8 +238,27 @@ function Marketplace() {
 
         {/* Cart Button */}
         <button
-          onClick={() => setIsCartOpen(true)}
-          className="relative flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-slate-800 transition"
+          onClick={() => setActiveView("orders")}
+          className={`relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            activeView === "orders"
+              ? "bg-blue-600 text-white"
+              : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          <ClipboardList size={18} />
+          <span>My Orders</span>
+          {myOrders.length > 0 && (
+            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white">
+              {myOrders.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            setActiveView("menu");
+            setIsCartOpen(true);
+          }}
+          className="relative flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-slate-800"
         >
           <ShoppingCart size={18} />
           <span>Cart</span>
@@ -223,6 +302,58 @@ function Marketplace() {
         </div>
       )}
 
+      {storageMessage && (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+        >
+          {storageMessage}
+        </p>
+      )}
+
+      {activeView === "orders" ? (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                Your food orders
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Follow each order as the vendor prepares and delivers it.
+              </p>
+            </div>
+            <button
+              onClick={() =>
+                setMyOrders(
+                  readFoodOrders().filter(
+                    (order) => order.studentId === "SEU/IS/22/ICT/090",
+                  ),
+                )
+              }
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Refresh tracking
+            </button>
+          </div>
+
+          {myOrders.length ? (
+            myOrders.map((order) => (
+              <OrderTrackingCard key={order.id} order={order} />
+            ))
+          ) : (
+            <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+              <ClipboardList className="mx-auto text-slate-300" size={32} />
+              <p className="mt-3 font-semibold text-slate-700">
+                No food orders yet
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Place an order from the marketplace to follow its progress here.
+              </p>
+            </div>
+          )}
+        </section>
+      ) : (
+        <>
       {/* Search & Categories Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
         <div className="relative flex-1">
@@ -315,6 +446,8 @@ function Marketplace() {
           </div>
         ))}
       </div>
+        </>
+      )}
 
       {/* SHOPPING CART DRAWER */}
       {isCartOpen && (
@@ -431,6 +564,72 @@ function Marketplace() {
         </div>
       )}
     </div>
+  );
+}
+
+function OrderTrackingCard({ order }) {
+  const steps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
+  const currentStep = steps.indexOf(order.status);
+  const statusIcon =
+    order.status === "Delivered"
+      ? PackageCheck
+      : order.status === "Out for Delivery"
+        ? Truck
+        : Clock;
+  const StatusIcon = statusIcon;
+
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold text-slate-400">{order.id}</p>
+          <h3 className="mt-1 font-bold text-slate-900">
+            {order.vendor || "Campus food order"}
+          </h3>
+          <p className="mt-1 text-xs text-slate-500">
+            {order.createdAt} · Delivery slot: {order.timeSlot}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700">
+          <StatusIcon size={17} />
+          {order.status}
+        </div>
+      </div>
+
+      <ol
+        aria-label={`Order progress: ${order.status}`}
+        className="mt-5 grid grid-cols-4 gap-2"
+      >
+        {steps.map((step, index) => {
+          const isComplete = currentStep >= index;
+          return (
+            <li key={step} className="min-w-0">
+              <div
+                className={`h-1.5 rounded-full ${
+                  isComplete ? "bg-blue-600" : "bg-slate-100"
+                }`}
+              />
+              <span
+                className={`mt-2 block text-[10px] font-semibold sm:text-xs ${
+                  isComplete ? "text-slate-800" : "text-slate-400"
+                }`}
+              >
+                {step}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4 text-xs">
+        <p className="text-slate-600">
+          {order.items.map((item) => `${item.qty}x ${item.name}`).join(", ")}
+        </p>
+        <p className="font-bold text-slate-900">
+          LKR {order.totalAmount.toLocaleString()}
+        </p>
+      </div>
+    </article>
   );
 }
 

@@ -2,15 +2,10 @@ import { useState } from "react";
 import {
   Clock,
   CheckCircle2,
-  Package,
-  Bike,
   Search,
-  Filter,
   User,
-  MapPin,
-  ChevronRight,
-  AlertCircle,
 } from "lucide-react";
+import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 
 const initialOrders = [
   {
@@ -61,14 +56,25 @@ const initialOrders = [
 const statusSteps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
 
 function VendorOrders() {
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState(() => readFoodOrders(initialOrders));
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [storageMessage, setStorageMessage] = useState("");
 
   const handleUpdateStatus = (orderId, newStatus) => {
-    setOrders(
-      orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
+    const updatedOrders = orders.map((order) =>
+      order.id === orderId ? { ...order, status: newStatus } : order,
     );
+    setOrders(updatedOrders);
+    try {
+      saveFoodOrders(updatedOrders);
+      setStorageMessage("");
+    } catch (error) {
+      console.error("Unable to save food order status.", error);
+      setStorageMessage(
+        "Order status changed for this session but could not be saved for student tracking in this browser.",
+      );
+    }
   };
 
   const filteredOrders = orders.filter((o) => {
@@ -110,6 +116,15 @@ function VendorOrders() {
           </p>
         </div>
       </div>
+
+      {storageMessage && (
+        <p
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+        >
+          {storageMessage}
+        </p>
+      )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-4">
