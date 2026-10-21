@@ -197,13 +197,13 @@ function DashboardLayout() {
                         sidebarCollapsed ? "justify-center px-1.5 py-2.5" : "gap-3 px-3 py-2.5"
                       } rounded-xl text-[13px] font-medium transition-all duration-200 ${
                         active
-                          ? "bg-blue-500/15 text-white ring-1 ring-inset ring-blue-400/20"
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-1 ring-inset ring-blue-400/40"
                           : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-100"
                       }`}
                     >
                       <Icon
                         size={17}
-                        className={active ? "text-blue-300" : "text-slate-500 group-hover:text-slate-300"}
+                        className={active ? "text-white" : "text-slate-500 group-hover:text-slate-300"}
                       />
                       {!sidebarCollapsed && <span>{item.name}</span>}
                     </Link>

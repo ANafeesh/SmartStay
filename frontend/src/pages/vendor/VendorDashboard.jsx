@@ -1,111 +1,55 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Plus,
-  Trash2,
-  Edit2,
-  Store,
   DollarSign,
   Package,
-  Check,
-  X,
   ToggleLeft,
   ToggleRight,
-  Sparkles,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  TrendingUp,
+  QrCode,
+  UtensilsCrossed,
+  ClipboardList,
 } from "lucide-react";
 
 const initialMenuItems = [
   {
     id: "FD-101",
-    name: "Chicken Kottu Roti (Full)",
+    name: "Chicken Kottu Roti (Full Portion)",
     category: "Main Dishes",
     price: 850,
     available: true,
+    ordersToday: 18,
     image:
       "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&q=80&w=400",
   },
   {
     id: "FD-103",
-    name: "Egg Fried Rice with Chili Paste",
+    name: "Special Egg Fried Rice & Chili Paste",
     category: "Main Dishes",
     price: 650,
     available: true,
+    ordersToday: 12,
     image:
       "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=400",
   },
   {
     id: "FD-106",
-    name: "Devilled Chicken Portion",
+    name: "Devilled Chicken Portion (Spicy)",
     category: "Sides",
     price: 700,
     available: false,
+    ordersToday: 6,
     image:
       "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&q=80&w=400",
   },
 ];
 
-function VendorDashboard() {
+export default function VendorDashboard() {
   const [menuItems, setMenuItems] = useState(initialMenuItems);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-
-  // Form State
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState("Main Dishes");
-  const [price, setPrice] = useState("");
-  const [image, setImage] = useState("");
-
-  const handleOpenModal = (item = null) => {
-    if (item) {
-      setEditingItem(item);
-      setName(item.name);
-      setCategory(item.category);
-      setPrice(item.price);
-      setImage(item.image);
-    } else {
-      setEditingItem(null);
-      setName("");
-      setCategory("Main Dishes");
-      setPrice("");
-      setImage("");
-    }
-    setIsModalOpen(true);
-  };
-
-  const handleSaveItem = (e) => {
-    e.preventDefault();
-
-    if (editingItem) {
-      setMenuItems(
-        menuItems.map((i) =>
-          i.id === editingItem.id
-            ? {
-                ...i,
-                name,
-                category,
-                price: parseFloat(price),
-                image:
-                  image ||
-                  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400",
-              }
-            : i,
-        ),
-      );
-    } else {
-      const newItem = {
-        id: `FD-${Math.floor(100 + Math.random() * 900)}`,
-        name,
-        category,
-        price: parseFloat(price),
-        available: true,
-        image:
-          image ||
-          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400",
-      };
-      setMenuItems([newItem, ...menuItems]);
-    }
-
-    setIsModalOpen(false);
-  };
+  const [storeOpen, setStoreOpen] = useState(true);
 
   const toggleAvailability = (id) => {
     setMenuItems(
@@ -115,264 +59,253 @@ function VendorDashboard() {
     );
   };
 
-  const handleDeleteItem = (id) => {
-    if (window.confirm("Are you sure you want to delete this menu item?")) {
-      setMenuItems(menuItems.filter((i) => i.id !== id));
-    }
-  };
-
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-12">
+    <div className="mx-auto max-w-7xl space-y-6 pb-16">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-              Vendor Menu Management
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              Vendor Operations Portal
             </h1>
-            <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 border border-emerald-200/60">
-              Approved
+            <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
+              Module 3 Vendor Hub
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Manage your restaurant food catalog, prices, and stock availability.
+            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> · Proprietor: <strong>Ahamed Nafeesh (SEU/IS/22/ICT/090)</strong>
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-500 transition"
-        >
-          <Plus size={16} />
-          <span>Add New Food Item</span>
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-              <Package size={20} />
-            </div>
-            <span className="text-xs font-semibold text-slate-400">
-              Catalog
+        {/* Live Store Status Switch */}
+        <div className="flex items-center gap-3 bg-white border border-slate-200/80 rounded-2xl p-2 px-3 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                storeOpen ? "bg-emerald-500 animate-pulse" : "bg-slate-400"
+              }`}
+            />
+            <span className="text-xs font-bold text-slate-800">
+              {storeOpen ? "Accepting Orders" : "Kitchen Paused"}
             </span>
           </div>
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            Total Listed Items
-          </p>
-          <h3 className="mt-0.5 text-2xl font-bold text-slate-900">
-            {menuItems.length} Items
-          </h3>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <Check size={20} />
-            </div>
-            <span className="text-xs font-semibold text-emerald-600">
-              Active
-            </span>
-          </div>
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            In-Stock Items
-          </p>
-          <h3 className="mt-0.5 text-2xl font-bold text-slate-900">
-            {menuItems.filter((i) => i.available).length} Ready
-          </h3>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-              <X size={20} />
-            </div>
-            <span className="text-xs font-semibold text-rose-600">
-              Unavailable
-            </span>
-          </div>
-          <p className="mt-3 text-xs font-medium text-slate-500">
-            Out of Stock Items
-          </p>
-          <h3 className="mt-0.5 text-2xl font-bold text-slate-900">
-            {menuItems.filter((i) => !i.available).length} Off
-          </h3>
-        </div>
-      </div>
-
-      {/* Food Items Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {menuItems.map((item) => (
-          <div
-            key={item.id}
-            className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs"
+          <button
+            onClick={() => setStoreOpen(!storeOpen)}
+            className="text-slate-500 hover:text-slate-900 cursor-pointer"
+            title="Toggle Kitchen Online/Offline"
           >
-            <div>
-              <div className="relative h-36 w-full overflow-hidden rounded-xl bg-slate-100 mb-3">
+            {storeOpen ? (
+              <ToggleRight size={28} className="text-blue-600" />
+            ) : (
+              <ToggleLeft size={28} className="text-slate-400" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Row */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">Today's Food Revenue</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <DollarSign size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-black text-slate-900">
+            LKR 14,250
+          </h3>
+          <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+            <TrendingUp size={12} /> +12.5% from yesterday
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">Orders in Queue</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <Package size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-black text-slate-900">
+            4 Orders
+          </h3>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Next Delivery: 12:30 PM Slot
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">Delivery Slot Capacity</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+              <Clock size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-black text-slate-900">
+            82% Booked
+          </h3>
+          <p className="mt-1 text-[11px] font-semibold text-purple-600">
+            Lunch Slots filling quickly
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-xs font-semibold">Gate Pass Security Seal</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <ShieldCheck size={18} />
+            </div>
+          </div>
+          <h3 className="mt-3 text-2xl font-black text-slate-900">
+            Active / Pass OK
+          </h3>
+          <p className="mt-1 text-[11px] font-semibold text-emerald-600">
+            Token: QR-SS-VND-88492019
+          </p>
+        </div>
+      </div>
+
+      {/* Quick Access Modules Navigation */}
+      <div>
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+          Module 3 Operational Control Centers
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            to="/vendor/food-items"
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-blue-400 hover:shadow-md transition flex flex-col justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <UtensilsCrossed size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Menu & Inventory</h4>
+                <p className="text-[11px] text-slate-500">Add, edit, stock toggles</p>
+              </div>
+            </div>
+            <span className="mt-4 text-xs font-bold text-blue-600 flex items-center gap-1">
+              <span>Manage Menus</span> <ArrowRight size={13} />
+            </span>
+          </Link>
+
+          <Link
+            to="/vendor/orders"
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-blue-400 hover:shadow-md transition flex flex-col justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                <ClipboardList size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Live Orders Queue</h4>
+                <p className="text-[11px] text-slate-500">Slots, status & KOT slips</p>
+              </div>
+            </div>
+            <span className="mt-4 text-xs font-bold text-amber-600 flex items-center gap-1">
+              <span>Process Orders</span> <ArrowRight size={13} />
+            </span>
+          </Link>
+
+          <Link
+            to="/vendor/pass"
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-blue-400 hover:shadow-md transition flex flex-col justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                <QrCode size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">QR Gate Pass</h4>
+                <p className="text-[11px] text-slate-500">Gate security clearance</p>
+              </div>
+            </div>
+            <span className="mt-4 text-xs font-bold text-purple-600 flex items-center gap-1">
+              <span>Gate Verification</span> <ArrowRight size={13} />
+            </span>
+          </Link>
+
+          <Link
+            to="/vendor/applications"
+            className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-blue-400 hover:shadow-md transition flex flex-col justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Registration & Permits</h4>
+                <p className="text-[11px] text-slate-500">Accreditation & approvals</p>
+              </div>
+            </div>
+            <span className="mt-4 text-xs font-bold text-emerald-600 flex items-center gap-1">
+              <span>View Permits</span> <ArrowRight size={13} />
+            </span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Menu Quick Availability Table */}
+      <div className="rounded-3xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 p-5 bg-slate-50/70">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">
+              Live Menu Offerings & Instant Stock Status
+            </h3>
+            <p className="text-xs text-slate-500">
+              Toggle items in real-time to reflect immediately in the student marketplace.
+            </p>
+          </div>
+          <Link
+            to="/vendor/food-items"
+            className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+          >
+            <span>Full Catalog</span>
+            <ArrowRight size={13} />
+          </Link>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {menuItems.map((item) => (
+            <div
+              key={item.id}
+              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition"
+            >
+              <div className="flex items-center gap-3.5">
                 <img
                   src={item.image}
                   alt={item.name}
-                  className="h-full w-full object-cover"
+                  className="h-12 w-12 rounded-xl object-cover"
                 />
-                <span className="absolute top-2.5 right-2.5 rounded-lg bg-slate-900/80 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white">
-                  {item.category}
-                </span>
-              </div>
-
-              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400">
-                    {item.id}
-                  </span>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs font-bold text-blue-600 mt-0.5">
-                    LKR {item.price.toLocaleString()}
+                  <h4 className="text-xs font-bold text-slate-900">{item.name}</h4>
+                  <p className="text-[11px] text-slate-400 font-mono">
+                    {item.id} · {item.category} · {item.ordersToday} orders today
                   </p>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-              {/* Availability Toggle */}
-              <button
-                onClick={() => toggleAvailability(item.id)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700"
-              >
-                {item.available ? (
-                  <ToggleRight size={24} className="text-emerald-600" />
-                ) : (
-                  <ToggleLeft size={24} className="text-slate-400" />
-                )}
-                <span
-                  className={
-                    item.available ? "text-emerald-700" : "text-slate-400"
-                  }
-                >
-                  {item.available ? "In Stock" : "Out of Stock"}
+              <div className="flex items-center gap-4 self-end sm:self-center">
+                <span className="text-xs font-bold text-slate-900">
+                  LKR {item.price}
                 </span>
-              </button>
 
-              {/* Actions */}
-              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => handleOpenModal(item)}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                  onClick={() => toggleAvailability(item.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-bold cursor-pointer transition ${
+                    item.available
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                  }`}
                 >
-                  <Edit2 size={16} />
-                </button>
-                <button
-                  onClick={() => handleDeleteItem(item.id)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                >
-                  <Trash2 size={16} />
+                  {item.available ? "In Stock" : "Sold Out"}
                 </button>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* CREATE / EDIT MODAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl border border-slate-100 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <h2 className="text-base font-bold text-slate-900">
-                {editingItem ? "Edit Food Item" : "Add Food Item"}
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveItem} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Item Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Chicken Kottu Roti"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-800 outline-none focus:border-blue-500"
-                  >
-                    <option value="Main Dishes">Main Dishes</option>
-                    <option value="Fast Food">Fast Food</option>
-                    <option value="Snacks">Snacks</option>
-                    <option value="Beverages">Beverages</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Price (LKR)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="850"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Image URL (Optional)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={image}
-                  onChange={(e) => setImage(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white"
-                />
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-500"
-                >
-                  {editingItem ? "Save Changes" : "Add Item"}
-                </button>
-              </div>
-            </form>
-          </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
-
-export default VendorDashboard;

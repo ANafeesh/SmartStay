@@ -5,9 +5,7 @@ import {
   CreditCard,
   Calendar,
   Download,
-  ArrowUpRight,
   Wallet,
-  Clock,
   CheckCircle2,
 } from "lucide-react";
 
