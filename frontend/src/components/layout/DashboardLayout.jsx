@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import TopRightAuth from "./TopRightAuth";
+import { useAuth } from "../../context/AuthContext";
 import {
   Activity,
   AlertTriangle,
@@ -86,6 +88,7 @@ const navigationGroups = [
 ];
 
 function DashboardLayout() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
@@ -104,16 +107,19 @@ function DashboardLayout() {
           </span>
           SmartStay
         </Link>
-        <button
-          type="button"
-          aria-label={sidebarOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={sidebarOpen}
-          aria-controls="smartstay-sidebar"
-          onClick={() => setSidebarOpen((open) => !open)}
-          className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <TopRightAuth compact={true} />
+          <button
+            type="button"
+            aria-label={sidebarOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={sidebarOpen}
+            aria-controls="smartstay-sidebar"
+            onClick={() => setSidebarOpen((open) => !open)}
+            className="rounded-xl border border-white/10 bg-white/5 p-2.5 text-slate-200 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {sidebarOpen && (
@@ -197,13 +203,13 @@ function DashboardLayout() {
                         sidebarCollapsed ? "justify-center px-1.5 py-2.5" : "gap-3 px-3 py-2.5"
                       } rounded-xl text-[13px] font-medium transition-all duration-200 ${
                         active
-                          ? "bg-blue-500/15 text-white ring-1 ring-inset ring-blue-400/20"
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-1 ring-inset ring-blue-400/40"
                           : "text-slate-400 hover:bg-white/[0.06] hover:text-slate-100"
                       }`}
                     >
                       <Icon
                         size={17}
-                        className={active ? "text-blue-300" : "text-slate-500 group-hover:text-slate-300"}
+                        className={active ? "text-white" : "text-slate-500 group-hover:text-slate-300"}
                       />
                       {!sidebarCollapsed && <span>{item.name}</span>}
                     </Link>
@@ -218,13 +224,13 @@ function DashboardLayout() {
           <div className="flex items-center rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
             <div className={`flex min-w-0 items-center ${sidebarCollapsed ? "w-full justify-center" : "gap-2.5"}`}>
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-xs font-bold text-blue-200 ring-1 ring-inset ring-blue-400/20">
-                AN
+                {user?.initials || "AN"}
               </div>
               {!sidebarCollapsed && (
                 <div className="min-w-0 truncate">
-                  <p className="truncate text-xs font-semibold text-white">Nafeesh</p>
+                  <p className="truncate text-xs font-semibold text-white">{user?.name || "Nafeesh"}</p>
                   <p className="truncate text-[10px] font-medium text-slate-500">
-                    SEU/IS/22/ICT/090
+                    {user?.studentId || "SEU/IS/22/ICT/090"}
                   </p>
                 </div>
               )}
@@ -252,15 +258,7 @@ function DashboardLayout() {
             >
               <Bell size={18} />
             </Link>
-            <div className="hidden items-center gap-2.5 border-l border-slate-200 pl-3 sm:flex">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white shadow-sm shadow-blue-500/20">
-                AN
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-800">Nafeesh</p>
-                <p className="text-[10px] font-medium text-slate-400">Student account</p>
-              </div>
-            </div>
+            <TopRightAuth />
           </div>
         </header>
         <div className="mx-auto w-full max-w-7xl">
