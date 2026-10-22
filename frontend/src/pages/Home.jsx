@@ -1,4 +1,5 @@
 import { CreditCard, ShoppingBag, ShieldCheck, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const features = [
   {
@@ -36,12 +37,27 @@ function Home() {
             </p>
           </div>
 
-          <a
-            href="/dashboard"
-            className="rounded-lg bg-smart-blue px-5 py-2.5 font-semibold transition hover:bg-smart-teal"
-          >
-            Get Started
-          </a>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/dashboard"
+              className="group flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-95"
+            >
+              <lord-icon
+                src="/system-solid-1725-person-exit.json"
+                trigger="hover"
+                state="hover-pinch"
+                colors="primary:#ffffff"
+                style={{ width: "20px", height: "20px", transform: "scaleX(-1)" }}
+              ></lord-icon>
+              <span>Login</span>
+            </Link>
+            <Link
+              to="/dashboard"
+              className="rounded-xl bg-smart-blue px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-smart-teal active:scale-95"
+            >
+              Get Started
+            </Link>
+          </div>
         </div>
       </header>
 

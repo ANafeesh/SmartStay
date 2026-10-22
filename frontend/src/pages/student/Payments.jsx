@@ -14,6 +14,11 @@ import {
   Sparkles,
   Eye,
   Info,
+  Zap,
+  Wrench,
+  ArrowRight,
+  Check,
+  Calendar,
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
@@ -110,7 +115,7 @@ const initialNotifications = [
   {
     id: "NOTIF-01",
     title: "Payment Received Successfully",
-    message: "LKR 15,000 for Hostel Fee (August 2026) settled. Receipt RCT-90421 generated.",
+    message: "LKR 15,000 for Hostel Fee (August 2026) settled. Official Receipt RCT-90421 generated with anti-tamper QR verification.",
     date: "02 Aug 2026, 11:20 AM",
     type: "success",
     refNo: "TXN-88492019",
@@ -118,7 +123,7 @@ const initialNotifications = [
   {
     id: "NOTIF-02",
     title: "Overdue Bill Alert",
-    message: "Electricity & AC Surcharge is overdue since 20 Sep 2026. A late fee of LKR 250 has been added.",
+    message: "Electricity & AC Surcharge is overdue since 20 Sep 2026. A late fee penalty of LKR 250 has been assessed.",
     date: "21 Sep 2026, 09:00 AM",
     type: "warning",
     refNo: "BIL-2026-08U",
@@ -159,7 +164,7 @@ export default function Payments() {
     setHistory((prev) => [paymentRecord, ...prev]);
 
     if (isSuccess) {
-      // Remove or mark paid
+      // Remove paid bill
       setBills((prev) => prev.filter((b) => b.id !== paymentRecord.billId));
 
       const newNotif = {
@@ -176,7 +181,7 @@ export default function Payments() {
       setLatestAlert({
         type: "success",
         title: "Payment Authorized Successfully",
-        message: `Your payment of LKR ${paymentRecord.amount.toLocaleString()} has been confirmed. Transaction Ref: ${paymentRecord.refNo}. Official receipt ${paymentRecord.receiptNo} is now ready to download.`,
+        message: `Your payment of LKR ${paymentRecord.amount.toLocaleString()} has been confirmed. Transaction Ref: ${paymentRecord.refNo}. Official bursary receipt #${paymentRecord.receiptNo} is now ready to download.`,
         receiptRecord: paymentRecord,
       });
     } else {
@@ -209,36 +214,83 @@ export default function Payments() {
     return matchesStatus && matchesSearch;
   });
 
+  const getBillIcon = (type) => {
+    switch (type) {
+      case "Room Fee":
+        return <Building2 size={20} className="text-blue-600" />;
+      case "Utilities":
+        return <Zap size={20} className="text-amber-600" />;
+      case "Maintenance":
+        return <Wrench size={20} className="text-cyan-600" />;
+      default:
+        return <FileText size={20} className="text-slate-600" />;
+    }
+  };
+
+  const getBillIconBg = (type) => {
+    switch (type) {
+      case "Room Fee":
+        return "bg-blue-50 border-blue-100";
+      case "Utilities":
+        return "bg-amber-50 border-amber-100";
+      case "Maintenance":
+        return "bg-cyan-50 border-cyan-100";
+      default:
+        return "bg-slate-50 border-slate-100";
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-16">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
-              Billing & Financial Management
-            </h1>
-            <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700">
-              Module 3
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-slate-500">
-            Student: <strong className="text-slate-800">Ahamed Nafeesh</strong> (ID:{" "}
-            <span className="font-mono font-semibold text-blue-600">
-              SEU/IS/22/ICT/090
-            </span>
-            ) · Hostel Block B, Room 204
-          </p>
-        </div>
+      {/* Student Financial Portal Hero Card */}
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Bursary Standing: Good
+              </span>
+              <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold text-blue-700">
+                Module 3: Finance & Billing
+              </span>
+            </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab("tests")}
-            className="inline-flex items-center gap-2 rounded-2xl bg-indigo-50 border border-indigo-200/80 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs cursor-pointer"
-          >
-            <Sparkles size={15} />
-            <span>Module 3 Test Suite</span>
-          </button>
+            <h1 className="mt-2 text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+              Student Billing & Financial Management
+            </h1>
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+              <span className="font-semibold text-slate-700">
+                Ahamed Nafeesh
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className="font-mono font-medium text-blue-600">
+                SEU/IS/22/ICT/090
+              </span>
+              <span className="text-slate-300">•</span>
+              <span>Hostel Block B, Room 204</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-400">Academic Year 2026/27</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setActiveTab("tests")}
+              className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
+                activeTab === "tests"
+                  ? "bg-indigo-600 text-white shadow-indigo-500/25 ring-2 ring-indigo-400/30"
+                  : "bg-indigo-50/80 border border-indigo-200/80 text-indigo-700 hover:bg-indigo-100"
+              }`}
+            >
+              <Sparkles size={15} />
+              <span>Module 3 Test Suite</span>
+              <span className="rounded-full bg-indigo-200/80 px-1.5 py-0.2 text-[10px] font-extrabold text-indigo-900">
+                9 Tests
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -290,7 +342,9 @@ export default function Payments() {
                 {latestAlert.receiptRecord && (
                   <div className="mt-3 flex items-center gap-2">
                     <button
-                      onClick={() => setSelectedReceipt(latestAlert.receiptRecord)}
+                      onClick={() =>
+                        setSelectedReceipt(latestAlert.receiptRecord)
+                      }
                       className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 transition shadow-xs cursor-pointer"
                     >
                       <Eye size={13} />
@@ -303,7 +357,7 @@ export default function Payments() {
 
             <button
               onClick={() => setLatestAlert(null)}
-              className="rounded-lg p-1.5 text-slate-500 hover:bg-black/5"
+              className="rounded-lg p-1.5 text-slate-500 hover:bg-black/5 cursor-pointer"
               aria-label="Dismiss banner"
             >
               <X size={18} />
@@ -312,169 +366,232 @@ export default function Payments() {
         </div>
       )}
 
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-px">
-        <button
-          onClick={() => setActiveTab("dashboard")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "dashboard"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
+      {/* Clean Navigation Segmented Bar (No ugly scrollbars!) */}
+      <div className="rounded-2xl bg-slate-200/70 p-1.5 backdrop-blur-sm">
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          <CreditCard size={16} />
-          <span>Billing Dashboard</span>
-          {bills.length > 0 && (
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] text-blue-800 font-bold">
-              {bills.length} Due
+          <button
+            onClick={() => setActiveTab("dashboard")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "dashboard"
+                ? "bg-white text-blue-600 shadow-xs ring-1 ring-slate-950/5"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+            }`}
+          >
+            <CreditCard size={15} />
+            <span>Billing Dashboard</span>
+            {bills.length > 0 ? (
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800">
+                {bills.length} Due
+              </span>
+            ) : (
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                Cleared
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("records")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "records"
+                ? "bg-white text-blue-600 shadow-xs ring-1 ring-slate-950/5"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+            }`}
+          >
+            <FileText size={15} />
+            <span>Payment Records</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+              {history.length}
             </span>
-          )}
-        </button>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("records")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "records"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <FileText size={16} />
-          <span>Payment Records ({history.length})</span>
-        </button>
+          <button
+            onClick={() => setActiveTab("receipts")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "receipts"
+                ? "bg-white text-blue-600 shadow-xs ring-1 ring-slate-950/5"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+            }`}
+          >
+            <Receipt size={15} />
+            <span>Receipts Archive</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+              {history.filter((h) => h.status === "Success").length}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("receipts")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "receipts"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <Receipt size={16} />
-          <span>Receipts Archive</span>
-        </button>
+          <button
+            onClick={() => setActiveTab("notifications")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "notifications"
+                ? "bg-white text-blue-600 shadow-xs ring-1 ring-slate-950/5"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+            }`}
+          >
+            <Bell size={15} />
+            <span>Notifications</span>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+              {notifications.length}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab("notifications")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "notifications"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <Bell size={16} />
-          <span>Notifications</span>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-800 font-bold">
-            {notifications.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("tests")}
-          className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-            activeTab === "tests"
-              ? "border-indigo-600 text-indigo-600 bg-indigo-50/50 rounded-t-xl"
-              : "border-transparent text-slate-500 hover:text-slate-800"
-          }`}
-        >
-          <Sparkles size={16} className="text-indigo-600" />
-          <span>Module 3 Test Cases</span>
-        </button>
+          <button
+            onClick={() => setActiveTab("tests")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "tests"
+                ? "bg-indigo-600 text-white shadow-xs shadow-indigo-500/25"
+                : "text-indigo-700 hover:text-indigo-900 hover:bg-white/40"
+            }`}
+          >
+            <Sparkles size={15} />
+            <span>Test Suite</span>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                activeTab === "tests"
+                  ? "bg-white/20 text-white"
+                  : "bg-indigo-100 text-indigo-700"
+              }`}
+            >
+              9 TCs
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* TAB 1: BILLING DASHBOARD */}
       {activeTab === "dashboard" && (
         <div className="space-y-6">
-          {/* Summary Stat Cards */}
+          {/* Summary Metric Cards with Subtle Aesthetic Accents */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-semibold">Total Outstanding</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+            {/* Card 1: Outstanding */}
+            <div className="relative overflow-hidden rounded-3xl border border-rose-200/80 bg-gradient-to-br from-white via-white to-rose-50/50 p-5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Total Outstanding
+                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 shadow-2xs">
                   <AlertTriangle size={18} />
                 </div>
               </div>
-              <h3 className="mt-3 text-2xl font-black text-slate-900">
-                LKR {totalOutstanding.toLocaleString()}
-              </h3>
-              <p className="mt-1 text-[11px] font-semibold text-rose-600">
-                {bills.some((b) => b.status === "Overdue")
-                  ? "Overdue notice active"
-                  : "Due by next cycle"}
-              </p>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-xs font-bold text-slate-400">LKR</span>
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+                  {totalOutstanding.toLocaleString()}
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100/70 border border-rose-200/60 px-2 py-0.5 text-[11px] font-bold text-rose-700">
+                  {bills.some((b) => b.status === "Overdue") ? (
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
+                      Overdue Notice Active
+                    </>
+                  ) : (
+                    "Due next cycle"
+                  )}
+                </span>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-semibold">Total Settled (Semester)</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+            {/* Card 2: Settled */}
+            <div className="relative overflow-hidden rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/50 p-5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Total Settled (Semester)
+                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 border border-emerald-100 text-emerald-600 shadow-2xs">
                   <CheckCircle2 size={18} />
                 </div>
               </div>
-              <h3 className="mt-3 text-2xl font-black text-slate-900">
-                LKR {totalPaid.toLocaleString()}
-              </h3>
-              <p className="mt-1 text-[11px] font-semibold text-emerald-600">
-                {history.filter((h) => h.status === "Success").length} Official Receipts Issued
-              </p>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-xs font-bold text-slate-400">LKR</span>
+                <span className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+                  {totalPaid.toLocaleString()}
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/70 border border-emerald-200/60 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                  <Check size={12} />
+                  {history.filter((h) => h.status === "Success").length} Official Receipts Issued
+                </span>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-semibold">Next Due Date</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            {/* Card 3: Next Due Date */}
+            <div className="relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-white via-white to-blue-50/50 p-5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Next Due Date
+                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 shadow-2xs">
                   <Clock size={18} />
                 </div>
               </div>
-              <h3 className="mt-3 text-2xl font-black text-slate-900">
-                {bills.length > 0 ? bills[0].dueDate : "All Cleared"}
-              </h3>
-              <p className="mt-1 text-[11px] text-slate-500">
-                Semester 2 Hostel Dues
-              </p>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+                  {bills.length > 0 ? bills[0].dueDate : "All Settled"}
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-100/70 border border-blue-200/60 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                  <Calendar size={12} />
+                  {bills.length > 0 ? bills[0].period : "No active dues"}
+                </span>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs">
-              <div className="flex items-center justify-between text-slate-500">
-                <span className="text-xs font-semibold">Bursary Standing</span>
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+            {/* Card 4: Bursary Standing */}
+            <div className="relative overflow-hidden rounded-3xl border border-purple-200/80 bg-gradient-to-br from-white via-white to-purple-50/50 p-5 shadow-xs transition hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Bursary Standing
+                </span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-50 border border-purple-100 text-purple-600 shadow-2xs">
                   <ShieldCheck size={18} />
                 </div>
               </div>
-              <h3 className="mt-3 text-2xl font-black text-slate-900">
-                Good Standing
-              </h3>
-              <p className="mt-1 text-[11px] font-semibold text-purple-600">
-                ID Verified: SEU/IS/22/ICT/090
-              </p>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+                  Good Standing
+                </span>
+              </div>
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 rounded-full bg-purple-100/70 border border-purple-200/60 px-2 py-0.5 text-[11px] font-semibold text-purple-700">
+                  SEU Student Welfare Subsidized
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Current Outstanding Bills Section */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-100 p-5 bg-slate-50/70">
+          <div className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 p-5 sm:p-6 bg-slate-50/60">
               <div>
-                <h3 className="text-base font-bold text-slate-900">
+                <h2 className="text-base font-extrabold text-slate-900">
                   Current Invoices & Payable Charges
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Click 'Pay Now' to launch the secure checkout simulator.
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Click 'Pay Now' to launch the secure checkout simulator with instant digital bursary receipt generation.
                 </p>
               </div>
-              <span className="rounded-xl bg-white border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
-                {bills.length} Open Invoices
-              </span>
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <span className="rounded-xl bg-white border border-slate-200/90 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+                  {bills.length} Open Invoices
+                </span>
+              </div>
             </div>
 
             {bills.length === 0 ? (
               <div className="p-12 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-3">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-3 shadow-xs">
                   <CheckCircle2 size={28} />
                 </div>
-                <h4 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-bold text-slate-900">
                   All Hostel Dues Settled!
-                </h4>
+                </h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                   You have no pending bills. Your accommodation and utility fees are completely up to date.
                 </p>
@@ -484,17 +601,22 @@ export default function Payments() {
                 {bills.map((bill) => (
                   <div
                     key={bill.id}
-                    className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 transition hover:bg-slate-50/60"
+                    className="p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 transition hover:bg-slate-50/50"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                        <Building2 size={22} />
+                      <div
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-2xs ${getBillIconBg(
+                          bill.type,
+                        )}`}
+                      >
+                        {getBillIcon(bill.type)}
                       </div>
-                      <div>
+
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-bold text-slate-900">
+                          <h3 className="text-sm font-bold text-slate-900">
                             {bill.title}
-                          </h4>
+                          </h3>
                           <span
                             className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                               bill.status === "Overdue"
@@ -508,34 +630,58 @@ export default function Payments() {
                             {bill.type}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Invoice ID: <span className="font-mono text-slate-700">{bill.id}</span> · Billing Cycle: {bill.period} · Due Date: <strong>{bill.dueDate}</strong>
-                        </p>
+
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
+                          <span>
+                            Invoice:{" "}
+                            <span className="font-mono font-medium text-slate-700">
+                              {bill.id}
+                            </span>
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span>Cycle: {bill.period}</span>
+                          <span className="text-slate-300">•</span>
+                          <span>
+                            Due Date:{" "}
+                            <strong className="text-slate-700">
+                              {bill.dueDate}
+                            </strong>
+                          </span>
+                        </div>
+
                         {bill.lateFee > 0 && (
-                          <p className="text-[11px] font-semibold text-rose-600 mt-1 flex items-center gap-1">
-                            <AlertTriangle size={12} />
-                            Includes overdue penalty of LKR {bill.lateFee.toLocaleString()}
-                          </p>
+                          <div className="pt-1">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 border border-rose-200/60 px-2.5 py-1 text-[11px] font-semibold text-rose-700">
+                              <AlertTriangle size={12} />
+                              Overdue penalty added: LKR {bill.lateFee.toLocaleString()} (Base: LKR {bill.amount.toLocaleString()})
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between md:justify-end gap-5">
+                    <div className="flex items-center justify-between md:justify-end gap-5 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
                       <div className="text-left md:text-right">
-                        <span className="text-[11px] text-slate-400 block font-medium">
+                        <span className="text-[11px] text-slate-400 block font-semibold uppercase tracking-wider">
                           Payable Amount
                         </span>
-                        <span className="text-xl font-black text-slate-900">
-                          LKR {(bill.amount + (bill.lateFee || 0)).toLocaleString()}
-                        </span>
+                        <div className="flex items-baseline gap-1 md:justify-end">
+                          <span className="text-xs font-bold text-slate-400">
+                            LKR
+                          </span>
+                          <span className="text-xl sm:text-2xl font-black text-slate-900">
+                            {(bill.amount + (bill.lateFee || 0)).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
 
                       <button
                         onClick={() => setSelectedBillForPayment(bill)}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition cursor-pointer"
+                        className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition cursor-pointer"
                       >
                         <CreditCard size={15} />
                         <span>Pay Now</span>
+                        <ArrowRight size={13} />
                       </button>
                     </div>
                   </div>
@@ -550,7 +696,7 @@ export default function Payments() {
       {activeTab === "records" && (
         <div className="space-y-4">
           {/* Filter and Search Bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs">
             <div className="relative w-full sm:w-80">
               <Search
                 size={16}
@@ -566,7 +712,9 @@ export default function Payments() {
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs text-slate-500 font-semibold">Status:</span>
+              <span className="text-xs text-slate-500 font-semibold">
+                Status:
+              </span>
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 {["All", "Success", "Failed"].map((st) => (
                   <button
@@ -586,23 +734,26 @@ export default function Payments() {
           </div>
 
           {/* Records Table */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+            <div className="overflow-x-auto no-scrollbar">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200">
+                <thead className="bg-slate-50/90 text-slate-500 font-semibold border-b border-slate-200">
                   <tr>
-                    <th className="py-3.5 px-4">Transaction / Bill</th>
+                    <th className="py-3.5 px-4 sm:px-6">Transaction / Bill</th>
                     <th className="py-3.5 px-4">Date</th>
                     <th className="py-3.5 px-4">Payment Method</th>
                     <th className="py-3.5 px-4">Amount</th>
                     <th className="py-3.5 px-4 text-center">Status</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
                   {filteredHistory.map((rec) => (
-                    <tr key={rec.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-3.5 px-4">
+                    <tr
+                      key={rec.id}
+                      className="hover:bg-slate-50/60 transition"
+                    >
+                      <td className="py-3.5 px-4 sm:px-6">
                         <p className="font-bold text-slate-900">{rec.title}</p>
                         <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 font-mono">
                           <span>Ref: {rec.refNo}</span>
@@ -641,7 +792,7 @@ export default function Payments() {
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
                         {rec.status === "Success" ? (
                           <button
                             onClick={() => setSelectedReceipt(rec)}
@@ -668,15 +819,18 @@ export default function Payments() {
       {/* TAB 3: RECEIPTS ARCHIVE */}
       {activeTab === "receipts" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900">
                 Official Bursary Payment Receipts
-              </h3>
-              <p className="text-xs text-slate-500">
-                Verified digital receipts equipped with anti-tamper QR signatures.
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Verified digital receipts equipped with anti-tamper QR signatures and bursary validation.
               </p>
             </div>
+            <span className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 self-start sm:self-center">
+              {history.filter((h) => h.status === "Success" && h.receiptNo).length} Issued Receipts
+            </span>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -685,24 +839,24 @@ export default function Payments() {
               .map((rec) => (
                 <div
                   key={rec.receiptNo}
-                  className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:shadow-sm transition flex flex-col justify-between"
+                  className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-extrabold text-xs shadow-xs">
                           SS
                         </div>
                         <div>
-                          <span className="text-xs font-mono font-bold text-slate-900">
+                          <span className="text-xs font-mono font-bold text-slate-900 block">
                             {rec.receiptNo}
                           </span>
-                          <span className="block text-[10px] text-slate-400">
+                          <span className="text-[10px] text-slate-400">
                             {rec.date}
                           </span>
                         </div>
                       </div>
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
                         Paid
                       </span>
                     </div>
@@ -711,14 +865,18 @@ export default function Payments() {
                       <p className="font-bold text-slate-900">{rec.title}</p>
                       <div className="flex justify-between text-slate-500 text-[11px]">
                         <span>Student Reg:</span>
-                        <span className="font-mono text-slate-700">SEU/IS/22/ICT/090</span>
+                        <span className="font-mono text-slate-700">
+                          SEU/IS/22/ICT/090
+                        </span>
                       </div>
                       <div className="flex justify-between text-slate-500 text-[11px]">
                         <span>Gateway:</span>
                         <span className="text-slate-700">{rec.method}</span>
                       </div>
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                        <span className="font-medium text-slate-600">Total Settled:</span>
+                      <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
+                        <span className="font-medium text-slate-600">
+                          Total Settled:
+                        </span>
                         <span className="text-base font-black text-slate-900">
                           LKR {rec.amount.toLocaleString()}
                         </span>
@@ -726,13 +884,13 @@ export default function Payments() {
                     </div>
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center gap-2">
                     <button
                       onClick={() => setSelectedReceipt(rec)}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow-xs cursor-pointer"
                     >
                       <Eye size={14} />
-                      <span>Open Receipt</span>
+                      <span>Open Official Receipt</span>
                     </button>
                   </div>
                 </div>
@@ -743,30 +901,36 @@ export default function Payments() {
 
       {/* TAB 4: NOTIFICATIONS */}
       {activeTab === "notifications" && (
-        <div className="rounded-2xl border border-slate-200/80 bg-white shadow-2xs overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-100 p-5 bg-slate-50/70">
+        <div className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-100 p-5 sm:p-6 bg-slate-50/60">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h2 className="text-base font-bold text-slate-900">
                 Billing & Payment Notification Dispatch Center
-              </h3>
-              <p className="text-xs text-slate-500">
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
                 Audited timeline of payment confirmations, rejection alerts, and invoice issuances.
               </p>
             </div>
+            <span className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+              {notifications.length} Logs
+            </span>
           </div>
 
           <div className="divide-y divide-slate-100">
             {notifications.map((notif) => (
-              <div key={notif.id} className="p-4 flex items-start gap-3.5 hover:bg-slate-50/50 transition">
+              <div
+                key={notif.id}
+                className="p-5 flex items-start gap-4 hover:bg-slate-50/50 transition"
+              >
                 <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white shadow-xs ${
                     notif.type === "success"
-                      ? "bg-emerald-600"
+                      ? "bg-emerald-600 shadow-emerald-600/20"
                       : notif.type === "danger"
-                        ? "bg-rose-600"
+                        ? "bg-rose-600 shadow-rose-600/20"
                         : notif.type === "warning"
-                          ? "bg-amber-600"
-                          : "bg-blue-600"
+                          ? "bg-amber-600 shadow-amber-600/20"
+                          : "bg-blue-600 shadow-blue-600/20"
                   }`}
                 >
                   {notif.type === "success" ? (
@@ -782,14 +946,14 @@ export default function Payments() {
 
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-slate-900">
+                    <h3 className="text-xs font-bold text-slate-900">
                       {notif.title}
-                    </h4>
+                    </h3>
                     <span className="text-[10px] text-slate-400 font-medium">
                       {notif.date}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                     {notif.message}
                   </p>
                   {notif.refNo && (
@@ -805,9 +969,7 @@ export default function Payments() {
       )}
 
       {/* TAB 5: MODULE 3 TEST CASES SUITE */}
-      {activeTab === "tests" && (
-        <Module3TestSuite />
-      )}
+      {activeTab === "tests" && <Module3TestSuite />}
 
       {/* Payment Modal */}
       {selectedBillForPayment && (
