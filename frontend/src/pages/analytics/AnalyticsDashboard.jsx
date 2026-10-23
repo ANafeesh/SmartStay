@@ -387,10 +387,7 @@ function AnalyticsDashboard() {
 
         <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-blue-100">
-              <Activity size={14} />
-              SMARTSTAY · MODULE 05
-            </div>
+        
 
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Smart Analytics

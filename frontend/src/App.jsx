@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 
 const Home = lazy(() => import("./pages/Home"));
 const DashboardLayout = lazy(() => import("./components/layout/DashboardLayout"));
@@ -17,10 +18,13 @@ const Complaints = lazy(() => import("./pages/student/Complaints"));
 const Notifications = lazy(() => import("./pages/student/Notifications"));
 const Profile = lazy(() => import("./pages/student/Profile"));
 
-const Payments = lazy(() => import("./pages/finance/Payments"));
+const Payments = lazy(() => import("./pages/student/Payments"));
 const Marketplace = lazy(() => import("./pages/marketplace/Marketplace"));
 
 const VendorDashboard = lazy(() => import("./pages/vendor/VendorDashboard"));
+const VendorApplications = lazy(
+  () => import("./pages/vendor/VendorApplications"),
+);
 const FoodItems = lazy(() => import("./pages/vendor/FoodItems"));
 const VendorOrders = lazy(() => import("./pages/vendor/VendorOrders"));
 const VendorPass = lazy(() => import("./pages/vendor/VendorPass"));
@@ -67,51 +71,57 @@ const SubmitComplaint = lazy(
 
 function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<RouteLoading />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Suspense fallback={<RouteLoading />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
 
-          <Route element={<DashboardLayout />}>
-            <Route path="/dashboard" element={<StudentDashboard />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/room" element={<Room />} />
-            <Route path="/complaints" element={<Complaints />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/marketplace" element={<Marketplace />} />
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<StudentDashboard />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/room" element={<Room />} />
+              <Route path="/complaints" element={<Complaints />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/marketplace" element={<Marketplace />} />
 
-            <Route path="/vendor/dashboard" element={<VendorDashboard />} />
-            <Route path="/vendor/food-items" element={<FoodItems />} />
-            <Route path="/vendor/orders" element={<VendorOrders />} />
-            <Route path="/vendor/pass" element={<VendorPass />} />
-            <Route path="/vendor/earnings" element={<VendorEarnings />} />
+              <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+              <Route
+                path="/vendor/applications"
+                element={<VendorApplications />}
+              />
+              <Route path="/vendor/food-items" element={<FoodItems />} />
+              <Route path="/vendor/orders" element={<VendorOrders />} />
+              <Route path="/vendor/pass" element={<VendorPass />} />
+              <Route path="/vendor/earnings" element={<VendorEarnings />} />
 
-            <Route path="/hostel" element={<HostelDashboard />} />
-            <Route path="/hostel/buildings" element={<Buildings />} />
-            <Route path="/hostel/rooms" element={<RoomsBeds />} />
-            <Route path="/hostel/allocations" element={<Allocations />} />
-            <Route path="/hostel/transfers" element={<Transfers />} />
-            <Route path="/hostel/occupancy" element={<Occupancy />} />
+              <Route path="/hostel" element={<HostelDashboard />} />
+              <Route path="/hostel/buildings" element={<Buildings />} />
+              <Route path="/hostel/rooms" element={<RoomsBeds />} />
+              <Route path="/hostel/allocations" element={<Allocations />} />
+              <Route path="/hostel/transfers" element={<Transfers />} />
+              <Route path="/hostel/occupancy" element={<Occupancy />} />
 
-            <Route path="/maintenance" element={<MaintenanceHome />} />
-            <Route
-              path="/maintenance/submit-complaint"
-              element={<SubmitComplaint />}
-            />
+              <Route path="/maintenance" element={<MaintenanceHome />} />
+              <Route
+                path="/maintenance/submit-complaint"
+                element={<SubmitComplaint />}
+              />
 
-            <Route path="/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/utilities" element={<UtilitiesAnalytics />} />
-            <Route path="/monitoring" element={<SmartMonitoring />} />
-            <Route
-              path="/notifications-center"
-              element={<NotificationsCenter />}
-            />
-          </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+              <Route path="/analytics" element={<AnalyticsDashboard />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/utilities" element={<UtilitiesAnalytics />} />
+              <Route path="/monitoring" element={<SmartMonitoring />} />
+              <Route
+                path="/notifications-center"
+                element={<NotificationsCenter />}
+              />
+            </Route>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

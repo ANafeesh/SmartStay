@@ -1,100 +1,112 @@
 
 import { useMemo, useState } from "react";
 import {
-  FileText,
+  FileBarChart,
   Download,
-  CalendarDays,
-  Building2,
-  Wallet,
-  BedDouble,
-  MessageSquareWarning,
-  ShoppingBag,
-  ShieldAlert,
-  Filter,
+  Search,
   RotateCcw,
-  TrendingUp,
+  FileText,
+  CalendarDays,
   CheckCircle2,
-  FileSpreadsheet,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
-
 import Card from "../../components/ui/Card";
-import {
-  overallMonthlyData,
-  blockData,
-} from "../../data/analyticsData";
 
-const REPORT_TYPES = [
+const reportTypes = [
+  "All Reports",
+  "Occupancy Report",
+  "Utility Report",
+  "Food Order Report",
+  "Complaint Report",
+  "Violation Report",
+  "Financial Report",
+];
+
+const sampleReports = [
   {
-    id: "occupancy",
-    label: "Occupancy Report",
-    description: "Bed availability and student occupancy",
-    icon: BedDouble,
+    id: "RPT001",
+    name: "Monthly Occupancy Report",
+    category: "Occupancy Report",
+    period: "September 2026",
+    generatedAt: "2026-09-30",
+    status: "Completed",
+    description: "Hostel capacity, occupied beds and available rooms.",
   },
   {
-    id: "financial",
-    label: "Financial Report",
-    description: "Revenue, expenses and financial trends",
-    icon: Wallet,
+    id: "RPT002",
+    name: "Utility Consumption Report",
+    category: "Utility Report",
+    period: "September 2026",
+    generatedAt: "2026-09-30",
+    status: "Completed",
+    description: "Water and electricity consumption trends.",
   },
   {
-    id: "complaints",
-    label: "Complaint Report",
-    description: "Monthly open-complaint figures",
-    icon: MessageSquareWarning,
+    id: "RPT003",
+    name: "Food Order Summary",
+    category: "Food Order Report",
+    period: "September 2026",
+    generatedAt: "2026-09-29",
+    status: "Completed",
+    description: "Food orders, popular meals and revenue summary.",
   },
   {
-    id: "violations",
-    label: "Violation Report",
-    description: "Hostel rule violation records",
-    icon: ShieldAlert,
+    id: "RPT004",
+    name: "Complaint Summary",
+    category: "Complaint Report",
+    period: "September 2026",
+    generatedAt: "2026-09-28",
+    status: "Pending",
+    description: "Complaint categories, statuses and resolution trends.",
   },
   {
-    id: "food",
-    label: "Food Order Report",
-    description: "Food-order records and trends",
-    icon: ShoppingBag,
+    id: "RPT005",
+    name: "Hostel Violation Summary",
+    category: "Violation Report",
+    period: "September 2026",
+    generatedAt: "2026-09-27",
+    status: "Completed",
+    description: "Violation categories and monthly statistics.",
+  },
+  {
+    id: "RPT006",
+    name: "Payment Collection Summary",
+    category: "Financial Report",
+    period: "September 2026",
+    generatedAt: "2026-09-26",
+    status: "Pending",
+    description: "Payment collection and outstanding balance summary.",
   },
 ];
 
-const formatCurrency = (value) =>
-  new Intl.NumberFormat("en-LK", {
-    style: "currency",
-    currency: "LKR",
-    maximumFractionDigits: 0,
-  }).format(value || 0);
+const formatDate = (date) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat("en-LK").format(value || 0);
+const downloadCSV = (filename, rows) => {
+  if (!rows.length) {
+    window.alert("No report data available to export.");
+    return;
+  }
 
-const getOccupancy = (occupied, totalBeds) =>
-  totalBeds > 0 ? Math.round((occupied / totalBeds) * 100) : 0;
+  const headers = Object.keys(rows[0]);
 
-function downloadCSV(filename, rows) {
-  if (!rows.length) return;
-
-  const csv = rows
-    .map((row) =>
-      row
-        .map((value) => {
-          const text = String(value ?? "");
-          return `"${text.replaceAll('"', '""')}"`;
+  const csv = [
+    headers.join(","),
+    ...rows.map((row) =>
+      headers
+        .map((header) => {
+          const value = String(row[header] ?? "").replace(/"/g, '""');
+          return `"${value}"`;
         })
         .join(","),
-    )
-    .join("\r\n");
+    ),
+  ].join("\n");
 
   const blob = new Blob(["\uFEFF" + csv], {
     type: "text/csv;charset=utf-8;",
@@ -110,361 +122,270 @@ function downloadCSV(filename, rows) {
   link.remove();
 
   URL.revokeObjectURL(url);
-}
+};
 
-function SectionTitle({ icon: Icon, title, description }) {
+const StatusBadge = ({ status }) => {
+  const styles = {
+    Completed: "bg-emerald-50 text-emerald-700",
+    Pending: "bg-amber-50 text-amber-700",
+    Failed: "bg-red-50 text-red-700",
+  };
+
+  const icons = {
+    Completed: CheckCircle2,
+    Pending: Clock,
+    Failed: AlertTriangle,
+  };
+
+  const Icon = icons[status] || Clock;
+
   return (
-    <div className="mb-5 flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-        <Icon size={20} />
-      </div>
-
-      <div>
-        <h2 className="text-base font-bold text-smart-primary">{title}</h2>
-        <p className="mt-1 text-sm text-smart-secondary">{description}</p>
-      </div>
-    </div>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+        styles[status] || "bg-gray-100 text-gray-600"
+      }`}
+    >
+      <Icon size={13} />
+      {status}
+    </span>
   );
-}
-
-function SummaryCard({ icon: Icon, label, value, subtitle }) {
-  return (
-    <Card>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-smart-secondary">{label}</p>
-          <p className="mt-2 break-words text-2xl font-bold tracking-tight text-smart-primary">
-            {value}
-          </p>
-          <p className="mt-2 text-xs text-smart-secondary">{subtitle}</p>
-        </div>
-
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          <Icon size={21} />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function EmptyState({ title, message }) {
-  return (
-    <div className="flex min-h-64 flex-col items-center justify-center px-5 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-        <FileText size={28} />
-      </div>
-
-      <h3 className="font-semibold text-smart-primary">{title}</h3>
-      <p className="mt-2 max-w-md text-sm leading-6 text-smart-secondary">
-        {message}
-      </p>
-    </div>
-  );
-}
+};
 
 export default function Reports() {
-  const [reportType, setReportType] = useState("occupancy");
-  const [dateRange, setDateRange] = useState("6");
-  const [selectedBlock, setSelectedBlock] = useState("All Blocks");
-  const [generated, setGenerated] = useState(false);
+  const [reports, setReports] = useState(sampleReports);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All Reports");
+  const [status, setStatus] = useState("All");
+  const [period, setPeriod] = useState("All");
+  const [generatedReport, setGeneratedReport] = useState(null);
 
-  const supportedReport = ["occupancy", "financial", "complaints"].includes(
-    reportType,
+  const periods = useMemo(
+    () => [...new Set(reports.map((report) => report.period))],
+    [reports],
   );
 
-  const filteredData = useMemo(() => {
-    return overallMonthlyData.slice(-Number(dateRange));
-  }, [dateRange]);
+  const filteredReports = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-  const blockOptions = useMemo(() => Object.keys(blockData || {}), []);
+    return reports.filter((report) => {
+      const matchesSearch =
+        !query ||
+        report.id.toLowerCase().includes(query) ||
+        report.name.toLowerCase().includes(query) ||
+        report.category.toLowerCase().includes(query);
 
-  const occupancyRows = useMemo(() => {
-    return filteredData.map((item) => {
-      let occupied = item.occupied || 0;
-      let totalBeds = item.totalBeds || 0;
-      let students = item.students ?? occupied;
+      const matchesCategory =
+        category === "All Reports" || report.category === category;
 
-      if (selectedBlock !== "All Blocks") {
-        const blockMonth = blockData?.[selectedBlock]?.find(
-          (record) => record.month === item.month,
-        );
+      const matchesStatus = status === "All" || report.status === status;
 
-        occupied = blockMonth?.occupied || 0;
-        totalBeds = blockMonth?.totalBeds || 0;
-        students = blockMonth?.students ?? occupied;
-      }
+      const matchesPeriod = period === "All" || report.period === period;
 
-      return {
-        month: item.month,
-        students,
-        occupied,
-        totalBeds,
-        occupancy: getOccupancy(occupied, totalBeds),
-      };
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesStatus &&
+        matchesPeriod
+      );
     });
-  }, [filteredData, selectedBlock]);
+  }, [reports, search, category, status, period]);
 
-  const financialRows = useMemo(() => {
-    return filteredData.map((item) => {
-      let revenue = item.revenue || 0;
-      let expenses = item.expenses || 0;
+  const completedCount = reports.filter(
+    (report) => report.status === "Completed",
+  ).length;
 
-      if (selectedBlock !== "All Blocks") {
-        const blockMonth = blockData?.[selectedBlock]?.find(
-          (record) => record.month === item.month,
-        );
+  const pendingCount = reports.filter(
+    (report) => report.status === "Pending",
+  ).length;
 
-        revenue = blockMonth?.revenue || 0;
-        expenses = blockMonth?.expenses || 0;
-      }
+  const resetFilters = () => {
+    setSearch("");
+    setCategory("All Reports");
+    setStatus("All");
+    setPeriod("All");
+  };
 
-      return {
-        month: item.month,
-        revenue,
-        expenses,
-        profit: revenue - expenses,
-      };
-    });
-  }, [filteredData, selectedBlock]);
-
-  const complaintRows = useMemo(() => {
-    return filteredData.map((item) => {
-      let complaints = item.openComplaints || 0;
-
-      if (selectedBlock !== "All Blocks") {
-        const blockMonth = blockData?.[selectedBlock]?.find(
-          (record) => record.month === item.month,
-        );
-
-        complaints = blockMonth?.openComplaints || 0;
-      }
-
-      return {
-        month: item.month,
-        complaints,
-      };
-    });
-  }, [filteredData, selectedBlock]);
-
-  const totals = useMemo(() => {
-    const occupiedBeds = occupancyRows.reduce(
-      (sum, item) => sum + item.occupied,
-      0,
-    );
-
-    const totalBeds = occupancyRows.reduce(
-      (sum, item) => sum + item.totalBeds,
-      0,
-    );
-
-    const revenue = financialRows.reduce(
-      (sum, item) => sum + item.revenue,
-      0,
-    );
-
-    const expenses = financialRows.reduce(
-      (sum, item) => sum + item.expenses,
-      0,
-    );
-
-    const complaints = complaintRows.reduce(
-      (sum, item) => sum + item.complaints,
-      0,
-    );
-
-    return {
-      occupiedBeds,
-      totalBeds,
-      occupancy: getOccupancy(occupiedBeds, totalBeds),
-      revenue,
-      expenses,
-      profit: revenue - expenses,
-      complaints,
-    };
-  }, [occupancyRows, financialRows, complaintRows]);
-
-  const activeReport = REPORT_TYPES.find(
-    (report) => report.id === reportType,
-  );
-
-  const reportRows = useMemo(() => {
-    if (!generated || !supportedReport) return [];
-
-    if (reportType === "occupancy") {
-      return [
-        ["Month", "Students", "Occupied Beds", "Total Beds", "Occupancy (%)"],
-        ...occupancyRows.map((item) => [
-          item.month,
-          item.students,
-          item.occupied,
-          item.totalBeds,
-          item.occupancy,
-        ]),
-      ];
-    }
-
-    if (reportType === "financial") {
-      return [
-        ["Month", "Revenue (LKR)", "Expenses (LKR)", "Net Balance (LKR)"],
-        ...financialRows.map((item) => [
-          item.month,
-          item.revenue,
-          item.expenses,
-          item.profit,
-        ]),
-      ];
-    }
-
-    return [
-      ["Month", "Open Complaints"],
-      ...complaintRows.map((item) => [item.month, item.complaints]),
-    ];
-  }, [
-    generated,
-    supportedReport,
-    reportType,
-    occupancyRows,
-    financialRows,
-    complaintRows,
-  ]);
-
-  const handleGenerateReport = () => {
-    if (!supportedReport || filteredData.length === 0) {
-      setGenerated(false);
+  const generateReport = () => {
+    if (category === "All Reports") {
+      window.alert("Please select a specific report type first.");
       return;
     }
 
-    setGenerated(true);
+    const today = new Date();
+    const newReport = {
+      id: `RPT${String(Date.now()).slice(-6)}`,
+      name: category.replace(" Report", "") + " Report",
+      category,
+      period:
+        period !== "All"
+          ? period
+          : today.toLocaleDateString("en-US", {
+              month: "long",
+              year: "numeric",
+            }),
+      generatedAt: today.toISOString().slice(0, 10),
+      status: "Completed",
+      description: `Demonstration ${category.toLowerCase()} entry.`,
+    };
+
+    setReports((previous) => [newReport, ...previous]);
+    setGeneratedReport(newReport);
   };
 
-  const handleExport = () => {
-    if (!generated || !supportedReport || reportRows.length < 2) return;
-
-    const safeType = reportType.replace(/[^a-z0-9]/gi, "-");
-    const safeBlock = selectedBlock.replace(/[^a-z0-9]/gi, "-");
-
+  const exportReports = () => {
     downloadCSV(
-      `smartstay-${safeType}-${safeBlock}.csv`,
-      reportRows,
+      "smartstay-reports.csv",
+      filteredReports.map((report) => ({
+        "Report ID": report.id,
+        "Report Name": report.name,
+        Category: report.category,
+        Period: report.period,
+        "Generated Date": report.generatedAt,
+        Status: report.status,
+        Description: report.description,
+      })),
     );
   };
 
-  const handleReset = () => {
-    setReportType("occupancy");
-    setDateRange("6");
-    setSelectedBlock("All Blocks");
-    setGenerated(false);
-  };
-
-  const updateFilter = (setter) => (event) => {
-    setter(event.target.value);
-    setGenerated(false);
+  const exportSingleReport = (report) => {
+    downloadCSV(`${report.id}.csv`, [
+      {
+        "Report ID": report.id,
+        "Report Name": report.name,
+        Category: report.category,
+        Period: report.period,
+        "Generated Date": report.generatedAt,
+        Status: report.status,
+        Description: report.description,
+      },
+    ]);
   };
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Page header and single export button */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 p-6 text-white shadow-lg sm:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-blue-400/10 blur-2xl" />
-
-        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-blue-100">
-              <FileSpreadsheet size={14} />
-              Smart Monitoring & Analytics
+    <div className="space-y-6 p-4 sm:p-6">
+      {/* Page heading */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-indigo-50 p-3 text-indigo-600">
+              <FileBarChart size={26} />
             </div>
-
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Reports & Insights
-            </h1>
-
-            <p className="mt-3 text-sm leading-6 text-blue-100 sm:text-base">
-              Generate, review and export hostel performance reports from
-              the available analytics data.
-            </p>
-          </div>
-
-          <div className="flex shrink-0 flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              <RotateCcw size={16} />
-              Reset
-            </button>
-
-            <button
-              type="button"
-              onClick={handleExport}
-              disabled={!generated || !supportedReport}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-blue-950 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Download size={17} />
-              Export CSV
-            </button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+                Reports
+              </h1>
+              <p className="mt-1 text-sm text-gray-500">
+                Generate, review and export SmartStay analytics reports.
+              </p>
+            </div>
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={exportReports}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+        >
+          <Download size={17} />
+          Export Reports
+        </button>
       </div>
 
-      {/* Report filters */}
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Reports</p>
+              <h2 className="mt-2 text-3xl font-bold text-gray-900">
+                {reports.length}
+              </h2>
+            </div>
+            <div className="rounded-xl bg-indigo-50 p-3 text-indigo-600">
+              <FileText size={24} />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Completed</p>
+              <h2 className="mt-2 text-3xl font-bold text-emerald-600">
+                {completedCount}
+              </h2>
+            </div>
+            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+              <CheckCircle2 size={24} />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Pending</p>
+              <h2 className="mt-2 text-3xl font-bold text-amber-600">
+                {pendingCount}
+              </h2>
+            </div>
+            <div className="rounded-xl bg-amber-50 p-3 text-amber-600">
+              <Clock size={24} />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Generate report */}
       <Card>
-        <SectionTitle
-          icon={Filter}
-          title="Report configuration"
-          description="Select the report and filters, then generate the results."
-        />
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Generate a Report
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Select a report type to add a demonstration report record.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="mb-2 block text-sm font-semibold text-smart-primary">
-              Report type
-            </label>
-
-            <select
-              value={reportType}
-              onChange={updateFilter(setReportType)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            <label
+              htmlFor="generate-category"
+              className="mb-2 block text-sm font-medium text-gray-700"
             >
-              {REPORT_TYPES.map((report) => (
-                <option key={report.id} value={report.id}>
-                  {report.label}
+              Report Type
+            </label>
+            <select
+              id="generate-category"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            >
+              {reportTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-smart-primary">
-              Reporting period
-            </label>
-
-            <select
-              value={dateRange}
-              onChange={updateFilter(setDateRange)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            <label
+              htmlFor="generate-period"
+              className="mb-2 block text-sm font-medium text-gray-700"
             >
-              <option value="1">Latest month</option>
-              <option value="3">Last 3 months</option>
-              <option value="6">Last 6 months</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-smart-primary">
-              Hostel block
+              Reporting Period
             </label>
-
             <select
-              value={selectedBlock}
-              onChange={updateFilter(setSelectedBlock)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              id="generate-period"
+              value={period}
+              onChange={(event) => setPeriod(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             >
-              <option value="All Blocks">All Blocks</option>
-
-              {blockOptions.map((block) => (
-                <option key={block} value={block}>
-                  {block}
+              <option value="All">Current / all periods</option>
+              {periods.map((item) => (
+                <option key={item} value={item}>
+                  {item}
                 </option>
               ))}
             </select>
@@ -473,329 +394,188 @@ export default function Reports() {
           <div className="flex items-end">
             <button
               type="button"
-              onClick={handleGenerateReport}
-              disabled={!supportedReport || filteredData.length === 0}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={generateReport}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
             >
-              <FileText size={17} />
+              <FileBarChart size={17} />
               Generate Report
             </button>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-4 text-xs text-smart-secondary">
-          <span className="inline-flex items-center gap-1.5">
+        {generatedReport && (
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2 text-emerald-800">
+              <CheckCircle2 size={20} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium">Demo report created successfully</p>
+                <p className="text-sm">
+                  {generatedReport.name} · {generatedReport.id}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => exportSingleReport(generatedReport)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-300 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100"
+            >
+              <Download size={15} />
+              Export this report
+            </button>
+          </div>
+        )}
+      </Card>
+
+      {/* Report records */}
+      <Card>
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Report History
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Search, filter and export available report records.
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="relative">
+            <Search
+              size={17}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search reports..."
+              className="w-full rounded-lg border border-gray-300 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            />
+          </div>
+
+          <select
+            aria-label="Filter report category"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
+          >
+            {reportTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label="Filter report status"
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
+          >
+            <option value="All">All Statuses</option>
+            <option value="Completed">Completed</option>
+            <option value="Pending">Pending</option>
+            <option value="Failed">Failed</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <RotateCcw size={16} />
+            Reset Filters
+          </button>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-gray-500">
+            Showing {filteredReports.length} of {reports.length} reports
+          </p>
+
+          <div className="hidden items-center gap-1 text-xs text-gray-400 sm:flex">
             <CalendarDays size={14} />
-            {filteredData[0]?.month || "—"} –{" "}
-            {filteredData[filteredData.length - 1]?.month || "—"}
-          </span>
+            Report register
+          </div>
+        </div>
 
-          <span className="inline-flex items-center gap-1.5">
-            <Building2 size={14} />
-            {selectedBlock}
-          </span>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[850px] border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50 text-gray-600">
+                <th className="px-4 py-3 font-semibold">Report</th>
+                <th className="px-4 py-3 font-semibold">Category</th>
+                <th className="px-4 py-3 font-semibold">Period</th>
+                <th className="px-4 py-3 font-semibold">Generated Date</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Action</th>
+              </tr>
+            </thead>
 
-          {generated && supportedReport && (
-            <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600">
-              <CheckCircle2 size={14} />
-              Report generated successfully
-            </span>
-          )}
+            <tbody>
+              {filteredReports.length > 0 ? (
+                filteredReports.map((report) => (
+                  <tr
+                    key={report.id}
+                    className="border-b border-gray-100 transition hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-4">
+                      <div className="font-medium text-gray-900">
+                        {report.name}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-400">
+                        {report.id}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 text-gray-600">
+                      {report.category}
+                    </td>
+
+                    <td className="px-4 py-4 text-gray-600">
+                      {report.period}
+                    </td>
+
+                    <td className="px-4 py-4 text-gray-600">
+                      {formatDate(report.generatedAt)}
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <StatusBadge status={report.status} />
+                    </td>
+
+                    <td className="px-4 py-4">
+                      <button
+                        type="button"
+                        onClick={() => exportSingleReport(report)}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                      >
+                        <Download size={14} />
+                        Export
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-12 text-center text-gray-500"
+                  >
+                    No reports match your search or filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </Card>
 
-      {/* Results appear after clicking Generate Report */}
-      {!generated && (
-        <Card>
-          <EmptyState
-            title="Ready to generate your report"
-            message="Choose your report type, date range and hostel block above. Click Generate Report to display the results."
-          />
-        </Card>
-      )}
-
-      {generated && !supportedReport && (
-        <Card>
-          <EmptyState
-            title={
-              reportType === "food"
-                ? "Food order data is not connected"
-                : "Violation data is not connected"
-            }
-            message="This report needs its own food-order or violation dataset. Select Occupancy, Financial or Complaint Report to generate a report from the currently available sample data."
-          />
-        </Card>
-      )}
-
-      {generated && supportedReport && (
-        <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {reportType === "occupancy" && (
-              <>
-                <SummaryCard
-                  icon={BedDouble}
-                  label="Occupied beds"
-                  value={formatNumber(totals.occupiedBeds)}
-                  subtitle="Total across selected months"
-                />
-
-                <SummaryCard
-                  icon={Building2}
-                  label="Bed capacity"
-                  value={formatNumber(totals.totalBeds)}
-                  subtitle="Sum of monthly capacity"
-                />
-
-                <SummaryCard
-                  icon={TrendingUp}
-                  label="Average occupancy"
-                  value={`${totals.occupancy}%`}
-                  subtitle="Weighted occupancy"
-                />
-
-                <SummaryCard
-                  icon={MessageSquareWarning}
-                  label="Open complaints"
-                  value={formatNumber(totals.complaints)}
-                  subtitle="Monthly figures summed"
-                />
-              </>
-            )}
-
-            {reportType === "financial" && (
-              <>
-                <SummaryCard
-                  icon={Wallet}
-                  label="Total revenue"
-                  value={formatCurrency(totals.revenue)}
-                  subtitle="Selected reporting period"
-                />
-
-                <SummaryCard
-                  icon={TrendingUp}
-                  label="Total expenses"
-                  value={formatCurrency(totals.expenses)}
-                  subtitle="Selected reporting period"
-                />
-
-                <SummaryCard
-                  icon={CheckCircle2}
-                  label="Net balance"
-                  value={formatCurrency(totals.profit)}
-                  subtitle="Revenue minus expenses"
-                />
-
-                <SummaryCard
-                  icon={CalendarDays}
-                  label="Reporting months"
-                  value={filteredData.length}
-                  subtitle="Months in this report"
-                />
-              </>
-            )}
-
-            {reportType === "complaints" && (
-              <>
-                <SummaryCard
-                  icon={MessageSquareWarning}
-                  label="Open complaints"
-                  value={formatNumber(totals.complaints)}
-                  subtitle="Sum of monthly figures"
-                />
-
-                <SummaryCard
-                  icon={CalendarDays}
-                  label="Reporting months"
-                  value={filteredData.length}
-                  subtitle="Months in this report"
-                />
-
-                <SummaryCard
-                  icon={Building2}
-                  label="Report scope"
-                  value={selectedBlock}
-                  subtitle="Selected hostel block"
-                />
-
-                <SummaryCard
-                  icon={FileSpreadsheet}
-                  label="Export format"
-                  value="CSV"
-                  subtitle="Spreadsheet-compatible file"
-                />
-              </>
-            )}
-          </div>
-
-          {/* One report chart */}
-          <Card>
-            <SectionTitle
-              icon={activeReport?.icon || FileText}
-              title={activeReport?.label || "Report"}
-              description={activeReport?.description || ""}
-            />
-
-            {reportType === "occupancy" && (
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={occupancyRows}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar
-                      dataKey="occupied"
-                      name="Occupied beds"
-                      fill="#2563eb"
-                      radius={[5, 5, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="totalBeds"
-                      name="Total beds"
-                      fill="#cbd5e1"
-                      radius={[5, 5, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {reportType === "financial" && (
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={financialRows}
-                    margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                    <YAxis
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) =>
-                        value >= 1000000
-                          ? `${(value / 1000000).toFixed(1)}M`
-                          : value >= 1000
-                            ? `${(value / 1000).toFixed(0)}k`
-                            : value
-                      }
-                    />
-                    <Tooltip
-                      formatter={(value) => formatCurrency(Number(value))}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="revenue"
-                      name="Revenue"
-                      stroke="#2563eb"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="expenses"
-                      name="Expenses"
-                      stroke="#f97316"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="profit"
-                      name="Net balance"
-                      stroke="#16a34a"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {reportType === "complaints" && (
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={complaintRows}
-                    margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="complaints"
-                      name="Open complaints"
-                      stroke="#ea580c"
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </Card>
-
-          {/* Report table */}
-          <Card>
-            <div className="mb-5">
-              <h2 className="text-base font-bold text-smart-primary">
-                Report data
-              </h2>
-              <p className="mt-1 text-sm text-smart-secondary">
-                Review the data included in your report.
-              </p>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px] border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-y border-slate-100 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                    {reportRows[0]?.map((heading) => (
-                      <th key={heading} className="px-4 py-3 font-semibold">
-                        {heading}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {reportRows.slice(1).map((row, rowIndex) => (
-                    <tr
-                      key={`${row[0]}-${rowIndex}`}
-                      className="border-b border-slate-100 transition hover:bg-slate-50/70"
-                    >
-                      {row.map((value, cellIndex) => {
-                        const isMoney =
-                          reportType === "financial" && cellIndex > 0;
-
-                        return (
-                          <td
-                            key={`${cellIndex}-${String(value)}`}
-                            className="px-4 py-4 text-smart-primary"
-                          >
-                            {isMoney
-                              ? formatCurrency(Number(value))
-                              : value}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </>
-      )}
+      <p className="text-xs leading-5 text-gray-400">
+        Demo mode: report records and report generation are currently managed
+        in frontend state using sample data. Connect these actions to your
+        agreed report API before treating them as permanent or live reports.
+      </p>
     </div>
   );
 }

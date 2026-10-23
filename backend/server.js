@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -23,6 +24,9 @@ app.use(cors());
 app.use(express.json());
 
 // Existing API routes
+app.use(cors());
+app.use(express.json());
+
 app.use("/api/bills", billRoutes);
 app.use("/api/buildings", buildingRoutes);
 app.use("/api/rooms", roomRoutes);
@@ -54,6 +58,8 @@ app.use((req, res) => {
 connectDB();
 
 // Start server
+connectDB();
+
 app.listen(PORT, () => {
   console.log(`SmartStay backend running on port ${PORT}`);
 });
