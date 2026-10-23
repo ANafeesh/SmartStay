@@ -13,10 +13,17 @@ const roomRoutes = require("./routes/roomRoutes");
 const bedRoutes = require("./routes/bedRoutes");
 const allocationRoutes = require("./routes/allocationRoutes");
 const transferRoutes = require("./routes/transferRoutes");
+const monitoringRoutes = require("./routes/monitoringRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Existing API routes
 app.use(cors());
 app.use(express.json());
 
@@ -27,6 +34,11 @@ app.use("/api/beds", bedRoutes);
 app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
 
+// Your Module 5: Monitoring and Analytics APIs
+app.use("/api/monitoring", monitoringRoutes);
+app.use("/api/analytics", analyticsRoutes);
+
+// Home route
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
@@ -34,6 +46,7 @@ app.get("/", (req, res) => {
   });
 });
 
+// Handle unknown routes
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -41,6 +54,10 @@ app.use((req, res) => {
   });
 });
 
+// Connect to MongoDB
+connectDB();
+
+// Start server
 connectDB();
 
 app.listen(PORT, () => {
