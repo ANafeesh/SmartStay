@@ -8,6 +8,7 @@ const roomRoutes = require("./routes/roomRoutes");
 const bedRoutes = require("./routes/bedRoutes");
 const allocationRoutes = require("./routes/allocationRoutes");
 const transferRoutes = require("./routes/transferRoutes");
+const monitoringRoutes = require("./routes/monitoringRoutes");
 dotenv.config();
 
 const app = express();
@@ -26,7 +27,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/beds", bedRoutes);
 app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
-
+app.use("/api/monitoring", monitoringRoutes);
 
 // Test route
 app.get("/", (req, res) => {
