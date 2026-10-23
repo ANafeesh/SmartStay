@@ -4,7 +4,9 @@ const Allocation = require("../models/Allocation");
 const Room = require("../models/Room");
 const Bed = require("../models/Bed");
 
-// GET /api/allocations
+const ACTIVE_STATUSES = ["Active", "Pending"];
+
+// GET: Get all allocations
 const getAllocations = async (req, res) => {
   try {
     const allocations = await Allocation.find()
@@ -15,23 +17,33 @@ const getAllocations = async (req, res) => {
       .populate("bedId")
       .sort({ createdAt: -1 });
 
-    res.status(200).json(allocations);
+    return res.status(200).json({
+      success: true,
+      count: allocations.length,
+      data: allocations,
+    });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get allocations error:", error.message);
+    return res.status(500).json({
+      success: false,
       message: "Failed to retrieve allocations",
-      error: error.message,
     });
   }
 };
 
-// GET /api/allocations/:id
+// GET: Get allocation by ID
 const getAllocationById = async (req, res) => {
   try {
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid allocation ID" });
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid allocation ID",
+      });
     }
 
-    const allocation = await Allocation.findById(req.params.id)
+    const allocation = await Allocation.findById(id)
       .populate({
         path: "roomId",
         populate: { path: "buildingId" },
@@ -39,19 +51,26 @@ const getAllocationById = async (req, res) => {
       .populate("bedId");
 
     if (!allocation) {
-      return res.status(404).json({ message: "Allocation not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Allocation not found",
+      });
     }
 
-    res.status(200).json(allocation);
+    return res.status(200).json({
+      success: true,
+      data: allocation,
+    });
   } catch (error) {
-    res.status(500).json({
+    console.error("Get allocation error:", error.message);
+    return res.status(500).json({
+      success: false,
       message: "Failed to retrieve allocation",
-      error: error.message,
     });
   }
 };
 
-// POST /api/allocations
+// POST: Create a new allocation
 const createAllocation = async (req, res) => {
   try {
     const {
@@ -67,8 +86,16 @@ const createAllocation = async (req, res) => {
 
     const registrationId = studentRegistrationId || studentId;
 
-    if (!registrationId || !studentName || !roomId || !bedId) {
+    if (
+      typeof registrationId !== "string" ||
+      !registrationId.trim() ||
+      typeof studentName !== "string" ||
+      !studentName.trim() ||
+      !roomId ||
+      !bedId
+    ) {
       return res.status(400).json({
+        success: false,
         message:
           "Student registration ID, student name, room ID, and bed ID are required",
       });
@@ -79,13 +106,15 @@ const createAllocation = async (req, res) => {
       !mongoose.isValidObjectId(bedId)
     ) {
       return res.status(400).json({
+        success: false,
         message: "Invalid room ID or bed ID",
       });
     }
 
-    if (!["Active", "Pending"].includes(status)) {
+    if (!ACTIVE_STATUSES.includes(status)) {
       return res.status(400).json({
-        message: "New allocation status must be Active or Pending",
+        success: false,
+        message: "Status must be Active or Pending",
       });
     }
 
@@ -94,6 +123,7 @@ const createAllocation = async (req, res) => {
       Number.isNaN(Date.parse(allocationDate))
     ) {
       return res.status(400).json({
+        success: false,
         message: "Invalid allocation date",
       });
     }
@@ -105,6 +135,7 @@ const createAllocation = async (req, res) => {
 
     if (!room) {
       return res.status(404).json({
+        success: false,
         message: "Active room not found",
       });
     }
@@ -117,41 +148,46 @@ const createAllocation = async (req, res) => {
 
     if (!bed) {
       return res.status(404).json({
+        success: false,
         message: "Active bed not found in the selected room",
       });
     }
 
     if (bed.status !== "Available") {
       return res.status(409).json({
+        success: false,
         message: "This bed is not available",
       });
     }
 
-    const existingStudentAllocation = await Allocation.findOne({
+    const existingStudent = await Allocation.findOne({
       studentRegistrationId: registrationId.trim(),
-      status: { $in: ["Active", "Pending"] },
+      status: { $in: ACTIVE_STATUSES },
     });
 
-    if (existingStudentAllocation) {
+    if (existingStudent) {
       return res.status(409).json({
-        message: "This student already has an active or pending allocation",
+        success: false,
+        message:
+          "Student already has an active or pending allocation",
       });
     }
 
-    const existingBedAllocation = await Allocation.findOne({
+    const existingBed = await Allocation.findOne({
       bedId,
-      status: { $in: ["Active", "Pending"] },
+      status: { $in: ACTIVE_STATUSES },
     });
 
-    if (existingBedAllocation) {
+    if (existingBed) {
       return res.status(409).json({
+        success: false,
         message: "This bed is already allocated or reserved",
       });
     }
 
     const allocation = await Allocation.create({
       studentRegistrationId: registrationId.trim(),
-      studentName,
+      studentName: studentName.trim(),
       roomId,
       bedId,
       allocationDate: allocationDate || Date.now(),
@@ -159,7 +195,6 @@ const createAllocation = async (req, res) => {
       notes,
     });
 
-    // Active and Pending allocations both reserve the bed.
     bed.status = "Occupied";
     await bed.save();
 
@@ -170,33 +205,278 @@ const createAllocation = async (req, res) => {
       })
       .populate("bedId");
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "Allocation created successfully",
-      allocation: result,
+      data: result,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Create allocation error:", error.message);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
       message: "Failed to create allocation",
-      error: error.message,
     });
   }
 };
 
-// PATCH /api/allocations/:id/checkout
-const checkoutAllocation = async (req, res) => {
+// PUT: Update an allocation
+const updateAllocation = async (req, res) => {
   try {
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid allocation ID" });
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid allocation ID",
+      });
     }
 
-    const allocation = await Allocation.findById(req.params.id);
+    const allocation = await Allocation.findById(id);
 
     if (!allocation) {
-      return res.status(404).json({ message: "Allocation not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Allocation not found",
+      });
+    }
+
+    const {
+      studentRegistrationId,
+      studentName,
+      roomId,
+      bedId,
+      allocationDate,
+      status,
+      notes,
+    } = req.body;
+
+    const registrationId =
+      studentRegistrationId ?? allocation.studentRegistrationId;
+    const nextStudentName = studentName ?? allocation.studentName;
+    const nextRoomId = roomId ?? allocation.roomId.toString();
+    const nextBedId = bedId ?? allocation.bedId.toString();
+    const nextStatus = status ?? allocation.status;
+
+    if (
+      typeof registrationId !== "string" ||
+      !registrationId.trim() ||
+      typeof nextStudentName !== "string" ||
+      !nextStudentName.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid student registration ID and name are required",
+      });
+    }
+
+    if (
+      !mongoose.isValidObjectId(nextRoomId) ||
+      !mongoose.isValidObjectId(nextBedId)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid room ID or bed ID",
+      });
+    }
+
+    if (!["Active", "Pending", "Checked Out"].includes(nextStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid allocation status",
+      });
+    }
+
+    if (
+      allocationDate !== undefined &&
+      Number.isNaN(Date.parse(allocationDate))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid allocation date",
+      });
+    }
+
+    const reservesBed = ACTIVE_STATUSES.includes(nextStatus);
+
+    // Prevent duplicate active/pending allocations for a student.
+    if (reservesBed) {
+      const duplicateStudent = await Allocation.findOne({
+        _id: { $ne: allocation._id },
+        studentRegistrationId: registrationId.trim(),
+        status: { $in: ACTIVE_STATUSES },
+      });
+
+      if (duplicateStudent) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "Student already has an active or pending allocation",
+        });
+      }
+    }
+
+    const room = await Room.findOne({
+      _id: nextRoomId,
+      isActive: true,
+    });
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Active room not found",
+      });
+    }
+
+    const bed = await Bed.findOne({
+      _id: nextBedId,
+      roomId: nextRoomId,
+      isActive: true,
+    });
+
+    if (!bed) {
+      return res.status(404).json({
+        success: false,
+        message: "Active bed not found in the selected room",
+      });
+    }
+
+    const oldBedId = allocation.bedId.toString();
+    const newBedId = bed._id.toString();
+
+    if (reservesBed) {
+      if (newBedId !== oldBedId && bed.status !== "Available") {
+        return res.status(409).json({
+          success: false,
+          message: "Selected bed is not available",
+        });
+      }
+
+      const duplicateBed = await Allocation.findOne({
+        _id: { $ne: allocation._id },
+        bedId: bed._id,
+        status: { $in: ACTIVE_STATUSES },
+      });
+
+      if (duplicateBed) {
+        return res.status(409).json({
+          success: false,
+          message: "This bed is already allocated or reserved",
+        });
+      }
+    }
+
+    allocation.studentRegistrationId = registrationId.trim();
+    allocation.studentName = nextStudentName.trim();
+    allocation.roomId = room._id;
+    allocation.bedId = bed._id;
+    allocation.status = nextStatus;
+
+    if (allocationDate !== undefined) {
+      allocation.allocationDate = allocationDate;
+    }
+
+    if (notes !== undefined) {
+      allocation.notes = notes;
+    }
+
+    await allocation.save();
+
+    // Release the old bed when moved or checked out.
+    if (oldBedId !== newBedId || !reservesBed) {
+      const oldBed = await Bed.findById(oldBedId);
+
+      if (oldBed) {
+        const oldBedReserved = await Allocation.exists({
+          _id: { $ne: allocation._id },
+          bedId: oldBed._id,
+          status: { $in: ACTIVE_STATUSES },
+        });
+
+        if (!oldBedReserved) {
+          oldBed.status = "Available";
+          await oldBed.save();
+        }
+      }
+    }
+
+    // Synchronize the new bed status.
+    if (reservesBed) {
+      bed.status = "Occupied";
+      await bed.save();
+    } else {
+      const bedReserved = await Allocation.exists({
+        _id: { $ne: allocation._id },
+        bedId: bed._id,
+        status: { $in: ACTIVE_STATUSES },
+      });
+
+      if (!bedReserved) {
+        bed.status = "Available";
+        await bed.save();
+      }
+    }
+
+    const result = await Allocation.findById(id)
+      .populate({
+        path: "roomId",
+        populate: { path: "buildingId" },
+      })
+      .populate("bedId");
+
+    return res.status(200).json({
+      success: true,
+      message: "Allocation updated successfully",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Update allocation error:", error.message);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update allocation",
+    });
+  }
+};
+
+// PATCH: Check out a student
+const checkoutAllocation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid allocation ID",
+      });
+    }
+
+    const allocation = await Allocation.findById(id);
+
+    if (!allocation) {
+      return res.status(404).json({
+        success: false,
+        message: "Allocation not found",
+      });
     }
 
     if (allocation.status !== "Active") {
       return res.status(400).json({
+        success: false,
         message: "Only active allocations can be checked out",
       });
     }
@@ -204,34 +484,39 @@ const checkoutAllocation = async (req, res) => {
     allocation.status = "Checked Out";
     await allocation.save();
 
-    // Release the bed only if no other active/pending allocation uses it.
     const otherAllocation = await Allocation.findOne({
       _id: { $ne: allocation._id },
       bedId: allocation.bedId,
-      status: { $in: ["Active", "Pending"] },
+      status: { $in: ACTIVE_STATUSES },
     });
 
     if (!otherAllocation) {
-      await Bed.findByIdAndUpdate(allocation.bedId, {
-        status: "Available",
-      });
+      const bed = await Bed.findById(allocation.bedId);
+
+      if (bed) {
+        bed.status = "Available";
+        await bed.save();
+      }
     }
 
-    const result = await Allocation.findById(allocation._id)
+    const result = await Allocation.findById(id)
       .populate({
         path: "roomId",
         populate: { path: "buildingId" },
       })
       .populate("bedId");
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: "Student checked out successfully",
-      allocation: result,
+      data: result,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Checkout allocation error:", error.message);
+
+    return res.status(500).json({
+      success: false,
       message: "Failed to check out student",
-      error: error.message,
     });
   }
 };
@@ -240,5 +525,6 @@ module.exports = {
   getAllocations,
   getAllocationById,
   createAllocation,
+  updateAllocation,
   checkoutAllocation,
 };
