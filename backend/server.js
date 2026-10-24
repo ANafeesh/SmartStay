@@ -8,6 +8,14 @@ dotenv.config();
 const connectDB = require("./config/db");
 
 const billRoutes = require("./routes/billRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const receiptRoutes = require("./routes/receiptRoutes");
+const paymentNotificationRoutes = require("./routes/paymentNotificationRoutes");
+const vendorRoutes = require("./routes/vendorRoutes");
+const menuRoutes = require("./routes/menuRoutes");
+const foodOrderRoutes = require("./routes/foodOrderRoutes");
+const deliverySlotRoutes = require("./routes/deliverySlotRoutes");
+const vendorPassRoutes = require("./routes/vendorPassRoutes");
 const buildingRoutes = require("./routes/buildingRoutes");
 const roomRoutes = require("./routes/roomRoutes");
 const bedRoutes = require("./routes/bedRoutes");
@@ -19,15 +27,18 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Existing API routes
 app.use(cors());
 app.use(express.json());
 
 app.use("/api/bills", billRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/receipts", receiptRoutes);
+app.use("/api/payment-notifications", paymentNotificationRoutes);
+app.use("/api/vendors", vendorRoutes);
+app.use("/api/menus", menuRoutes);
+app.use("/api/food-orders", foodOrderRoutes);
+app.use("/api/delivery-slots", deliverySlotRoutes);
+app.use("/api/vendor-passes", vendorPassRoutes);
 app.use("/api/buildings", buildingRoutes);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/beds", bedRoutes);
@@ -54,10 +65,6 @@ app.use((req, res) => {
   });
 });
 
-// Connect to MongoDB
-connectDB();
-
-// Start server
 connectDB();
 
 app.listen(PORT, () => {
