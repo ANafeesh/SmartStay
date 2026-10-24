@@ -1,11 +1,14 @@
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   ArrowDownRight,
   ArrowUpRight,
   BedDouble,
+  Building2,
+  CalendarDays,
   CheckCircle2,
+  CircleDollarSign,
   Download,
   Filter,
   MessageSquareWarning,
@@ -13,9 +16,9 @@ import {
   TrendingUp,
   Users,
   Wallet,
-  CalendarDays,
-  Building2,
-  CircleDollarSign,
+  Droplets,
+  Zap,
+  RefreshCw,
 } from "lucide-react";
 
 import {
@@ -35,12 +38,16 @@ import {
 } from "recharts";
 
 import Card from "../../components/ui/Card";
-
 import {
   overallMonthlyData,
   blockData,
   recentActivity,
 } from "../../data/analyticsData";
+
+import {
+  getMonitoringSummary,
+  getBlockSummary,
+} from "../../services/analyticsApi";
 
 const COLORS = [
   "#2563eb",
@@ -78,10 +85,155 @@ const formatShortCurrency = (value) => {
 const getPercentage = (value, total) =>
   total > 0 ? (value / total) * 100 : 0;
 
+function CurrencyTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+      <p className="mb-2 text-sm font-bold text-slate-800">{label}</p>
+
+      {payload.map((entry) => (
+        <div
+          key={entry.dataKey}
+          className="flex items-center justify-between gap-5 py-1 text-sm"
+        >
+          <span className="text-slate-500">{entry.name}</span>
+          <span className="font-semibold text-slate-800">
+            {formatCurrency(entry.value)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  iconStyle,
+  trend,
+}) {
+  return (
+    <Card>
+      <div className="flex h-full items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-smart-secondary">{title}</p>
+
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-smart-primary sm:text-3xl">
+            {value}
+          </h2>
+
+          <p className="mt-2 text-xs text-smart-secondary">{subtitle}</p>
+
+          {trend !== undefined && (
+            <div
+              className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
+                trend >= 0
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-rose-50 text-rose-700"
+              }`}
+            >
+              {trend >= 0 ? (
+                <ArrowUpRight size={14} />
+              ) : (
+                <ArrowDownRight size={14} />
+              )}
+              {Math.abs(trend).toFixed(1)}% vs first month
+            </div>
+          )}
+        </div>
+
+        <div
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconStyle}`}
+        >
+          <Icon size={23} />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function AnalyticsDashboard() {
   const [dateRange, setDateRange] = useState("6months");
   const [selectedBlock, setSelectedBlock] = useState("All");
 
+  // Backend monitoring data
+  const [monitoringSummary, setMonitoringSummary] = useState([]);
+  const [blockSummary, setBlockSummary] = useState([]);
+  const [monitoringLoading, setMonitoringLoading] = useState(true);
+  const [monitoringError, setMonitoringError] = useState("");
+
+  async function loadMonitoringData() {
+    try {
+      setMonitoringLoading(true);
+      setMonitoringError("");
+
+      const [summaryResponse, blocksResponse] = await Promise.all([
+        getMonitoringSummary(),
+        getBlockSummary(),
+      ]);
+
+      setMonitoringSummary(
+        Array.isArray(summaryResponse.data) ? summaryResponse.data : []
+      );
+
+      setBlockSummary(
+        Array.isArray(blocksResponse.data) ? blocksResponse.data : []
+      );
+    } catch (error) {
+      setMonitoringError(
+        error.message || "Unable to load utility monitoring data."
+      );
+    } finally {
+      setMonitoringLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      try {
+        setMonitoringLoading(true);
+        setMonitoringError("");
+
+        const [summaryResponse, blocksResponse] = await Promise.all([
+          getMonitoringSummary(),
+          getBlockSummary(),
+        ]);
+
+        if (cancelled) return;
+
+        setMonitoringSummary(
+          Array.isArray(summaryResponse.data) ? summaryResponse.data : []
+        );
+
+        setBlockSummary(
+          Array.isArray(blocksResponse.data) ? blocksResponse.data : []
+        );
+      } catch (error) {
+        if (!cancelled) {
+          setMonitoringError(
+            error.message || "Unable to load utility monitoring data."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setMonitoringLoading(false);
+        }
+      }
+    }
+
+    loadData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Existing dashboard sample data and filters
   const sourceData = useMemo(() => {
     if (selectedBlock === "All") {
       return overallMonthlyData;
@@ -92,8 +244,7 @@ function AnalyticsDashboard() {
 
   const filteredMonthlyData = useMemo(() => {
     const selectedPeriod =
-      PERIODS.find((period) => period.value === dateRange) ||
-      PERIODS[2];
+      PERIODS.find((period) => period.value === dateRange) || PERIODS[2];
 
     return sourceData.slice(-selectedPeriod.count);
   }, [sourceData, dateRange]);
@@ -135,8 +286,7 @@ function AnalyticsDashboard() {
     );
 
     const averageStudents =
-      data.reduce((sum, item) => sum + item.students, 0) /
-      data.length;
+      data.reduce((sum, item) => sum + item.students, 0) / data.length;
 
     const totalOpenComplaints = data.reduce(
       (sum, item) => sum + item.openComplaints,
@@ -181,11 +331,9 @@ function AnalyticsDashboard() {
     const totals = {};
 
     filteredMonthlyData.forEach((item) => {
-      Object.entries(item.complaints || {}).forEach(
-        ([category, count]) => {
-          totals[category] = (totals[category] || 0) + count;
-        }
-      );
+      Object.entries(item.complaints || {}).forEach(([category, count]) => {
+        totals[category] = (totals[category] || 0) + count;
+      });
     });
 
     return Object.entries(totals)
@@ -220,20 +368,18 @@ function AnalyticsDashboard() {
   }, [selectedBlock]);
 
   const totalProfit = summary.totalRevenue - summary.totalExpenses;
+
   const profitMargin = getPercentage(
     totalProfit,
     summary.totalRevenue
   );
 
   const firstMonth = filteredMonthlyData[0];
-  const lastMonth =
-    filteredMonthlyData[filteredMonthlyData.length - 1];
+  const lastMonth = filteredMonthlyData[filteredMonthlyData.length - 1];
 
   const revenueChange =
     firstMonth && lastMonth && firstMonth.revenue > 0
-      ? ((lastMonth.revenue - firstMonth.revenue) /
-          firstMonth.revenue) *
-        100
+      ? ((lastMonth.revenue - firstMonth.revenue) / firstMonth.revenue) * 100
       : 0;
 
   function resetFilters() {
@@ -274,8 +420,7 @@ function AnalyticsDashboard() {
       .map((row) =>
         row
           .map(
-            (value) =>
-              `"${String(value ?? "").replaceAll('"', '""')}"`
+            (value) => `"${String(value ?? "").replaceAll('"', '""')}"`
           )
           .join(",")
       )
@@ -299,103 +444,25 @@ function AnalyticsDashboard() {
     URL.revokeObjectURL(url);
   }
 
-  function CurrencyTooltip({ active, payload, label }) {
-    if (!active || !payload?.length) return null;
-
-    return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-        <p className="mb-2 text-sm font-bold text-slate-800">
-          {label}
-        </p>
-
-        {payload.map((entry) => (
-          <div
-            key={entry.dataKey}
-            className="flex items-center justify-between gap-5 py-1 text-sm"
-          >
-            <span className="text-slate-500">{entry.name}</span>
-            <span className="font-semibold text-slate-800">
-              {formatCurrency(entry.value)}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  function MetricCard({
-    title,
-    value,
-    subtitle,
-    icon: Icon,
-    iconStyle,
-    trend,
-  }) {
-    return (
-      <Card>
-        <div className="flex h-full items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-smart-secondary">
-              {title}
-            </p>
-
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-smart-primary sm:text-3xl">
-              {value}
-            </h2>
-
-            <p className="mt-2 text-xs text-smart-secondary">
-              {subtitle}
-            </p>
-
-            {trend !== undefined && (
-              <div
-                className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
-                  trend >= 0
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-rose-50 text-rose-700"
-                }`}
-              >
-                {trend >= 0 ? (
-                  <ArrowUpRight size={14} />
-                ) : (
-                  <ArrowDownRight size={14} />
-                )}
-                {Math.abs(trend).toFixed(1)}% vs first month
-              </div>
-            )}
-          </div>
-
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconStyle}`}
-          >
-            <Icon size={23} />
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
   const chartHeading =
     selectedBlock === "All" ? "All hostel blocks" : selectedBlock;
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-10">
-      {/* Page heading */}
+      {/* Dashboard heading */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 p-6 text-white shadow-lg sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-blue-400/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 right-1/3 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
 
         <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div>
-        
-
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
               Smart Analytics
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-blue-100 sm:text-base">
-              Understand hostel occupancy, financial performance,
-              and service issues from one clear dashboard.
+              Understand hostel occupancy, financial performance, utility
+              usage, and service issues from one clear dashboard.
             </p>
           </div>
 
@@ -424,15 +491,19 @@ function AnalyticsDashboard() {
             {filteredMonthlyData.length} month
             {filteredMonthlyData.length === 1 ? "" : "s"} selected
           </span>
+
           <span className="text-blue-200/60">•</span>
+
           <span className="inline-flex items-center gap-2">
             <Building2 size={14} />
             {selectedBlock === "All" ? "All blocks" : selectedBlock}
           </span>
+
           <span className="text-blue-200/60">•</span>
+
           <span className="inline-flex items-center gap-2">
             <CheckCircle2 size={14} />
-            Sample dashboard data
+            Utility data from backend
           </span>
         </div>
       </section>
@@ -443,10 +514,9 @@ function AnalyticsDashboard() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
             <Filter size={17} />
           </div>
+
           <div>
-            <h2 className="font-bold text-smart-primary">
-              Dashboard filters
-            </h2>
+            <h2 className="font-bold text-smart-primary">Dashboard filters</h2>
             <p className="text-xs text-smart-secondary">
               Choose the reporting period and hostel block
             </p>
@@ -458,6 +528,7 @@ function AnalyticsDashboard() {
             <span className="mb-2 block text-sm font-semibold text-smart-primary">
               Reporting period
             </span>
+
             <select
               value={dateRange}
               onChange={(event) => setDateRange(event.target.value)}
@@ -475,6 +546,7 @@ function AnalyticsDashboard() {
             <span className="mb-2 block text-sm font-semibold text-smart-primary">
               Hostel block
             </span>
+
             <select
               value={selectedBlock}
               onChange={(event) => setSelectedBlock(event.target.value)}
@@ -490,7 +562,7 @@ function AnalyticsDashboard() {
         </div>
       </Card>
 
-      {/* KPI cards */}
+      {/* Performance overview */}
       <section>
         <div className="mb-4">
           <h2 className="text-lg font-bold text-smart-primary">
@@ -537,6 +609,239 @@ function AnalyticsDashboard() {
         </div>
       </section>
 
+      {/* Backend utility monitoring */}
+      <section>
+        <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-lg font-bold text-smart-primary">
+              Utility monitoring
+            </h2>
+            <p className="mt-1 text-sm text-smart-secondary">
+              Water and electricity readings received from the backend.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={loadMonitoringData}
+            disabled={monitoringLoading}
+            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:self-auto"
+          >
+            <RefreshCw
+              size={16}
+              className={monitoringLoading ? "animate-spin" : ""}
+            />
+            Refresh data
+          </button>
+        </div>
+
+        {monitoringLoading ? (
+          <Card>
+            <div className="flex items-center gap-3 py-4 text-sm text-slate-500">
+              <RefreshCw size={18} className="animate-spin" />
+              Loading utility readings...
+            </div>
+          </Card>
+        ) : monitoringError ? (
+          <Card>
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-rose-50 p-3 text-rose-600">
+                <Activity size={20} />
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-rose-700">
+                  Unable to load monitoring data
+                </h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  {monitoringError}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">
+                  Check that the backend is running and the analytics API
+                  routes are available.
+                </p>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {["Water", "Electricity"].map((type) => {
+              const item = monitoringSummary.find(
+                (reading) => reading.utilityType === type
+              );
+
+              const value = Number(item?.total ?? 0);
+              const unit = item?.unit ?? (type === "Water" ? "L" : "kWh");
+              const percentage = Number(item?.percentage ?? 0);
+              const status = item?.status ?? "No data";
+
+              const statusClass =
+                status === "Exceeded"
+                  ? "bg-rose-100 text-rose-700"
+                  : status === "Warning"
+                    ? "bg-amber-100 text-amber-700"
+                    : status === "Normal"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-slate-100 text-slate-600";
+
+              const progressClass =
+                status === "Exceeded"
+                  ? "bg-rose-500"
+                  : status === "Warning"
+                    ? "bg-amber-500"
+                    : "bg-emerald-500";
+
+              return (
+                <Card key={type}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                          type === "Water"
+                            ? "bg-cyan-50 text-cyan-700"
+                            : "bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {type === "Water" ? (
+                          <Droplets size={22} />
+                        ) : (
+                          <Zap size={22} />
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-medium text-smart-secondary">
+                          {type} usage today
+                        </p>
+                        <p className="mt-1 text-2xl font-bold text-smart-primary">
+                          {value.toLocaleString()}{" "}
+                          <span className="text-sm font-medium">{unit}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}
+                    >
+                      {status}
+                    </span>
+                  </div>
+
+                  <p className="mt-4 text-xs text-smart-secondary">
+                    {item?.dailyLimit != null
+                      ? `Daily limit: ${Number(item.dailyLimit).toLocaleString()} ${unit}`
+                      : "Daily limit unavailable"}
+                  </p>
+
+                  <div className="mt-4">
+                    <div className="mb-2 flex justify-between text-xs text-slate-500">
+                      <span>Daily usage</span>
+                      <span>{percentage.toFixed(1)}%</span>
+                    </div>
+
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className={`h-full rounded-full transition-all ${progressClass}`}
+                        style={{
+                          width: `${Math.min(Math.max(percentage, 0), 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    {item?.readingCount ?? 0} readings recorded today
+                  </p>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Utility summary by block */}
+      <section>
+        <Card>
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
+              <Building2 size={20} />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-bold text-smart-primary">
+                Utility summary by block
+              </h2>
+              <p className="text-sm text-smart-secondary">
+                Today's recorded water and electricity usage
+              </p>
+            </div>
+          </div>
+
+          {monitoringLoading ? (
+            <p className="py-4 text-sm text-slate-500">
+              Loading block data...
+            </p>
+          ) : monitoringError ? (
+            <p className="py-4 text-sm text-rose-600">
+              Block utility summary is unavailable.
+            </p>
+          ) : blockSummary.length === 0 ? (
+            <div className="rounded-xl bg-slate-50 px-4 py-8 text-center">
+              <Building2
+                size={28}
+                className="mx-auto text-slate-400"
+              />
+              <p className="mt-3 text-sm font-semibold text-slate-700">
+                No block readings recorded today
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Add monitoring readings with a block name to display them here.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[540px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500">
+                    <th className="px-3 py-3 font-medium">Block</th>
+                    <th className="px-3 py-3 font-medium">Water (L)</th>
+                    <th className="px-3 py-3 font-medium">Electricity (kWh)</th>
+                    <th className="px-3 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {blockSummary.map((block, index) => (
+                    <tr
+                      key={block.blockName || index}
+                      className="border-b border-slate-100 last:border-0"
+                    >
+                      <td className="px-3 py-3 font-semibold text-slate-800">
+                        {block.blockName || "Unassigned"}
+                      </td>
+
+                      <td className="px-3 py-3 text-slate-700">
+                        {Number(block.water || 0).toLocaleString()}
+                      </td>
+
+                      <td className="px-3 py-3 text-slate-700">
+                        {Number(block.electricity || 0).toLocaleString()}
+                      </td>
+
+                      <td className="px-3 py-3">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                          {block.status || "Unknown"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </section>
+
       {/* Occupancy and revenue charts */}
       <section className="grid gap-5 xl:grid-cols-2">
         <Card>
@@ -550,6 +855,7 @@ function AnalyticsDashboard() {
                   Occupancy trends
                 </h2>
               </div>
+
               <p className="mt-2 text-sm text-smart-secondary">
                 Occupied and available beds by month
               </p>
@@ -614,6 +920,7 @@ function AnalyticsDashboard() {
                 {summary.totalOccupied.toLocaleString()}
               </p>
             </div>
+
             <div className="rounded-xl bg-slate-50 p-3">
               <p className="text-xs text-slate-500">Available records</p>
               <p className="mt-1 text-lg font-bold text-slate-800">
@@ -634,6 +941,7 @@ function AnalyticsDashboard() {
                   Revenue & expenses
                 </h2>
               </div>
+
               <p className="mt-2 text-sm text-smart-secondary">
                 Monthly financial performance in LKR
               </p>
@@ -704,6 +1012,7 @@ function AnalyticsDashboard() {
                 {formatShortCurrency(totalProfit)}
               </p>
             </div>
+
             <div className="rounded-xl bg-amber-50 p-3">
               <p className="text-xs text-amber-700">Total expenses</p>
               <p className="mt-1 text-lg font-bold text-amber-800">
@@ -714,7 +1023,7 @@ function AnalyticsDashboard() {
         </Card>
       </section>
 
-      {/* Complaints */}
+      {/* Complaint analysis and block comparison */}
       <section className="grid gap-5 xl:grid-cols-5">
         <div className="xl:col-span-3">
           <Card>
@@ -785,6 +1094,7 @@ function AnalyticsDashboard() {
                               {item.category}
                             </span>
                           </div>
+
                           <span className="font-bold text-slate-900">
                             {item.count}
                           </span>
@@ -811,7 +1121,6 @@ function AnalyticsDashboard() {
           </Card>
         </div>
 
-        {/* Block comparison */}
         <div className="xl:col-span-2">
           <Card>
             <div className="mb-5">
@@ -823,6 +1132,7 @@ function AnalyticsDashboard() {
                   Block occupancy
                 </h2>
               </div>
+
               <p className="mt-2 text-sm text-smart-secondary">
                 Latest occupancy snapshot by block
               </p>
@@ -845,8 +1155,7 @@ function AnalyticsDashboard() {
                       className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${Math.min(item.rate, 100)}%`,
-                        backgroundColor:
-                          COLORS[index % COLORS.length],
+                        backgroundColor: COLORS[index % COLORS.length],
                       }}
                     />
                   </div>
@@ -866,10 +1175,12 @@ function AnalyticsDashboard() {
               </p>
               <p className="mt-1 text-xs leading-5 text-blue-800">
                 {blockOccupancyChartData.length
-                  ? `${blockOccupancyChartData.reduce(
-                      (best, item) => (item.rate > best.rate ? item : best),
-                      blockOccupancyChartData[0]
-                    ).block} has the highest occupancy in the displayed snapshot.`
+                  ? `${
+                      blockOccupancyChartData.reduce(
+                        (best, item) => (item.rate > best.rate ? item : best),
+                        blockOccupancyChartData[0]
+                      ).block
+                    } has the highest occupancy in the displayed snapshot.`
                   : "No block occupancy data available."}
               </p>
             </div>
@@ -877,13 +1188,14 @@ function AnalyticsDashboard() {
         </div>
       </section>
 
-      {/* Financial summary and activity */}
+      {/* Financial summary and recent activity */}
       <section className="grid gap-5 lg:grid-cols-2">
         <Card>
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
               <CircleDollarSign size={21} />
             </div>
+
             <div>
               <h2 className="text-lg font-bold text-smart-primary">
                 Financial summary
@@ -921,6 +1233,7 @@ function AnalyticsDashboard() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <Activity size={21} />
             </div>
+
             <div>
               <h2 className="text-lg font-bold text-smart-primary">
                 Recent activity
@@ -947,6 +1260,7 @@ function AnalyticsDashboard() {
                   >
                     <Activity size={17} />
                   </div>
+
                   {index < recentActivity.length - 1 && (
                     <div className="mt-2 min-h-5 w-px flex-1 bg-slate-200" />
                   )}
@@ -961,9 +1275,11 @@ function AnalyticsDashboard() {
                       {activity.time}
                     </span>
                   </div>
+
                   <p className="mt-1 text-sm leading-5 text-slate-500">
                     {activity.description}
                   </p>
+
                   <span className="mt-2 inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs capitalize text-slate-600">
                     {activity.type}
                   </span>
@@ -975,14 +1291,20 @@ function AnalyticsDashboard() {
       </section>
 
       <p className="px-1 text-center text-xs text-smart-secondary">
-        SmartStay Analytics · Figures are based on the project's current
-        sample data and are not live backend records.
+        SmartStay Analytics · Occupancy, financial, complaint, and activity
+        charts use the current project sample data. Utility monitoring cards
+        use backend API records.
       </p>
     </div>
   );
 }
 
-function FinancialRow({ label, value, highlight, positive = true }) {
+function FinancialRow({
+  label,
+  value,
+  highlight,
+  positive = true,
+}) {
   return (
     <div
       className={`flex items-center justify-between gap-4 ${
@@ -1022,9 +1344,11 @@ function EmptyState({
       <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
         <Activity size={23} />
       </div>
+
       <p className="text-sm font-semibold text-slate-700">
         Nothing to display
       </p>
+
       <p className="mt-1 text-xs text-slate-500">{message}</p>
     </div>
   );
