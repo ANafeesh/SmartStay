@@ -151,39 +151,39 @@ function StudentDashboard() {
         </div>
 
         {/* Room Card */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 p-6 text-white shadow-md">
+        <div className="flex flex-col justify-between rounded-2xl border border-blue-100 bg-gradient-to-br from-white via-white to-blue-50 p-6 text-slate-800 shadow-sm">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
-                <BedDouble size={20} className="text-blue-400" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                <BedDouble size={20} className="text-blue-600" />
               </div>
-              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+              <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700">
                 <ShieldCheck size={12} />
                 Occupied
               </span>
             </div>
 
             <div>
-              <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                 Current Room
               </p>
-              <h2 className="text-2xl font-bold text-white tracking-tight">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">
                 Room B-204
               </h2>
-              <p className="text-xs text-slate-300">Block B · Second Floor</p>
+              <p className="text-xs text-slate-500">Block B · Second Floor</p>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/10 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white/80 p-3">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                   <Users size={15} />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400">Roommates</p>
-                  <p className="text-xs font-semibold text-white">2 Students</p>
+                  <p className="text-[10px] text-slate-500">Roommates</p>
+                  <p className="text-xs font-semibold text-slate-800">2 Students</p>
                 </div>
               </div>
-              <span className="text-[11px] text-slate-400 font-medium">
+              <span className="text-[11px] font-medium text-slate-500">
                 Cap: 3
               </span>
             </div>
@@ -191,7 +191,7 @@ function StudentDashboard() {
 
           <Link
             to="/room"
-            className="mt-5 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-xs font-semibold text-white transition hover:bg-blue-500 shadow-sm shadow-blue-500/30"
+            className="mt-5 block w-full rounded-xl bg-blue-600 py-2.5 text-center text-xs font-semibold text-white shadow-sm shadow-blue-500/20 transition hover:bg-blue-700"
           >
             View Room Details
           </Link>
