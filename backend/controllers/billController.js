@@ -29,6 +29,12 @@ const createBill = async (req, res) => {
       data: bill,
     });
   } catch (error) {
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
     res.status(500).json({
       success: false,
       message: "Failed to create bill",
@@ -69,7 +75,7 @@ const getStudentBills = async (req, res) => {
       data: bills,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.name === "CastError" ? 400 : 500).json({
       success: false,
       message: "Failed to fetch student bills",
       error: error.message,
@@ -94,7 +100,7 @@ const getBillById = async (req, res) => {
       data: bill,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.name === "CastError" ? 400 : 500).json({
       success: false,
       message: "Failed to fetch bill",
       error: error.message,
@@ -106,6 +112,12 @@ const getBillById = async (req, res) => {
 const updateBillStatus = async (req, res) => {
   try {
     const { status } = req.body;
+    if (!["Pending", "Paid", "Overdue", "Cancelled"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid bill status is required.",
+      });
+    }
 
     const bill = await Bill.findByIdAndUpdate(
       req.params.id,
@@ -126,7 +138,7 @@ const updateBillStatus = async (req, res) => {
       data: bill,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.name === "CastError" ? 400 : error.name === "ValidationError" ? 400 : 500).json({
       success: false,
       message: "Failed to update bill status",
       error: error.message,
