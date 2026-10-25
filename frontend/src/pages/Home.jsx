@@ -119,17 +119,19 @@ export default function Home() {
 
             <Link
               to="/payments"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/80 px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/80 px-2.5 sm:px-3.5 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs"
             >
               <CreditCard size={14} />
-              <span>Payments Portal</span>
+              <span className="hidden sm:inline">Payments Portal</span>
+              <span className="sm:hidden">Payments</span>
             </Link>
 
             <Link
               to="/dashboard"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-500 transition active:scale-95"
+              className="inline-flex items-center gap-1.5 sm:gap-2 rounded-xl bg-blue-600 px-3 sm:px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-600/20 hover:bg-blue-500 transition active:scale-95"
             >
-              <span>Open Dashboard</span>
+              <span className="hidden sm:inline">Open Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -148,22 +150,22 @@ export default function Home() {
               <span>SWT22022 Practical for Internet Application Development</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.12]">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.15] sm:leading-[1.12]">
               Smart Hostel &amp; Co-Living{" "}
               <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
                 Management System
               </span>
             </h1>
 
-            <p className="mt-6 text-base sm:text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto font-normal">
+            <p className="mt-4 sm:mt-6 text-sm sm:text-lg leading-relaxed text-slate-600 max-w-2xl mx-auto font-normal">
               A comprehensive campus platform unifying student room administration, automated billing and payments, food marketplace delivery slots, digital QR gate security, and operational monitoring.
             </p>
 
             {/* Quick Action Badges */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-md sm:max-w-none mx-auto">
               <Link
                 to="/payments"
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-6 py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-600/30 transition cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-600/30 transition cursor-pointer"
               >
                 <CreditCard size={17} />
                 <span>Explore Student Billing &amp; Receipts</span>
@@ -172,7 +174,7 @@ export default function Home() {
 
               <Link
                 to="/marketplace"
-                className="inline-flex items-center gap-2 rounded-2xl bg-white border border-slate-300 px-6 py-3.5 text-xs sm:text-sm font-bold text-slate-800 hover:bg-slate-50 transition shadow-xs cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white border border-slate-300 px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-slate-800 hover:bg-slate-50 transition shadow-xs cursor-pointer"
               >
                 <ShoppingBag size={17} className="text-emerald-600" />
                 <span>Food Marketplace &amp; Orders</span>
@@ -180,7 +182,7 @@ export default function Home() {
 
               <Link
                 to="/vendor/dashboard"
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-slate-800 transition shadow-md cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-sm font-bold text-white hover:bg-slate-800 transition shadow-md cursor-pointer"
               >
                 <Store size={17} className="text-amber-400" />
                 <span>Vendor Operations Hub</span>
