@@ -5,6 +5,7 @@ import {
   UploadCloud, X, AlertCircle, MapPin, Wrench, Zap, Armchair, Wifi, SprayCan,
   Hammer, MoreHorizontal, Info, CheckCircle2, Building2, ImagePlus, Home, Send,
 } from "lucide-react";
+import Logo from "../../../components/ui/Logo";
 
 /* ---------- SmartStay theme ---------- */
 const C = {
@@ -223,14 +224,13 @@ export default function SubmitComplaint() {
         className={"fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 flex flex-col transition-transform duration-200 " + (menuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")}
         style={{ width: 260, background: `linear-gradient(180deg, ${C.sidebar} 0%, #082440 100%)` }}
       >
-        <div className="flex items-center gap-3 px-6 pt-7 pb-8">
-          <div className="flex items-center justify-center rounded-xl" style={{ width: 40, height: 40, background: `linear-gradient(135deg,${C.teal},${C.blue})` }}>
-            <Home size={20} color="#fff" />
-          </div>
-          <div>
-            <div className="text-white font-bold text-lg leading-none">SmartStay</div>
-            <div className="text-xs mt-1" style={{ color: "#7FA6CB" }}>Hostel & Co-Living</div>
-          </div>
+        <div className="flex items-center justify-between gap-3 px-6 pt-7 pb-8">
+          <Logo
+            variant="horizontal"
+            size="md"
+            theme="dark"
+            subtitle="Hostel &amp; Co-Living"
+          />
           <button className="lg:hidden ml-auto text-white" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X size={20} /></button>
         </div>
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">

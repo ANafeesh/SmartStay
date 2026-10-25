@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
+import Logo from "../ui/Logo";
 import { useAuth } from "../../context/AuthContext";
 import {
   Activity,
@@ -102,16 +103,7 @@ function DashboardLayout() {
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 lg:flex-row antialiased font-sans">
       {/* Mobile Top Navigation Header */}
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/90 bg-white/95 px-4 py-3 text-slate-900 shadow-xs backdrop-blur-md lg:hidden">
-        <Link to="/" className="flex items-center gap-2.5 text-base font-extrabold tracking-tight">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 text-sm font-black text-white shadow-md shadow-blue-500/25">
-            S
-          </span>
-          <div className="leading-tight">
-            <span className="text-slate-900">Smart</span>
-            <span className="text-blue-600">Stay</span>
-            <span className="ml-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">SEU</span>
-          </div>
-        </Link>
+        <Logo variant="horizontal" size="sm" badge="SEU" asLink />
         <div className="flex items-center gap-2">
           <TopRightAuth compact={true} />
           <button
@@ -146,32 +138,17 @@ function DashboardLayout() {
       >
         {/* Brand Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4">
-          <Link
-            to="/"
-            className={`flex items-center ${sidebarCollapsed ? "justify-center w-full" : "gap-3"}`}
-          >
-            <div className="relative">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 text-lg font-black text-white shadow-md shadow-blue-600/30">
-                S
-              </span>
-              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white bg-emerald-500" />
-            </div>
-            {!sidebarCollapsed && (
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <h2 className="text-base font-extrabold leading-tight tracking-tight text-slate-900">
-                    SmartStay
-                  </h2>
-                  <span className="rounded-full bg-blue-50 border border-blue-200 px-1.5 py-0.2 text-[9px] font-black text-blue-700 uppercase">
-                    v2.0
-                  </span>
-                </div>
-                <p className="text-[10px] font-medium text-slate-500 truncate">
-                  Hostel Management OS
-                </p>
-              </div>
-            )}
-          </Link>
+          {sidebarCollapsed ? (
+            <Logo variant="mark" size="md" asLink />
+          ) : (
+            <Logo
+              variant="horizontal"
+              size="md"
+              badge="v2.0"
+              subtitle="Hostel Management OS"
+              asLink
+            />
+          )}
 
           {!sidebarCollapsed && (
             <button

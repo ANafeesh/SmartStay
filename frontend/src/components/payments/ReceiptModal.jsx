@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ShieldCheck,
 } from "lucide-react";
+import Logo from "../ui/Logo";
 
 export default function ReceiptModal({ receipt, onClose }) {
   const printRef = useRef(null);
@@ -48,10 +49,13 @@ export default function ReceiptModal({ receipt, onClose }) {
 <body>
   <div class="receipt-box">
     <div class="header">
-      <div>
-        <h1 class="logo-title">SmartStay</h1>
-        <p class="subtitle">South Eastern University of Sri Lanka · Hostel Bursary Division</p>
-        <p class="subtitle">Module 3: Payments & Financial Records Management</p>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <img src="/smartstay-mark.png" alt="SmartStay" width="44" height="44" style="border-radius: 10px; border: 1px solid #cbd5e1; object-fit: cover;" onerror="this.style.display='none'" />
+        <div>
+          <h1 class="logo-title" style="margin: 0; font-size: 20px;">SmartStay</h1>
+          <p class="subtitle" style="margin: 2px 0 0 0;">South Eastern University of Sri Lanka · Hostel Bursary Division</p>
+          <p class="subtitle" style="margin: 0;">Module 3: Payments &amp; Financial Records Management</p>
+        </div>
       </div>
       <div>
         <span class="badge-paid">✓ Verified & Paid</span>
@@ -197,20 +201,12 @@ export default function ReceiptModal({ receipt, onClose }) {
           {/* Receipt Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-dashed border-slate-200 pb-6">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-extrabold text-sm">
-                  SS
-                </div>
-                <h3 className="text-xl font-extrabold tracking-tight text-slate-900">
-                  Smart<span className="text-blue-600">Stay</span> Bursary
-                </h3>
-              </div>
-              <p className="mt-1 text-xs text-slate-500">
-                South Eastern University of Sri Lanka
-              </p>
-              <p className="text-[11px] text-slate-400">
-                Hostel Management & Electronic Billing Gateway
-              </p>
+              <Logo
+                variant="horizontal"
+                size="md"
+                badge="Bursary"
+                subtitle="South Eastern University · Hostel Billing Gateway"
+              />
             </div>
 
             <div className="text-left sm:text-right">

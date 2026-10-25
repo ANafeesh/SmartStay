@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { LogIn, User, ShieldCheck, X } from "lucide-react";
+import Logo from "../ui/Logo";
 
 export default function TopRightAuth({ compact = false }) {
   const { user, isLoggedIn, login, logout } = useAuth();
@@ -75,14 +76,12 @@ export default function TopRightAuth({ compact = false }) {
                 <X size={18} />
               </button>
 
-              <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
-                  <User size={22} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Sign in to SmartStay</h3>
-                  <p className="text-xs text-slate-500">Access student, vendor or management portals</p>
-                </div>
+              <div className="mb-5">
+                <Logo
+                  variant="horizontal"
+                  size="md"
+                  subtitle="Access student, vendor or management portals"
+                />
               </div>
 
               <div className="mb-4 space-y-1">
