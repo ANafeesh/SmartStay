@@ -1,4 +1,4 @@
-﻿import {
+import {
   LayoutDashboard,
   ChartNoAxesCombined,
   FileText,
@@ -26,6 +26,7 @@
 } from "lucide-react";
 
 import { NavLink } from "react-router-dom";
+import Logo from "../ui/Logo";
 
 const menuItems = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -130,19 +131,12 @@ function Sidebar({ isOpen, onClose }) {
       >
         {/* Header */}
         <div className="flex h-20 shrink-0 items-center justify-between border-b border-slate-100 px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-500/30">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">
-                Smart<span className="text-blue-600">Stay</span>
-              </h1>
-              <p className="text-[11px] font-medium text-slate-400">
-                Hostel Management
-              </p>
-            </div>
-          </div>
+          <Logo
+            variant="horizontal"
+            size="md"
+            subtitle="Hostel Management"
+            asLink
+          />
 
           <button
             onClick={onClose}

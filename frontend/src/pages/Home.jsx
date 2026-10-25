@@ -13,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import Logo from "../components/ui/Logo";
 
 export default function Home() {
   const modules = [
@@ -99,24 +100,13 @@ export default function Home() {
       {/* Top Navbar */}
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3.5">
-          <Link to="/" className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-500 text-lg font-black text-white shadow-md shadow-blue-500/25">
-              S
-            </span>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-lg font-extrabold tracking-tight text-slate-900">
-                  Smart<span className="text-blue-600">Stay</span>
-                </span>
-                <span className="rounded-full bg-blue-50 border border-blue-200 px-2 py-0.2 text-[10px] font-bold text-blue-700 uppercase">
-                  Group L
-                </span>
-              </div>
-              <p className="text-[10px] font-medium text-slate-500">
-                South Eastern University of Sri Lanka
-              </p>
-            </div>
-          </Link>
+          <Logo
+            variant="horizontal"
+            size="md"
+            badge="Group L"
+            subtitle="South Eastern University of Sri Lanka"
+            asLink
+          />
 
           <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
@@ -312,13 +302,13 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-black text-white">
-                  S
-                </span>
-                <span className="text-base font-extrabold">SmartStay</span>
-                <span className="text-xs text-slate-400">· Campus Accommodation</span>
-              </div>
+              <Logo
+                variant="horizontal"
+                size="sm"
+                theme="dark"
+                subtitle="Campus Accommodation"
+                asLink
+              />
               <p className="text-xs text-slate-400 mt-1 max-w-md">
                 SWT22022 Practical for Internet Application Development · CA1 Group Assignment (Group L)
                 <br />

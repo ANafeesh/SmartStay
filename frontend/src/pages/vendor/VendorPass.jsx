@@ -217,7 +217,10 @@ export default function VendorPass() {
             <span className="flex items-center gap-1 font-semibold text-emerald-600">
               <ShieldCheck size={14} /> Valid Until: {pass.validUntil}
             </span>
-            <span className="text-[11px] text-slate-400">SmartStay Gate Seal</span>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+              <img src="/smartstay-mark.png" alt="" className="h-4 w-4 rounded object-cover border border-slate-200" />
+              <span>SmartStay Gate Seal</span>
+            </div>
           </div>
         </div>
 
