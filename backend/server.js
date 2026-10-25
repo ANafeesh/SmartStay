@@ -23,6 +23,7 @@ const allocationRoutes = require("./routes/allocationRoutes");
 const transferRoutes = require("./routes/transferRoutes");
 const monitoringRoutes = require("./routes/monitoringRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const complaintRoutes = require("./routes/complaintRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,6 +45,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/beds", bedRoutes);
 app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
+app.use("/api/complaints", complaintRoutes);
 
 // Your Module 5: Monitoring and Analytics APIs
 app.use("/api/monitoring", monitoringRoutes);
