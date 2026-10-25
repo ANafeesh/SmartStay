@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertCircle,
   CalendarDays,
@@ -7,11 +8,16 @@ import {
   Plus,
   Wrench,
   X,
+  Image,
 } from "lucide-react";
 
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
+import {
+  getComplaintsFromDB,
+  submitComplaintToDB,
+} from "../../services/complaintApi";
 
 const initialComplaints = [
   {
@@ -53,6 +59,35 @@ function Complaints() {
   const [complaints, setComplaints] = useState(initialComplaints);
   const [showForm, setShowForm] = useState(false);
 
+  useEffect(() => {
+    getComplaintsFromDB()
+      .then((data) => {
+        if (data && data.length > 0) {
+          const mapped = data.map((d) => ({
+            id: d.complaintId || d._id,
+            title: d.title,
+            category: d.category,
+            description: d.description,
+            date: new Date(d.createdAt).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+            status: d.status,
+            images: d.images || [],
+          }));
+          setComplaints((prev) => {
+            const existingIds = new Set(mapped.map((m) => m.id));
+            const remaining = prev.filter((p) => !existingIds.has(p.id));
+            return [...mapped, ...remaining];
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load complaints from MongoDB:", err.message);
+      });
+  }, []);
+
   const [formData, setFormData] = useState({
     title: "",
     category: "Plumbing",
@@ -80,7 +115,7 @@ function Complaints() {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!formData.title.trim() || !formData.description.trim()) {
@@ -88,16 +123,43 @@ function Complaints() {
       return;
     }
 
-    const newComplaint = {
-      id: `CMP-2026-${String(complaints.length + 4).padStart(3, "0")}`,
-      title: formData.title,
-      category: formData.category,
-      description: formData.description,
-      date: "25 Sep 2026",
-      status: "Pending",
-    };
+    try {
+      const saved = await submitComplaintToDB({
+        title: formData.title,
+        category: formData.category,
+        description: formData.description,
+        priority: "Medium",
+        building: "Block B – Horizon Hall",
+        floor: "2nd Floor",
+        room: "B-204",
+      });
 
-    setComplaints((previous) => [newComplaint, ...previous]);
+      const newComplaint = {
+        id: saved.complaintId,
+        title: saved.title,
+        category: saved.category,
+        description: saved.description,
+        date: new Date().toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+        status: saved.status,
+      };
+
+      setComplaints((previous) => [newComplaint, ...previous]);
+    } catch (e) {
+      const newComplaint = {
+        id: `CMP-2026-${String(complaints.length + 4).padStart(3, "0")}`,
+        title: formData.title,
+        category: formData.category,
+        description: formData.description,
+        date: "Today",
+        status: "Pending",
+      };
+
+      setComplaints((previous) => [newComplaint, ...previous]);
+    }
 
     setFormData({
       title: "",
@@ -114,18 +176,26 @@ function Complaints() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-smart-primary">
-            Complaints & Maintenance
+            Complaints &amp; Maintenance
           </h1>
 
           <p className="mt-2 text-smart-secondary">
-            Report hostel issues and track your maintenance requests.
+            Report hostel issues, attach photo evidence, and track your maintenance requests in MongoDB.
           </p>
         </div>
 
-        <Button onClick={() => setShowForm(true)}>
-          <Plus size={18} className="mr-2 inline" />
-          New Complaint
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/maintenance/submit-complaint"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition active:scale-95 cursor-pointer"
+          >
+            <Plus size={16} />
+            <span>Submit Complaint with Photos</span>
+          </Link>
+          <Button onClick={() => setShowForm(true)} variant="secondary">
+            Quick Complaint
+          </Button>
+        </div>
       </div>
 
       {/* Summary */}

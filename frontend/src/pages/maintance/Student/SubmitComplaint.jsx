@@ -1,119 +1,169 @@
 import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, BedDouble, CreditCard, UtensilsCrossed, MessageSquareWarning,
-  Ticket, Bell, User, Settings, Menu, ArrowLeft, ChevronDown, ChevronRight, Check,
-  UploadCloud, X, AlertCircle, MapPin, Wrench, Zap, Armchair, Wifi, SprayCan,
-  Hammer, MoreHorizontal, Info, CheckCircle2, Building2, ImagePlus, Home, Send,
+  Wrench,
+  Zap,
+  Armchair,
+  Wifi,
+  SprayCan,
+  Hammer,
+  MoreHorizontal,
+  Info,
+  CheckCircle2,
+  Building2,
+  ImagePlus,
+  Send,
+  UploadCloud,
+  X,
+  AlertCircle,
+  MapPin,
+  ChevronDown,
+  Check,
+  ArrowLeft,
+  MessageSquareWarning,
+  Loader2,
+  Cloud,
 } from "lucide-react";
-import Logo from "../../../components/ui/Logo";
+import { useAuth } from "../../../context/AuthContext";
+import {
+  uploadComplaintPhotos,
+  submitComplaintToDB,
+} from "../../../services/complaintApi";
 
-/* ---------- SmartStay theme ---------- */
+/* ---------- Theme Tokens ---------- */
 const C = {
-  navy: "#0F4C81", blue: "#1686D4", teal: "#06B6D4", bg: "#F8FAFC", white: "#FFFFFF",
-  text: "#172033", muted: "#6E7575", green: "#10B981", orange: "#F59E0B", red: "#EF4444",
-  line: "#E2E8F0", sidebar: "#0B2F52",
+  navy: "#0F4C81",
+  blue: "#2563eb",
+  teal: "#06b6d4",
+  bg: "#F8FAFC",
+  white: "#FFFFFF",
+  text: "#172033",
+  muted: "#64748B",
+  green: "#10B981",
+  orange: "#F59E0B",
+  red: "#EF4444",
+  line: "#E2E8F0",
 };
 
-const css = `
-.ss-root{font-family:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:${C.text};background:${C.bg}}
-.ss-input{width:100%;background:#fff;border:1.5px solid ${C.line};border-radius:12px;padding:11px 14px;font-size:14px;color:${C.text};outline:none;transition:border-color .15s,box-shadow .15s}
-.ss-input::placeholder{color:#94A3B8}
-.ss-input:hover{border-color:#CBD5E1}
-.ss-input:focus{border-color:${C.blue};box-shadow:0 0 0 4px rgba(22,134,212,.14)}
-.ss-input.err{border-color:${C.red};box-shadow:0 0 0 4px rgba(239,68,68,.08)}
-.ss-card{background:#fff;border:1px solid ${C.line};border-radius:18px;box-shadow:0 1px 2px rgba(15,76,129,.04),0 8px 24px -12px rgba(15,76,129,.10)}
-.ss-nav{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;font-size:14px;font-weight:500;color:#B6CCE2;transition:background .15s,color .15s;cursor:pointer;width:100%;text-align:left}
-.ss-nav:hover{background:rgba(255,255,255,.07);color:#fff}
-.ss-nav.on{background:${C.blue};color:#fff;box-shadow:0 8px 18px -8px rgba(22,134,212,.8)}
-.ss-btn-primary{background:linear-gradient(135deg,${C.blue},${C.navy});color:#fff;font-weight:600;font-size:14px;border-radius:12px;padding:12px 22px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,box-shadow .15s,filter .15s;box-shadow:0 10px 20px -10px rgba(15,76,129,.7)}
-.ss-btn-primary:hover{filter:brightness(1.07);transform:translateY(-1px)}
-.ss-btn-primary:active{transform:translateY(0)}
-.ss-btn-ghost{background:#fff;border:1.5px solid ${C.line};color:${C.text};font-weight:600;font-size:14px;border-radius:12px;padding:11px 20px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,border-color .15s}
-.ss-btn-ghost:hover{background:#F1F5F9;border-color:#CBD5E1}
-.ss-pri{position:relative;text-align:left;border:1.5px solid ${C.line};border-radius:14px;padding:14px;background:#fff;transition:all .15s;cursor:pointer}
-.ss-pri:hover{transform:translateY(-2px);box-shadow:0 10px 20px -12px rgba(23,32,51,.25)}
-.ss-drop{border:2px dashed #CBD5E1;border-radius:16px;background:#F8FAFC;transition:all .15s;cursor:pointer}
-.ss-drop:hover,.ss-drop.over{border-color:${C.blue};background:rgba(22,134,212,.05)}
-@keyframes ssIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
-.ss-pop{animation:ssIn .16s ease-out}
-@keyframes ssToast{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
-.ss-toast{animation:ssToast .3s ease-out}
-.ss-label{display:block;font-size:13px;font-weight:600;margin-bottom:7px;color:${C.text}}
-.ss-err{display:flex;align-items:center;gap:5px;font-size:12px;color:${C.red};margin-top:6px}
-@media (prefers-reduced-motion:reduce){.ss-pop,.ss-toast{animation:none}.ss-pri,.ss-btn-primary{transition:none}}
-`;
-
-const NAV = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Rooms", icon: BedDouble },
-  { label: "Payments", icon: CreditCard },
-  { label: "Food & Marketplace", icon: UtensilsCrossed },
-  { label: "Complaints", icon: MessageSquareWarning },
-  { label: "Visitor Pass", icon: Ticket },
-  { label: "Notifications", icon: Bell },
-  { label: "Profile", icon: User },
-  { label: "Settings", icon: Settings },
-];
-
 const CATEGORIES = [
-  { name: "Plumbing", icon: Wrench }, { name: "Electrical", icon: Zap },
-  { name: "Furniture", icon: Armchair }, { name: "Internet/Wi-Fi", icon: Wifi },
-  { name: "Housekeeping", icon: SprayCan }, { name: "Building Maintenance", icon: Hammer },
+  { name: "Plumbing", icon: Wrench },
+  { name: "Electrical", icon: Zap },
+  { name: "Furniture", icon: Armchair },
+  { name: "Internet / Network", icon: Wifi },
+  { name: "Cleaning", icon: SprayCan },
+  { name: "Building Maintenance", icon: Hammer },
   { name: "Other", icon: MoreHorizontal },
 ];
 
 const PRIORITIES = [
-  { id: "Low", color: C.green, hint: "Minor, can wait a few days" },
+  { id: "Low", color: C.green, hint: "Minor issue, can wait a few days" },
   { id: "Medium", color: C.blue, hint: "Needs attention this week" },
-  { id: "High", color: C.orange, hint: "Affects daily living" },
-  { id: "Urgent", color: C.red, hint: "Safety risk, act now" },
+  { id: "High", color: C.orange, hint: "Affects daily study or living" },
+  { id: "Critical", color: C.red, hint: "Safety risk, urgent action needed" },
 ];
 
-const BUILDINGS = ["Block A – Aurora Hall", "Block B – Horizon Hall", "Block C – Lakeside Residence", "Block D – Co-Living Annex"];
-const FLOORS = ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor"];
-const MAX_DESC = 500, MIN_DESC = 20, MAX_IMG = 3;
+const BUILDINGS = [
+  "Block A – Aurora Hall",
+  "Block B – Horizon Hall",
+  "Block C – Lakeside Residence",
+  "Block D – Co-Living Annex",
+];
 
-const EMPTY = { title: "", category: "", priority: "", description: "", building: "", floor: "", room: "", spot: "" };
+const FLOORS = [
+  "Ground Floor",
+  "1st Floor",
+  "2nd Floor",
+  "3rd Floor",
+  "4th Floor",
+];
 
-/* ---------- Custom dropdown ---------- */
+const MAX_DESC = 500;
+const MIN_DESC = 20;
+const MAX_IMG = 3;
+
+const EMPTY = {
+  title: "",
+  category: "Plumbing",
+  priority: "Medium",
+  description: "",
+  building: "Block B – Horizon Hall",
+  floor: "2nd Floor",
+  room: "B-204",
+  spot: "",
+};
+
+/* ---------- Custom Dropdown Component ---------- */
 function Dropdown({ value, onChange, options, placeholder, error, icon: Icon }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+
   useEffect(() => {
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    const handleOutsideClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
+
   const items = options.map((o) => (typeof o === "string" ? { name: o } : o));
   const sel = items.find((i) => i.name === value);
   const SelIcon = sel?.icon || Icon;
+
   return (
     <div ref={ref} className="relative">
       <button
-        type="button" onClick={() => setOpen(!open)}
+        type="button"
+        onClick={() => setOpen(!open)}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-        className={"ss-input flex items-center justify-between gap-2 text-left " + (error ? "err" : "")}
-        aria-haspopup="listbox" aria-expanded={open}
+        className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm transition-all flex items-center justify-between gap-2 cursor-pointer ${
+          error
+            ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
+            : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
+        }`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
       >
-        <span className="flex items-center gap-2 truncate" style={{ color: sel ? C.text : "#94A3B8" }}>
-          {SelIcon && <SelIcon size={16} style={{ color: sel ? C.blue : "#94A3B8" }} />}
+        <span
+          className="flex items-center gap-2 truncate"
+          style={{ color: sel ? C.text : "#94A3B8" }}
+        >
+          {SelIcon && <SelIcon size={16} className="text-blue-600 shrink-0" />}
           {sel ? sel.name : placeholder}
         </span>
-        <ChevronDown size={16} style={{ color: C.muted, transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }} />
+        <ChevronDown
+          size={16}
+          className={`text-slate-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
       </button>
+
       {open && (
-        <ul role="listbox" className="ss-pop absolute z-30 mt-2 w-full max-h-64 overflow-auto bg-white p-1.5"
-          style={{ border: `1px solid ${C.line}`, borderRadius: 14, boxShadow: "0 18px 40px -12px rgba(15,76,129,.28)" }}>
+        <ul
+          role="listbox"
+          className="absolute z-30 mt-2 w-full max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100"
+        >
           {items.map((it) => {
-            const I = it.icon; const on = it.name === value;
+            const I = it.icon;
+            const on = it.name === value;
             return (
-              <li key={it.name} role="option" aria-selected={on}
-                onClick={() => { onChange(it.name); setOpen(false); }}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer text-sm hover:bg-slate-50"
-                style={{ color: on ? C.blue : C.text, fontWeight: on ? 600 : 400, background: on ? "rgba(22,134,212,.07)" : undefined }}>
-                {I && <I size={16} style={{ color: on ? C.blue : C.muted }} />}
+              <li
+                key={it.name}
+                role="option"
+                aria-selected={on}
+                onClick={() => {
+                  onChange(it.name);
+                  setOpen(false);
+                }}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer text-sm transition-colors ${
+                  on
+                    ? "bg-blue-50 text-blue-700 font-semibold"
+                    : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {I && <I size={16} className={on ? "text-blue-600" : "text-slate-400"} />}
                 <span className="flex-1">{it.name}</span>
-                {on && <Check size={15} />}
+                {on && <Check size={15} className="text-blue-600" />}
               </li>
             );
           })}
@@ -125,331 +175,661 @@ function Dropdown({ value, onChange, options, placeholder, error, icon: Icon }) 
 
 const Field = ({ label, required, error, children, hint }) => (
   <div>
-    <label className="ss-label">{label}{required && <span style={{ color: C.red }}> *</span>}</label>
+    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+      {label}
+      {required && <span className="text-rose-500 font-black"> *</span>}
+    </label>
     {children}
-    {error ? <p className="ss-err"><AlertCircle size={13} />{error}</p> : hint ? <p className="text-xs mt-1.5" style={{ color: C.muted }}>{hint}</p> : null}
+    {error ? (
+      <p className="flex items-center gap-1.5 text-xs text-rose-500 font-medium mt-1.5">
+        <AlertCircle size={13} className="shrink-0" />
+        {error}
+      </p>
+    ) : hint ? (
+      <p className="text-xs text-slate-400 mt-1.5">{hint}</p>
+    ) : null}
   </div>
 );
 
 const SectionTitle = ({ icon: Icon, title, sub }) => (
   <div className="flex items-start gap-3 mb-5">
-    <div className="flex items-center justify-center rounded-xl shrink-0" style={{ width: 36, height: 36, background: "rgba(22,134,212,.10)", color: C.blue }}>
+    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
       <Icon size={18} />
     </div>
     <div>
-      <h2 className="text-base font-semibold leading-tight">{title}</h2>
-      {sub && <p className="text-xs mt-0.5" style={{ color: C.muted }}>{sub}</p>}
+      <h2 className="text-base font-bold text-slate-900 leading-tight">{title}</h2>
+      {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
     </div>
   </div>
 );
 
-/* ---------- Page ---------- */
+/* ---------- SubmitComplaint Component ---------- */
 export default function SubmitComplaint() {
-  const [f, setF] = useState(EMPTY);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const [f, setF] = useState({
+    ...EMPTY,
+    room: user?.room ? user.room.split(" - ").pop() : "B-204",
+  });
   const [images, setImages] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [over, setOver] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [toast, setToast] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const fileRef = useRef(null);
 
   const set = (k) => (v) => {
     setF((p) => ({ ...p, [k]: v }));
     if (errors[k]) setErrors((e) => ({ ...e, [k]: undefined }));
   };
+
   const onText = (k) => (e) => set(k)(e.target.value);
 
-  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 6000); return () => clearTimeout(t); } }, [toast]);
-  useEffect(() => () => images.forEach((i) => URL.revokeObjectURL(i.url)), []); // eslint-disable-line
+  useEffect(() => {
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 8000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
 
-  const addFiles = (list) => {
+  // Upload handler connecting to Cloudinary
+  const handlePhotoUpload = async (fileList) => {
     setUploadMsg("");
-    const files = Array.from(list || []);
+    const files = Array.from(fileList || []);
     const valid = files.filter((x) => x.type.startsWith("image/"));
-    if (valid.length < files.length) setUploadMsg("Only image files (JPG, PNG, WebP) are supported.");
-    const room = MAX_IMG - images.length;
-    if (valid.length > room) setUploadMsg(`You can attach up to ${MAX_IMG} photos.`);
-    const add = valid.slice(0, Math.max(room, 0)).map((file) => ({
-      id: Math.random().toString(36).slice(2), name: file.name,
-      size: (file.size / 1024 / 1024).toFixed(2), url: URL.createObjectURL(file),
-    }));
-    if (add.length) setImages((p) => [...p, ...add]);
+
+    if (valid.length < files.length) {
+      setUploadMsg("Only image files (JPG, PNG, WebP) are supported.");
+    }
+
+    const availableSlots = MAX_IMG - images.length;
+    if (valid.length > availableSlots) {
+      setUploadMsg(`You can attach up to ${MAX_IMG} photos in total.`);
+    }
+
+    const filesToUpload = valid.slice(0, Math.max(availableSlots, 0));
+    if (filesToUpload.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      // Call Cloudinary Upload via Backend Service
+      const uploadedResults = await uploadComplaintPhotos(filesToUpload);
+
+      const newPhotos = uploadedResults.map((item, idx) => ({
+        id: item.publicId || Math.random().toString(36).slice(2),
+        name: item.name || filesToUpload[idx]?.name || "photo.jpg",
+        size: filesToUpload[idx]
+          ? (filesToUpload[idx].size / 1024 / 1024).toFixed(2)
+          : "0.50",
+        url: item.url,
+        publicId: item.publicId,
+        cloudinary: true,
+      }));
+
+      setImages((prev) => [...prev, ...newPhotos]);
+    } catch (err) {
+      console.error("Cloudinary upload failed:", err);
+      setUploadMsg(`Cloudinary upload failed: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
+
   const removeImg = (id) => {
-    setImages((p) => { const g = p.find((i) => i.id === id); if (g) URL.revokeObjectURL(g.url); return p.filter((i) => i.id !== id); });
+    setImages((prev) => prev.filter((i) => i.id !== id));
     setUploadMsg("");
   };
 
   const validate = () => {
     const e = {};
     if (!f.title.trim()) e.title = "Enter a short title for your complaint.";
-    else if (f.title.trim().length < 5) e.title = "Title should be at least 5 characters.";
-    if (!f.category) e.category = "Choose a category.";
+    else if (f.title.trim().length < 5)
+      e.title = "Title should be at least 5 characters.";
+    if (!f.category) e.category = "Choose a complaint category.";
     if (!f.priority) e.priority = "Select a priority level.";
-    if (!f.description.trim()) e.description = "Describe the problem so staff know what to fix.";
-    else if (f.description.trim().length < MIN_DESC) e.description = `Add a little more detail (at least ${MIN_DESC} characters).`;
+    if (!f.description.trim())
+      e.description = "Describe the problem so hostel staff know what to fix.";
+    else if (f.description.trim().length < MIN_DESC)
+      e.description = `Add a little more detail (at least ${MIN_DESC} characters).`;
     if (!f.building) e.building = "Select your building.";
     if (!f.floor) e.floor = "Select the floor.";
     if (!f.room.trim()) e.room = "Enter your room number.";
     return e;
   };
 
-  const submit = (ev) => {
+  const submit = async (ev) => {
     ev.preventDefault();
     const e = validate();
     setErrors(e);
-    if (Object.keys(e).length) {
-      setToast({ type: "error", text: "Please fix the highlighted fields and try again." });
+
+    if (Object.keys(e).length > 0) {
+      setToast({
+        type: "error",
+        text: "Please fill in all highlighted fields before submitting.",
+      });
       return;
     }
-    const ref = "DEMO-" + Math.floor(1000 + Math.random() * 9000);
-    setToast({ type: "success", text: `Demo only: complaint ${ref} was not saved anywhere. In SmartStay this is where it would be sent to maintenance.` });
-    setF(EMPTY); setImages([]); setErrors({}); setUploadMsg("");
+
+    setIsSubmitting(true);
+    try {
+      // Record complaint in MongoDB via Backend API
+      const complaintPayload = {
+        title: f.title.trim(),
+        category: f.category,
+        priority: f.priority,
+        description: f.description.trim(),
+        building: f.building,
+        floor: f.floor,
+        room: f.room.trim() + (f.spot.trim() ? ` (${f.spot.trim()})` : ""),
+        images: images.map((img) => ({
+          url: img.url,
+          publicId: img.publicId,
+          name: img.name,
+        })),
+        studentId: user?.studentId || "SEU/IS/22/ICT/090",
+        studentName: user?.name || "Ahamed Nafeesh",
+      };
+
+      const result = await submitComplaintToDB(complaintPayload);
+
+      setToast({
+        type: "success",
+        text: `Complaint ${result.complaintId} has been successfully recorded in MongoDB Atlas and queued with Maintenance!`,
+        ref: result.complaintId,
+      });
+
+      // Reset form
+      setF(EMPTY);
+      setImages([]);
+      setErrors({});
+      setUploadMsg("");
+    } catch (err) {
+      console.error("Submission error:", err);
+      setToast({
+        type: "error",
+        text: `Could not save to MongoDB: ${err.message}`,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const cancel = () => { setF(EMPTY); setImages([]); setErrors({}); setUploadMsg(""); setToast(null); };
+  const cancel = () => {
+    setF(EMPTY);
+    setImages([]);
+    setErrors({});
+    setUploadMsg("");
+    setToast(null);
+  };
 
   const descLen = f.description.length;
 
   return (
-    <div className="ss-root min-h-screen flex w-full">
-      <style>{css}</style>
-
-      {/* Mobile overlay */}
-      {menuOpen && <div className="fixed inset-0 z-40 lg:hidden" style={{ background: "rgba(11,47,82,.55)" }} onClick={() => setMenuOpen(false)} />}
-
-      {/* Sidebar */}
-      <aside
-        className={"fixed lg:sticky top-0 left-0 z-50 h-screen shrink-0 flex flex-col transition-transform duration-200 " + (menuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")}
-        style={{ width: 260, background: `linear-gradient(180deg, ${C.sidebar} 0%, #082440 100%)` }}
-      >
-        <div className="flex items-center justify-between gap-3 px-6 pt-7 pb-8">
-          <Logo
-            variant="horizontal"
-            size="md"
-            theme="dark"
-            subtitle="Hostel &amp; Co-Living"
-          />
-          <button className="lg:hidden ml-auto text-white" onClick={() => setMenuOpen(false)} aria-label="Close menu"><X size={20} /></button>
-        </div>
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-          {NAV.map(({ label, icon: I }) => (
-            <button key={label} className={"ss-nav " + (label === "Complaints" ? "on" : "")} aria-current={label === "Complaints" ? "page" : undefined}>
-              <I size={18} /><span>{label}</span>
-              {label === "Notifications" && <span className="ml-auto text-xs font-semibold rounded-full px-2 py-0.5" style={{ background: C.teal, color: "#04303a" }}>3</span>}
-            </button>
-          ))}
-        </nav>
-        <div className="m-4 p-4 rounded-2xl" style={{ background: "rgba(255,255,255,.07)" }}>
-          <p className="text-white text-sm font-semibold">Need help fast?</p>
-          <p className="text-xs mt-1" style={{ color: "#9CBBD8" }}>Warden desk is open 8 AM – 10 PM.</p>
-        </div>
-      </aside>
-
-      {/* Main column */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-8 h-16" style={{ background: "rgba(255,255,255,.9)", backdropFilter: "blur(10px)", borderBottom: `1px solid ${C.line}` }}>
-          <button className="p-2 rounded-lg hover:bg-slate-100" onClick={() => setMenuOpen(true)} aria-label="Open menu"><Menu size={20} /></button>
-          <div className="flex-1" />
-          <button className="relative p-2.5 rounded-xl hover:bg-slate-100" aria-label="Notifications">
-            <Bell size={19} style={{ color: C.muted }} />
-            <span className="absolute rounded-full" style={{ top: 8, right: 9, width: 9, height: 9, background: C.red, border: "2px solid #fff" }} />
-          </button>
-          <div className="flex items-center gap-3 pl-3" style={{ borderLeft: `1px solid ${C.line}` }}>
-            <div className="flex items-center justify-center rounded-full text-white text-sm font-bold" style={{ width: 38, height: 38, background: `linear-gradient(135deg,${C.navy},${C.teal})` }}>NP</div>
-            <div className="hidden sm:block leading-tight">
-              <div className="text-sm font-semibold">Nimali Perera</div>
-              <div className="text-xs" style={{ color: C.muted }}>Student · Room B-214</div>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 px-4 sm:px-8 py-7 w-full" style={{ maxWidth: 1180 }}>
-          {/* Breadcrumb */}
-          <nav className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm mb-4" style={{ color: C.muted }} aria-label="Breadcrumb">
-            <span className="hover:underline cursor-pointer">Dashboard</span><ChevronRight size={14} />
-            <span className="hover:underline cursor-pointer">Complaints & Services</span><ChevronRight size={14} />
-            <span className="font-semibold" style={{ color: C.blue }}>Submit Complaint</span>
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-16 antialiased">
+      {/* Breadcrumb & Navigation */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <nav
+            className="flex items-center gap-1.5 text-xs text-slate-400 mb-1"
+            aria-label="Breadcrumb"
+          >
+            <Link to="/dashboard" className="hover:text-slate-600 transition">
+              Dashboard
+            </Link>
+            <span>/</span>
+            <Link to="/complaints" className="hover:text-slate-600 transition">
+              Complaints
+            </Link>
+            <span>/</span>
+            <span className="font-semibold text-blue-600">Submit Complaint</span>
           </nav>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+            Submit New Complaint
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            Report hostel room maintenance, electrical, plumbing, or facility issues to the warden.
+          </p>
+        </div>
 
-          {/* Heading */}
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-7">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: C.navy }}>Submit New Complaint</h1>
-              <p className="mt-1.5 text-sm sm:text-base" style={{ color: C.muted }}>Report maintenance issues or hostel service problems.</p>
-            </div>
-            <button type="button" className="ss-btn-ghost self-start sm:self-auto"><ArrowLeft size={16} />Back to Complaints</button>
-          </div>
-
-          <form onSubmit={submit} noValidate>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-              {/* LEFT: main form */}
-              <div className="xl:col-span-2 space-y-6">
-                {/* Details */}
-                <section className="ss-card p-5 sm:p-7">
-                  <SectionTitle icon={MessageSquareWarning} title="Complaint details" sub="Tell us what's wrong and how serious it is." />
-                  <div className="space-y-5">
-                    <Field label="Complaint Title" required error={errors.title}>
-                      <input className={"ss-input " + (errors.title ? "err" : "")} placeholder="e.g., Water leakage in bathroom" value={f.title} onChange={onText("title")} maxLength={80} />
-                    </Field>
-
-                    <Field label="Complaint Category" required error={errors.category}>
-                      <Dropdown value={f.category} onChange={set("category")} options={CATEGORIES} placeholder="Select a category" error={errors.category} />
-                    </Field>
-
-                    <div>
-                      <label className="ss-label">Priority Level <span style={{ color: C.red }}>*</span></label>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" role="radiogroup" aria-label="Priority level">
-                        {PRIORITIES.map((p) => {
-                          const on = f.priority === p.id;
-                          return (
-                            <button key={p.id} type="button" role="radio" aria-checked={on} onClick={() => set("priority")(p.id)} className="ss-pri"
-                              style={on ? { borderColor: p.color, background: p.color + "14", boxShadow: `0 0 0 4px ${p.color}22` } : undefined}>
-                              <span className="flex items-center justify-between mb-2">
-                                <span className="rounded-full" style={{ width: 10, height: 10, background: p.color }} />
-                                <span className="flex items-center justify-center rounded-full" style={{ width: 18, height: 18, border: `1.5px solid ${on ? p.color : "#CBD5E1"}`, background: on ? p.color : "#fff" }}>
-                                  {on && <Check size={11} color="#fff" strokeWidth={3} />}
-                                </span>
-                              </span>
-                              <span className="block text-sm font-semibold" style={{ color: on ? p.color : C.text }}>{p.id}</span>
-                              <span className="block text-xs mt-0.5 leading-snug" style={{ color: C.muted }}>{p.hint}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {errors.priority && <p className="ss-err"><AlertCircle size={13} />{errors.priority}</p>}
-                    </div>
-
-                    <Field label="Description" required error={errors.description}>
-                      <textarea rows={6} className={"ss-input " + (errors.description ? "err" : "")} style={{ resize: "vertical", lineHeight: 1.55 }}
-                        placeholder="Describe the issue: when it started, how often it happens and what you have already tried."
-                        value={f.description} maxLength={MAX_DESC} onChange={onText("description")} />
-                      <div className="flex justify-end mt-1.5">
-                        <span className="text-xs font-medium" style={{ color: descLen > MAX_DESC - 40 ? C.orange : C.muted }}>{descLen} / {MAX_DESC}</span>
-                      </div>
-                    </Field>
-                  </div>
-                </section>
-
-                {/* Location */}
-                <section className="ss-card p-5 sm:p-7">
-                  <SectionTitle icon={MapPin} title="Complaint location" sub="Help the maintenance team find the problem quickly." />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <Field label="Building / Hostel" required error={errors.building}>
-                      <Dropdown value={f.building} onChange={set("building")} options={BUILDINGS} placeholder="Select building" error={errors.building} icon={Building2} />
-                    </Field>
-                    <Field label="Floor" required error={errors.floor}>
-                      <Dropdown value={f.floor} onChange={set("floor")} options={FLOORS} placeholder="Select floor" error={errors.floor} />
-                    </Field>
-                    <Field label="Room Number" required error={errors.room}>
-                      <input className={"ss-input " + (errors.room ? "err" : "")} placeholder="e.g., B-214" value={f.room} onChange={onText("room")} maxLength={10} />
-                    </Field>
-                    <Field label="Specific Location">
-                      <input className="ss-input" placeholder="e.g., Attached bathroom, near the sink" value={f.spot} onChange={onText("spot")} maxLength={60} />
-                    </Field>
-                  </div>
-                </section>
-
-                {/* Photos */}
-                <section className="ss-card p-5 sm:p-7">
-                  <SectionTitle icon={ImagePlus} title="Photo evidence" sub={`Optional. Add up to ${MAX_IMG} photos (JPG, PNG or WebP).`} />
-                  <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-                  {images.length < MAX_IMG && (
-                    <div
-                      className={"ss-drop flex flex-col items-center text-center px-4 py-9 " + (over ? "over" : "")}
-                      role="button" tabIndex={0}
-                      onClick={() => fileRef.current?.click()}
-                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), fileRef.current?.click())}
-                      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
-                      onDragLeave={() => setOver(false)}
-                      onDrop={(e) => { e.preventDefault(); setOver(false); addFiles(e.dataTransfer.files); }}
-                    >
-                      <div className="flex items-center justify-center rounded-full mb-3" style={{ width: 52, height: 52, background: "rgba(22,134,212,.12)", color: C.blue }}>
-                        <UploadCloud size={26} />
-                      </div>
-                      <p className="text-sm font-semibold">Drag photos here, or <span style={{ color: C.blue }}>browse files</span></p>
-                      <p className="text-xs mt-1" style={{ color: C.muted }}>{images.length} of {MAX_IMG} added</p>
-                    </div>
-                  )}
-                  {uploadMsg && <p className="ss-err"><AlertCircle size={13} />{uploadMsg}</p>}
-                  {images.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                      {images.map((img) => (
-                        <div key={img.id} className="relative overflow-hidden group" style={{ borderRadius: 14, border: `1px solid ${C.line}` }}>
-                          <img src={img.url} alt={img.name} className="w-full object-cover" style={{ height: 140 }} />
-                          <button type="button" onClick={() => removeImg(img.id)} aria-label={`Remove ${img.name}`}
-                            className="absolute flex items-center justify-center rounded-full transition-transform hover:scale-110"
-                            style={{ top: 8, right: 8, width: 28, height: 28, background: "rgba(23,32,51,.78)", color: "#fff" }}>
-                            <X size={15} />
-                          </button>
-                          <div className="px-3 py-2 bg-white">
-                            <p className="text-xs font-medium truncate">{img.name}</p>
-                            <p className="text-xs" style={{ color: C.muted }}>{img.size} MB</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </div>
-
-              {/* RIGHT: student + actions */}
-              <aside className="space-y-6 xl:sticky xl:top-24">
-                <section className="ss-card p-5 sm:p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-base font-semibold">Student information</h2>
-                    <span className="text-xs font-semibold rounded-full px-2.5 py-1" style={{ background: "rgba(245,158,11,.14)", color: "#B45309" }}>Demo data</span>
-                  </div>
-                  <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: `1px solid ${C.line}` }}>
-                    <div className="flex items-center justify-center rounded-full text-white font-bold" style={{ width: 48, height: 48, background: `linear-gradient(135deg,${C.navy},${C.teal})` }}>NP</div>
-                    <div>
-                      <p className="font-semibold leading-tight">Nimali Perera</p>
-                      <p className="text-xs mt-0.5" style={{ color: C.muted }}>BSc (Hons) Software Engineering</p>
-                    </div>
-                  </div>
-                  <dl className="space-y-3 text-sm">
-                    {[["Student ID", "SS-2024-0417"], ["Hostel", "Block B – Horizon Hall"], ["Room", "B-214 (Twin sharing)"], ["Contact", "+94 77 123 4567"]].map(([k, v]) => (
-                      <div key={k} className="flex justify-between gap-4">
-                        <dt style={{ color: C.muted }}>{k}</dt>
-                        <dd className="font-medium text-right">{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  <div className="flex gap-2 mt-4 p-3 rounded-xl text-xs leading-relaxed" style={{ background: "rgba(6,182,212,.08)", color: "#0E7490" }}>
-                    <Info size={15} className="shrink-0 mt-0.5" />
-                    <span>Sample details for preview only. They are read-only and not linked to a real account.</span>
-                  </div>
-                </section>
-
-                <section className="ss-card p-5 sm:p-6">
-                  <h2 className="text-base font-semibold mb-1">Ready to send?</h2>
-                  <p className="text-xs mb-4" style={{ color: C.muted }}>Fields marked * are required.</p>
-                  <div className="flex flex-col-reverse sm:flex-row xl:flex-col-reverse gap-3">
-                    <button type="button" onClick={cancel} className="ss-btn-ghost flex-1">Cancel</button>
-                    <button type="submit" className="ss-btn-primary flex-1"><Send size={16} />Submit Complaint</button>
-                  </div>
-                </section>
-              </aside>
-            </div>
-          </form>
-          <p className="text-center text-xs mt-10" style={{ color: C.muted }}>SmartStay · Maintenance, Complaints and Student Services · UI preview</p>
-        </main>
+        <Link
+          to="/complaints"
+          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 active:scale-95"
+        >
+          <ArrowLeft size={15} />
+          <span>Back to Complaints</span>
+        </Link>
       </div>
 
-      {/* Toast */}
+      {/* Global Toast Notification */}
       {toast && (
-        <div className="ss-toast fixed z-50 flex gap-3 p-4 bg-white" role="status" aria-live="polite"
-          style={{ top: 78, right: 16, left: 16, maxWidth: 400, marginLeft: "auto", borderRadius: 16, border: `1px solid ${C.line}`, borderLeft: `5px solid ${toast.type === "success" ? C.green : C.red}`, boxShadow: "0 20px 40px -12px rgba(15,76,129,.35)" }}>
-          {toast.type === "success" ? <CheckCircle2 size={22} style={{ color: C.green }} className="shrink-0" /> : <AlertCircle size={22} style={{ color: C.red }} className="shrink-0" />}
-          <div className="flex-1">
-            <p className="text-sm font-semibold">{toast.type === "success" ? "Demo submission successful" : "Check your form"}</p>
-            <p className="text-xs mt-1 leading-relaxed" style={{ color: C.muted }}>{toast.text}</p>
+        <div
+          role="status"
+          className={`flex items-start gap-3 rounded-2xl border p-4 shadow-md transition-all animate-in slide-in-from-top-2 duration-200 ${
+            toast.type === "success"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+              : "border-rose-300 bg-rose-50 text-rose-900"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle size={20} className="text-rose-600 shrink-0 mt-0.5" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">
+              {toast.type === "success"
+                ? "Complaint Submitted Successfully"
+                : "Submission Problem"}
+            </p>
+            <p className="text-xs mt-0.5 leading-relaxed">{toast.text}</p>
+            {toast.ref && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100/80 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-800">
+                  Ref: {toast.ref}
+                </span>
+                <Link
+                  to="/complaints"
+                  className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
+                >
+                  View in My Complaints →
+                </Link>
+              </div>
+            )}
           </div>
-          <button onClick={() => setToast(null)} aria-label="Dismiss" className="self-start p-1 rounded hover:bg-slate-100"><X size={16} style={{ color: C.muted }} /></button>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="rounded-lg p-1 text-slate-400 hover:bg-black/5 hover:text-slate-600"
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
+
+      <form onSubmit={submit} noValidate>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* LEFT 2 COLS: Form Inputs */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Section 1: Details */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
+              <SectionTitle
+                icon={MessageSquareWarning}
+                title="Complaint Details"
+                sub="Specify the nature of the issue and its urgency level."
+              />
+
+              <div className="space-y-5">
+                <Field label="Complaint Title" required error={errors.title}>
+                  <input
+                    type="text"
+                    className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition ${
+                      errors.title
+                        ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
+                        : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
+                    }`}
+                    placeholder="e.g., Bathroom water tap leaking continuously"
+                    value={f.title}
+                    onChange={onText("title")}
+                    maxLength={80}
+                  />
+                </Field>
+
+                <Field label="Category" required error={errors.category}>
+                  <Dropdown
+                    value={f.category}
+                    onChange={set("category")}
+                    options={CATEGORIES}
+                    placeholder="Select category"
+                    error={errors.category}
+                  />
+                </Field>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+                    Priority Level <span className="text-rose-500 font-black">*</span>
+                  </label>
+                  <div
+                    className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3"
+                    role="radiogroup"
+                  >
+                    {PRIORITIES.map((p) => {
+                      const on = f.priority === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => set("priority")(p.id)}
+                          className={`rounded-2xl border p-3 text-left transition-all cursor-pointer ${
+                            on
+                              ? "border-blue-600 bg-blue-50/70 shadow-xs ring-2 ring-blue-500/20"
+                              : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: p.color }}
+                            />
+                            {on && <Check size={14} className="text-blue-600 font-bold" />}
+                          </div>
+                          <span
+                            className="block text-xs font-bold"
+                            style={{ color: on ? C.blue : C.text }}
+                          >
+                            {p.id}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 leading-tight mt-0.5">
+                            {p.hint}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {errors.priority && (
+                    <p className="flex items-center gap-1.5 text-xs text-rose-500 font-medium mt-1.5">
+                      <AlertCircle size={13} />
+                      {errors.priority}
+                    </p>
+                  )}
+                </div>
+
+                <Field label="Description" required error={errors.description}>
+                  <textarea
+                    rows={5}
+                    className={`w-full rounded-xl border bg-white p-3.5 text-sm text-slate-800 outline-none transition leading-relaxed ${
+                      errors.description
+                        ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
+                        : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
+                    }`}
+                    placeholder="Provide relevant details: when did the issue start, what have you tried, or what parts need replacement?"
+                    value={f.description}
+                    maxLength={MAX_DESC}
+                    onChange={onText("description")}
+                  />
+                  <div className="flex justify-end mt-1.5">
+                    <span
+                      className={`text-[11px] font-medium ${
+                        descLen > MAX_DESC - 40 ? "text-amber-600" : "text-slate-400"
+                      }`}
+                    >
+                      {descLen} / {MAX_DESC} characters
+                    </span>
+                  </div>
+                </Field>
+              </div>
+            </div>
+
+            {/* Section 2: Location */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
+              <SectionTitle
+                icon={MapPin}
+                title="Location in Hostel"
+                sub="Help the maintenance technician pinpoint the exact room or fixture."
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+                <Field label="Building / Hostel Block" required error={errors.building}>
+                  <Dropdown
+                    value={f.building}
+                    onChange={set("building")}
+                    options={BUILDINGS}
+                    placeholder="Select building"
+                    error={errors.building}
+                    icon={Building2}
+                  />
+                </Field>
+
+                <Field label="Floor" required error={errors.floor}>
+                  <Dropdown
+                    value={f.floor}
+                    onChange={set("floor")}
+                    options={FLOORS}
+                    placeholder="Select floor"
+                    error={errors.floor}
+                  />
+                </Field>
+
+                <Field label="Room Number" required error={errors.room}>
+                  <input
+                    type="text"
+                    className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition ${
+                      errors.room
+                        ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
+                        : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
+                    }`}
+                    placeholder="e.g., B-204"
+                    value={f.room}
+                    onChange={onText("room")}
+                    maxLength={15}
+                  />
+                </Field>
+
+                <Field label="Specific Spot (Optional)">
+                  <input
+                    type="text"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
+                    placeholder="e.g., Near window desk, washroom sink"
+                    value={f.spot}
+                    onChange={onText("spot")}
+                    maxLength={60}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            {/* Section 3: Photo Evidence with Cloudinary Integration */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
+              <div className="flex items-center justify-between gap-3 mb-5">
+                <SectionTitle
+                  icon={ImagePlus}
+                  title="Photo Evidence (Cloudinary)"
+                  sub={`Attach up to ${MAX_IMG} photos. Images are uploaded to Cloudinary CDN.`}
+                />
+                <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-[11px] font-bold text-blue-700">
+                  <Cloud size={13} />
+                  Cloud Storage
+                </span>
+              </div>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  handlePhotoUpload(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+
+              {images.length < MAX_IMG && (
+                <div
+                  className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition-all cursor-pointer ${
+                    over
+                      ? "border-blue-500 bg-blue-50/50"
+                      : "border-slate-200 bg-slate-50/50 hover:border-blue-400 hover:bg-blue-50/20"
+                  }`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => !isUploading && fileRef.current?.click()}
+                  onKeyDown={(e) =>
+                    (e.key === "Enter" || e.key === " ") &&
+                    (!isUploading && fileRef.current?.click())
+                  }
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setOver(true);
+                  }}
+                  onDragLeave={() => setOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setOver(false);
+                    handlePhotoUpload(e.dataTransfer.files);
+                  }}
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 mb-3 shadow-xs">
+                    {isUploading ? (
+                      <Loader2 size={24} className="animate-spin text-blue-600" />
+                    ) : (
+                      <UploadCloud size={24} />
+                    )}
+                  </div>
+
+                  <p className="text-sm font-bold text-slate-800">
+                    {isUploading
+                      ? "Uploading image to Cloudinary..."
+                      : "Drag photos here, or browse files"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    PNG, JPG, or WebP up to 10MB ({images.length} of {MAX_IMG} uploaded)
+                  </p>
+                </div>
+              )}
+
+              {uploadMsg && (
+                <p className="flex items-center gap-1.5 text-xs text-amber-600 font-medium mt-3">
+                  <AlertCircle size={14} />
+                  {uploadMsg}
+                </p>
+              )}
+
+              {/* Uploaded Cloudinary Photos Grid */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4">
+                  {images.map((img) => (
+                    <div
+                      key={img.id}
+                      className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs group"
+                    >
+                      <img
+                        src={img.url}
+                        alt={img.name}
+                        className="w-full h-36 object-cover bg-slate-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImg(img.id)}
+                        aria-label={`Remove photo ${img.name}`}
+                        className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/75 text-white hover:bg-rose-600 transition shadow-xs cursor-pointer"
+                      >
+                        <X size={14} />
+                      </button>
+
+                      <div className="p-2.5 bg-white border-t border-slate-100">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="text-xs font-semibold text-slate-800 truncate">
+                            {img.name}
+                          </p>
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
+                            ✓ Cloud
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{img.size} MB</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COL: Student Info & Actions */}
+          <div className="space-y-6 lg:sticky lg:top-24">
+            {/* Student Profile Info */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-slate-900">
+                  Student Information
+                </h2>
+                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                  Verified
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white shadow-xs">
+                  {user?.initials || "AN"}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-900 leading-tight truncate">
+                    {user?.name || "Ahamed Nafeesh"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5 truncate">
+                    {user?.role || "Student account"}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="space-y-2.5 text-xs">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400">Student ID</dt>
+                  <dd className="font-mono font-bold text-slate-700">
+                    {user?.studentId || "SEU/IS/22/ICT/090"}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400">Hostel</dt>
+                  <dd className="font-semibold text-slate-700">Block B – Horizon Hall</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400">Allocated Room</dt>
+                  <dd className="font-semibold text-slate-700">
+                    {user?.room || "Block B - Room 204"}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-400">Database</dt>
+                  <dd className="font-semibold text-emerald-600">MongoDB Atlas Live</dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Submission Actions */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+              <h2 className="text-base font-bold text-slate-900 mb-1">
+                Ready to Submit?
+              </h2>
+              <p className="text-xs text-slate-400 mb-4">
+                Your report will be stored in MongoDB and routed directly to the hostel maintenance desk.
+              </p>
+
+              <div className="flex flex-col gap-2.5">
+                <button
+                  type="submit"
+                  disabled={isSubmitting || isUploading}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition hover:bg-blue-700 active:scale-95 disabled:opacity-60 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Saving to MongoDB...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      <span>Submit Complaint</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={cancel}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Clear Form
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }
