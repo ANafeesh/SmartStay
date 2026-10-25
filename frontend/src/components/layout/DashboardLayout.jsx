@@ -18,8 +18,6 @@ import {
   Home,
   LayoutDashboard,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   QrCode,
   ShoppingBag,
   Store,
@@ -91,7 +89,7 @@ const navigationGroups = [
 function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const sidebarCollapsed = false;
   const location = useLocation();
   const currentPage = navigationGroups
     .flatMap((group) => group.items)
@@ -102,9 +100,19 @@ function DashboardLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 lg:flex-row antialiased font-sans">
       {/* Mobile Top Navigation Header */}
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/90 bg-white/95 px-4 py-3 text-slate-900 shadow-xs backdrop-blur-md lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/90 bg-white/95 px-3.5 py-2.5 text-slate-900 shadow-xs backdrop-blur-md lg:hidden">
         <Logo variant="horizontal" size="sm" badge="SEU" asLink />
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Link
+            to="/notifications"
+            aria-label="View notifications"
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-50 active:scale-95"
+          >
+            <Bell size={16} />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
+              3
+            </span>
+          </Link>
           <TopRightAuth compact={true} />
           <button
             type="button"
@@ -112,9 +120,9 @@ function DashboardLayout() {
             aria-expanded={sidebarOpen}
             aria-controls="smartstay-sidebar"
             onClick={() => setSidebarOpen((open) => !open)}
-            className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100 active:scale-95 cursor-pointer"
           >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
       </div>
@@ -125,67 +133,36 @@ function DashboardLayout() {
           type="button"
           aria-label="Close sidebar overlay"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs transition-opacity lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs transition-opacity lg:hidden"
         />
       )}
 
       {/* Primary Sidebar */}
       <aside
         id="smartstay-sidebar"
-        className={`fixed left-0 top-0 z-50 flex h-screen ${sidebarWidth} shrink-0 flex-col border-r border-slate-200/90 bg-white text-slate-800 shadow-xl shadow-slate-900/5 transition-all duration-300 lg:sticky ${
+        className={`fixed left-0 top-0 z-50 flex h-screen w-72 sm:w-80 max-w-[85vw] ${sidebarWidth} shrink-0 flex-col border-r border-slate-200/90 bg-white text-slate-800 shadow-2xl shadow-slate-900/10 transition-all duration-300 lg:sticky ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         {/* Brand Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4">
-          {sidebarCollapsed ? (
-            <Logo variant="mark" size="md" asLink />
-          ) : (
-            <Logo
-              variant="horizontal"
-              size="md"
-              badge="v2.0"
-              subtitle="Hostel Management OS"
-              asLink
-            />
-          )}
-
-          {!sidebarCollapsed && (
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed(true)}
-              className="hidden h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 lg:flex cursor-pointer"
-              aria-label="Collapse sidebar"
-              title="Collapse sidebar"
-            >
-              <PanelLeftClose size={16} />
-            </button>
-          )}
+          <Logo
+            variant="horizontal"
+            size="md"
+            badge="v2.0"
+            subtitle="Hostel Management OS"
+            asLink
+          />
 
           <button
             type="button"
             onClick={() => setSidebarOpen(false)}
-            className="text-slate-400 transition-colors hover:text-slate-700 lg:hidden cursor-pointer"
+            className="text-slate-400 transition-colors hover:text-slate-700 lg:hidden cursor-pointer p-1"
             aria-label="Close navigation menu"
           >
             <X size={18} />
           </button>
         </div>
-
-        {/* Sidebar Expand Button (When Collapsed) */}
-        {sidebarCollapsed && (
-          <div className="hidden lg:flex justify-center py-2 border-b border-slate-100">
-            <button
-              type="button"
-              onClick={() => setSidebarCollapsed(false)}
-              className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition cursor-pointer"
-              aria-label="Expand sidebar"
-              title="Expand sidebar"
-            >
-              <PanelLeftOpen size={16} />
-            </button>
-          </div>
-        )}
 
         {/* Nav Links */}
         <nav
@@ -279,26 +256,26 @@ function DashboardLayout() {
       </aside>
 
       {/* Main Content Workspace */}
-      <main className="min-w-0 flex-1 px-4 pb-12 sm:px-6 lg:px-10">
-        {/* Sticky Executive Top Bar */}
-        <header className="-mx-4 mb-6 flex min-h-[76px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:sticky lg:top-0 lg:z-30 lg:-mx-10 lg:mb-8 lg:px-10">
+      <main className="min-w-0 flex-1 px-3.5 pb-12 sm:px-6 lg:px-10">
+        {/* Sticky Executive Top Bar (Desktop) */}
+        <header className="hidden lg:flex sticky top-0 z-30 -mx-10 mb-8 min-h-[76px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-10 backdrop-blur-xl">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Live Campus Network
               </span>
-              <span className="text-[11px] font-medium text-slate-400 hidden sm:inline">•</span>
-              <span className="text-[11px] font-semibold text-slate-500 hidden sm:inline">
+              <span className="text-[11px] font-medium text-slate-400">•</span>
+              <span className="text-[11px] font-semibold text-slate-500">
                 SEU SmartStay Platform
               </span>
             </div>
-            <h1 className="truncate text-xl font-black tracking-tight text-slate-900 sm:text-2xl mt-0.5">
+            <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 mt-0.5">
               {pageTitle}
             </h1>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <Link
               to="/notifications"
               aria-label="View notifications"
@@ -306,13 +283,29 @@ function DashboardLayout() {
               className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-blue-300 hover:text-blue-600 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <Bell size={18} />
-              <span className="absolute 1.5 -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
                 3
               </span>
             </Link>
             <TopRightAuth />
           </div>
         </header>
+
+        {/* Mobile Page Header Strip */}
+        <div className="lg:hidden flex items-center justify-between pt-3 pb-3 mb-4 border-b border-slate-200/60">
+          <div>
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Campus Network
+            </div>
+            <h1 className="text-xl font-black tracking-tight text-slate-900 mt-0.5">
+              {pageTitle}
+            </h1>
+          </div>
+          <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
+            SEU
+          </span>
+        </div>
 
         {/* Viewport Router Outlet */}
         <div className="mx-auto w-full max-w-7xl animate-in fade-in duration-200">

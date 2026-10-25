@@ -51,51 +51,51 @@ const stats = [
 
 function StudentDashboard() {
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-12">
+    <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 pb-12">
       {/* Title Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h1 className="text-xl sm:text-3xl font-black tracking-tight text-slate-900">
           Student Dashboard
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
           Here is a quick overview of your hostel services and balance.
         </p>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Stat Cards (2x2 on mobile, 4 cols on desktop) */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
 
           return (
             <div
               key={stat.title}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-md"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-2xs transition-all hover:border-slate-300 hover:shadow-md"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-1">
                 <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${stat.bg} ${stat.color}`}
+                  className={`flex h-8 w-8 sm:h-11 sm:w-11 items-center justify-center rounded-xl ${stat.bg} ${stat.color}`}
                 >
-                  <Icon size={22} />
+                  <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
 
                 <span
-                  className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${stat.badgeColor}`}
+                  className={`rounded-full border px-2 py-0.5 text-[9px] sm:text-[11px] font-semibold truncate ${stat.badgeColor}`}
                 >
                   {stat.badge}
                 </span>
               </div>
 
-              <p className="mt-4 text-xs font-medium text-slate-500">
+              <p className="mt-3 sm:mt-4 text-[11px] sm:text-xs font-medium text-slate-500 truncate">
                 {stat.title}
               </p>
               <div className="mt-1 flex items-baseline justify-between">
-                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
+                <h3 className="text-lg sm:text-2xl font-bold text-slate-900 tracking-tight truncate">
                   {stat.value}
                 </h3>
                 <ArrowUpRight
-                  size={18}
-                  className="text-slate-300 transition-colors group-hover:text-slate-600"
+                  size={16}
+                  className="hidden sm:block text-slate-300 transition-colors group-hover:text-slate-600"
                 />
               </div>
             </div>
