@@ -19,6 +19,10 @@ import {
   ArrowRight,
   Check,
   Calendar,
+  Plus,
+  RotateCcw,
+  CheckCheck,
+  Filter,
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
@@ -115,10 +119,15 @@ const initialNotifications = [
   {
     id: "NOTIF-01",
     title: "Payment Received Successfully",
-    message: "LKR 15,000 for Hostel Fee (August 2026) settled. Official Receipt RCT-90421 generated with anti-tamper QR verification.",
+    message: "LKR 15,000 settled for Hostel Fee (August 2026). Official Bursary Receipt RCT-90421 generated with anti-tamper QR stamp.",
     date: "02 Aug 2026, 11:20 AM",
     type: "success",
+    amount: 15000,
+    paymentDate: "02 Aug 2026",
+    paymentMethod: "Credit / Debit Card (Visa)",
     refNo: "TXN-88492019",
+    receiptNo: "RCT-90421",
+    read: true,
   },
   {
     id: "NOTIF-02",
@@ -126,7 +135,12 @@ const initialNotifications = [
     message: "Electricity & AC Surcharge is overdue since 20 Sep 2026. A late fee penalty of LKR 250 has been assessed.",
     date: "21 Sep 2026, 09:00 AM",
     type: "warning",
+    amount: 3050,
+    paymentDate: "Pending",
+    paymentMethod: "Unpaid",
     refNo: "BIL-2026-08U",
+    receiptNo: null,
+    read: false,
   },
   {
     id: "NOTIF-03",
@@ -134,7 +148,12 @@ const initialNotifications = [
     message: "South Eastern University student welfare meal subsidy applied to account.",
     date: "15 Sep 2026, 02:15 PM",
     type: "info",
+    amount: 5000,
+    paymentDate: "15 Sep 2026",
+    paymentMethod: "SEU Bursary Welfare",
     refNo: "SUB-2026-09",
+    receiptNo: null,
+    read: false,
   },
 ];
 
@@ -148,6 +167,19 @@ export default function Payments() {
   const [latestAlert, setLatestAlert] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [receiptSearch, setReceiptSearch] = useState("");
+  const [notifFilter, setNotifFilter] = useState("All");
+
+  // Generate Bill Modal State (Proposal Requirement 6)
+  const [isGenerateBillOpen, setIsGenerateBillOpen] = useState(false);
+  const [newBillForm, setNewBillForm] = useState({
+    title: "",
+    type: "Room Fee",
+    period: "October 2026",
+    amount: "15000",
+    dueDate: "25 Oct 2026",
+    lateFee: "0",
+  });
 
   const totalOutstanding = bills.reduce(
     (sum, b) => sum + b.amount + (b.lateFee || 0),
@@ -157,41 +189,94 @@ export default function Payments() {
     .filter((h) => h.status === "Success")
     .reduce((sum, h) => sum + h.amount, 0);
 
-  const handleCompletePayment = (paymentRecord, isSuccess) => {
+  const unreadNotifCount = notifications.filter((n) => !n.read).length;
+
+  const handleCompletePayment = (paymentRecord, isSuccess, isPending, isRefund) => {
     setSelectedBillForPayment(null);
 
-    // Add to history
+    // Add to payment history ledger
     setHistory((prev) => [paymentRecord, ...prev]);
 
     if (isSuccess) {
-      // Remove paid bill
+      // Clear bill from outstanding list
       setBills((prev) => prev.filter((b) => b.id !== paymentRecord.billId));
 
       const newNotif = {
         id: `NOTIF-${Date.now()}`,
-        title: "Payment Successful",
+        title: "Payment Received Successfully",
         message: `Settled LKR ${paymentRecord.amount.toLocaleString()} for ${paymentRecord.title}. Receipt #${paymentRecord.receiptNo} generated.`,
         date: "Just now",
         type: "success",
+        amount: paymentRecord.amount,
+        paymentDate: paymentRecord.date,
+        paymentMethod: paymentRecord.method,
         refNo: paymentRecord.refNo,
         receiptNo: paymentRecord.receiptNo,
+        read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
 
       setLatestAlert({
         type: "success",
         title: "Payment Authorized Successfully",
-        message: `Your payment of LKR ${paymentRecord.amount.toLocaleString()} has been confirmed. Transaction Ref: ${paymentRecord.refNo}. Official bursary receipt #${paymentRecord.receiptNo} is now ready to download.`,
+        message: `Your payment of LKR ${paymentRecord.amount.toLocaleString()} has been confirmed. Transaction Ref: ${paymentRecord.refNo}. Official bursary receipt #${paymentRecord.receiptNo} is now ready to view and download.`,
         receiptRecord: paymentRecord,
+      });
+    } else if (isPending) {
+      const newNotif = {
+        id: `NOTIF-${Date.now()}`,
+        title: "Payment Verification Pending",
+        message: `LKR ${paymentRecord.amount.toLocaleString()} for ${paymentRecord.title} is queued for bursary reconciliation. Ref: ${paymentRecord.refNo}.`,
+        date: "Just now",
+        type: "warning",
+        amount: paymentRecord.amount,
+        paymentDate: paymentRecord.date,
+        paymentMethod: paymentRecord.method,
+        refNo: paymentRecord.refNo,
+        receiptNo: null,
+        read: false,
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+
+      setLatestAlert({
+        type: "warning",
+        title: "Payment Queued for Bursary Verification",
+        message: `Your payment slip/counter deposit of LKR ${paymentRecord.amount.toLocaleString()} has been submitted. Status: Pending Accountant Verification (Ref: ${paymentRecord.refNo}).`,
+      });
+    } else if (isRefund) {
+      const newNotif = {
+        id: `NOTIF-${Date.now()}`,
+        title: "Payment Refunded",
+        message: `Refund of LKR ${paymentRecord.amount.toLocaleString()} processed for ${paymentRecord.title}. Ref: ${paymentRecord.refNo}.`,
+        date: "Just now",
+        type: "refund",
+        amount: paymentRecord.amount,
+        paymentDate: paymentRecord.date,
+        paymentMethod: paymentRecord.method,
+        refNo: paymentRecord.refNo,
+        receiptNo: null,
+        read: false,
+      };
+      setNotifications((prev) => [newNotif, ...prev]);
+
+      setLatestAlert({
+        type: "info",
+        title: "Payment Refund Processed",
+        message: `LKR ${paymentRecord.amount.toLocaleString()} has been credited back to your original payment channel. Transaction Ref: ${paymentRecord.refNo}.`,
       });
     } else {
       const newNotif = {
         id: `NOTIF-${Date.now()}`,
-        title: "Payment Declined",
+        title: "Payment Transaction Declined",
         message: `Transaction of LKR ${paymentRecord.amount.toLocaleString()} for ${paymentRecord.title} failed: ${paymentRecord.failureReason}.`,
         date: "Just now",
         type: "danger",
+        amount: paymentRecord.amount,
+        paymentDate: paymentRecord.date,
+        paymentMethod: paymentRecord.method,
         refNo: paymentRecord.refNo,
+        receiptNo: null,
+        read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
 
@@ -204,6 +289,56 @@ export default function Payments() {
     }
   };
 
+  // Generate New Bill Handler (Requirement 6)
+  const handleGenerateBillSubmit = (e) => {
+    e.preventDefault();
+    const newBill = {
+      id: `BIL-2026-${Math.floor(100 + Math.random() * 900)}`,
+      title: newBillForm.title.trim() || `${newBillForm.type} - ${newBillForm.period}`,
+      period: newBillForm.period,
+      dueDate: newBillForm.dueDate,
+      amount: Number(newBillForm.amount) || 5000,
+      lateFee: Number(newBillForm.lateFee) || 0,
+      status: Number(newBillForm.lateFee) > 0 ? "Overdue" : "Pending",
+      type: newBillForm.type,
+    };
+
+    setBills([newBill, ...bills]);
+    setIsGenerateBillOpen(false);
+
+    // Dispatch notification about new bill
+    const billNotif = {
+      id: `NOTIF-${Date.now()}`,
+      title: "New Hostel Bill Generated",
+      message: `Invoice #${newBill.id} for ${newBill.title} (LKR ${newBill.amount.toLocaleString()}) has been issued. Due: ${newBill.dueDate}.`,
+      date: "Just now",
+      type: "info",
+      amount: newBill.amount,
+      paymentDate: "Pending",
+      paymentMethod: "Unpaid",
+      refNo: newBill.id,
+      receiptNo: null,
+      read: false,
+    };
+    setNotifications((prev) => [billNotif, ...prev]);
+
+    setLatestAlert({
+      type: "success",
+      title: "Hostel Bill Generated Successfully",
+      message: `Invoice #${newBill.id} for ${newBill.title} (LKR ${newBill.amount.toLocaleString()}) is now active in your payable ledger.`,
+    });
+  };
+
+  const handleToggleRead = (id) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
+    );
+  };
+
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
   const filteredHistory = history.filter((item) => {
     const matchesStatus =
       statusFilter === "All" || item.status === statusFilter;
@@ -212,6 +347,28 @@ export default function Payments() {
       item.refNo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.receiptNo?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
+  });
+
+  const filteredReceipts = history
+    .filter((h) => h.status === "Success" && h.receiptNo)
+    .filter((rec) => {
+      const q = receiptSearch.toLowerCase();
+      return (
+        rec.receiptNo?.toLowerCase().includes(q) ||
+        rec.title.toLowerCase().includes(q) ||
+        rec.refNo?.toLowerCase().includes(q) ||
+        rec.period?.toLowerCase().includes(q)
+      );
+    });
+
+  const filteredNotifications = notifications.filter((notif) => {
+    if (notifFilter === "All") return true;
+    if (notifFilter === "Unread") return !notif.read;
+    if (notifFilter === "Success") return notif.type === "success";
+    if (notifFilter === "Declined") return notif.type === "danger";
+    if (notifFilter === "Overdue") return notif.type === "warning";
+    if (notifFilter === "Refund") return notif.type === "refund";
+    return true;
   });
 
   const getBillIcon = (type) => {
@@ -241,9 +398,9 @@ export default function Payments() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-16">
+    <div className="mx-auto max-w-7xl space-y-6 pb-16 font-sans">
       {/* Student Financial Portal Hero Card */}
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+      <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -252,16 +409,16 @@ export default function Payments() {
                 Bursary Standing: Good
               </span>
               <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold text-blue-700">
-                Module 3: Finance & Billing
+                Module 3: Finance &amp; Billing
               </span>
             </div>
 
             <h1 className="mt-2 text-xl sm:text-2xl font-black tracking-tight text-slate-900">
-              Student Billing & Financial Management
+              Student Billing &amp; Financial Management
             </h1>
 
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-              <span className="font-semibold text-slate-700">
+              <span className="font-semibold text-slate-800">
                 Ahamed Nafeesh
               </span>
               <span className="text-slate-300">•</span>
@@ -275,7 +432,15 @@ export default function Payments() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <button
+              onClick={() => setIsGenerateBillOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-50 border border-blue-200 px-3.5 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs cursor-pointer"
+            >
+              <Plus size={15} />
+              <span>Generate / Issue Bill</span>
+            </button>
+
             <button
               onClick={() => setActiveTab("tests")}
               className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
@@ -301,7 +466,11 @@ export default function Payments() {
           className={`relative overflow-hidden rounded-2xl border p-5 shadow-sm transition-all animate-in slide-in-from-top-2 duration-300 ${
             latestAlert.type === "success"
               ? "border-emerald-300 bg-emerald-50/95"
-              : "border-rose-300 bg-rose-50/95"
+              : latestAlert.type === "warning"
+                ? "border-amber-300 bg-amber-50/95"
+                : latestAlert.type === "info"
+                  ? "border-blue-300 bg-blue-50/95"
+                  : "border-rose-300 bg-rose-50/95"
           }`}
         >
           <div className="flex items-start justify-between gap-4">
@@ -310,11 +479,19 @@ export default function Payments() {
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-xs ${
                   latestAlert.type === "success"
                     ? "bg-emerald-600 shadow-emerald-600/30"
-                    : "bg-rose-600 shadow-rose-600/30"
+                    : latestAlert.type === "warning"
+                      ? "bg-amber-600 shadow-amber-600/30"
+                      : latestAlert.type === "info"
+                        ? "bg-blue-600 shadow-blue-600/30"
+                        : "bg-rose-600 shadow-rose-600/30"
                 }`}
               >
                 {latestAlert.type === "success" ? (
                   <CheckCircle2 size={22} />
+                ) : latestAlert.type === "warning" ? (
+                  <Clock size={22} />
+                ) : latestAlert.type === "info" ? (
+                  <Info size={22} />
                 ) : (
                   <AlertTriangle size={22} />
                 )}
@@ -324,7 +501,11 @@ export default function Payments() {
                   className={`text-sm font-bold ${
                     latestAlert.type === "success"
                       ? "text-emerald-950"
-                      : "text-rose-950"
+                      : latestAlert.type === "warning"
+                        ? "text-amber-950"
+                        : latestAlert.type === "info"
+                          ? "text-blue-950"
+                          : "text-rose-950"
                   }`}
                 >
                   {latestAlert.title}
@@ -333,7 +514,11 @@ export default function Payments() {
                   className={`mt-1 text-xs leading-relaxed ${
                     latestAlert.type === "success"
                       ? "text-emerald-800"
-                      : "text-rose-800"
+                      : latestAlert.type === "warning"
+                        ? "text-amber-800"
+                        : latestAlert.type === "info"
+                          ? "text-blue-800"
+                          : "text-rose-800"
                   }`}
                 >
                   {latestAlert.message}
@@ -345,10 +530,10 @@ export default function Payments() {
                       onClick={() =>
                         setSelectedReceipt(latestAlert.receiptRecord)
                       }
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 transition shadow-xs cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-800 transition shadow-xs cursor-pointer"
                     >
                       <Eye size={13} />
-                      <span>View Official Receipt</span>
+                      <span>View Official Bursary Receipt</span>
                     </button>
                   </div>
                 )}
@@ -366,7 +551,7 @@ export default function Payments() {
         </div>
       )}
 
-      {/* Clean Navigation Segmented Bar (No ugly scrollbars!) */}
+      {/* Clean Navigation Segmented Bar */}
       <div className="rounded-2xl bg-slate-200/70 p-1.5 backdrop-blur-sm">
         <div
           className="flex items-center gap-1.5 overflow-x-auto no-scrollbar"
@@ -432,10 +617,16 @@ export default function Payments() {
             }`}
           >
             <Bell size={15} />
-            <span>Notifications</span>
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-              {notifications.length}
-            </span>
+            <span>Payment Notifications</span>
+            {unreadNotifCount > 0 ? (
+              <span className="rounded-full bg-amber-500 text-white px-2 py-0.5 text-[10px] font-extrabold animate-pulse">
+                {unreadNotifCount} New
+              </span>
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                {notifications.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -464,7 +655,7 @@ export default function Payments() {
       {/* TAB 1: BILLING DASHBOARD */}
       {activeTab === "dashboard" && (
         <div className="space-y-6">
-          {/* Summary Metric Cards with Subtle Aesthetic Accents */}
+          {/* Summary Metric Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* Card 1: Outstanding */}
             <div className="relative overflow-hidden rounded-3xl border border-rose-200/80 bg-gradient-to-br from-white via-white to-rose-50/50 p-5 shadow-xs transition hover:shadow-sm">
@@ -571,14 +762,21 @@ export default function Payments() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 p-5 sm:p-6 bg-slate-50/60">
               <div>
                 <h2 className="text-base font-extrabold text-slate-900">
-                  Current Invoices & Payable Charges
+                  Current Invoices &amp; Payable Charges
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Click 'Pay Now' to launch the secure checkout simulator with instant digital bursary receipt generation.
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">
-                <span className="rounded-xl bg-white border border-slate-200/90 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+                <button
+                  onClick={() => setIsGenerateBillOpen(true)}
+                  className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition shadow-2xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus size={14} />
+                  <span>Issue New Bill</span>
+                </button>
+                <span className="rounded-xl bg-slate-100 border border-slate-200/90 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
                   {bills.length} Open Invoices
                 </span>
               </div>
@@ -595,6 +793,13 @@ export default function Payments() {
                 <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
                   You have no pending bills. Your accommodation and utility fees are completely up to date.
                 </p>
+                <button
+                  onClick={() => setIsGenerateBillOpen(true)}
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-500 transition cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span>Simulate Generating Next Month's Bill</span>
+                </button>
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
@@ -704,7 +909,7 @@ export default function Payments() {
               />
               <input
                 type="text"
-                placeholder="Search transaction ref, receipt #..."
+                placeholder="Search transaction ref, receipt #, description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none"
@@ -716,7 +921,7 @@ export default function Payments() {
                 Status:
               </span>
               <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                {["All", "Success", "Failed"].map((st) => (
+                {["All", "Success", "Failed", "Pending", "Refunded"].map((st) => (
                   <button
                     key={st}
                     onClick={() => setStatusFilter(st)}
@@ -748,67 +953,79 @@ export default function Payments() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {filteredHistory.map((rec) => (
-                    <tr
-                      key={rec.id}
-                      className="hover:bg-slate-50/60 transition"
-                    >
-                      <td className="py-3.5 px-4 sm:px-6">
-                        <p className="font-bold text-slate-900">{rec.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 font-mono">
-                          <span>Ref: {rec.refNo}</span>
-                          {rec.receiptNo && (
-                            <>
-                              <span>•</span>
-                              <span className="text-blue-600 font-semibold">
-                                {rec.receiptNo}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">
-                        {rec.date}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-slate-600">
-                        {rec.method}
-                      </td>
-
-                      <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
-                        LKR {rec.amount.toLocaleString()}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            rec.status === "Success"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : "bg-rose-50 text-rose-700 border border-rose-200"
-                          }`}
-                        >
-                          {rec.status}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
-                        {rec.status === "Success" ? (
-                          <button
-                            onClick={() => setSelectedReceipt(rec)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-2xs cursor-pointer"
-                          >
-                            <Receipt size={14} />
-                            <span>View Receipt</span>
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-slate-400 font-medium">
-                            {rec.failureReason || "Declined"}
-                          </span>
-                        )}
+                  {filteredHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        No transactions found matching your criteria.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredHistory.map((rec) => (
+                      <tr
+                        key={rec.id}
+                        className="hover:bg-slate-50/60 transition"
+                      >
+                        <td className="py-3.5 px-4 sm:px-6">
+                          <p className="font-bold text-slate-900">{rec.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400 font-mono">
+                            <span>Ref: {rec.refNo}</span>
+                            {rec.receiptNo && (
+                              <>
+                                <span>•</span>
+                                <span className="text-blue-600 font-semibold">
+                                  {rec.receiptNo}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap text-slate-600">
+                          {rec.date}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {rec.method}
+                        </td>
+
+                        <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                          LKR {rec.amount.toLocaleString()}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-center">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                              rec.status === "Success"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : rec.status === "Pending"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : rec.status === "Refunded"
+                                    ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                    : "bg-rose-50 text-rose-700 border border-rose-200"
+                            }`}
+                          >
+                            {rec.status}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
+                          {rec.status === "Success" ? (
+                            <button
+                              onClick={() => setSelectedReceipt(rec)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition shadow-2xs cursor-pointer"
+                            >
+                              <Receipt size={14} />
+                              <span>View Receipt</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 font-medium">
+                              {rec.failureReason || rec.status}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -825,142 +1042,86 @@ export default function Payments() {
                 Official Bursary Payment Receipts
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Verified digital receipts equipped with anti-tamper QR signatures and bursary validation.
+                Verified digital receipts equipped with anti-tamper QR signatures and university bursary validation.
               </p>
             </div>
-            <span className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 self-start sm:self-center">
-              {history.filter((h) => h.status === "Success" && h.receiptNo).length} Issued Receipts
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Filter receipts..."
+                  value={receiptSearch}
+                  onChange={(e) => setReceiptSearch(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-slate-50 pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none"
+                />
+              </div>
+              <span className="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs font-bold text-emerald-700 whitespace-nowrap">
+                {filteredReceipts.length} Issued Receipts
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {history
-              .filter((h) => h.status === "Success" && h.receiptNo)
-              .map((rec) => (
-                <div
-                  key={rec.receiptNo}
-                  className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-extrabold text-xs shadow-xs">
-                          SS
-                        </div>
-                        <div>
-                          <span className="text-xs font-mono font-bold text-slate-900 block">
-                            {rec.receiptNo}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            {rec.date}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                        Paid
-                      </span>
-                    </div>
-
-                    <div className="mt-4 space-y-2 text-xs">
-                      <p className="font-bold text-slate-900">{rec.title}</p>
-                      <div className="flex justify-between text-slate-500 text-[11px]">
-                        <span>Student Reg:</span>
-                        <span className="font-mono text-slate-700">
-                          SEU/IS/22/ICT/090
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-slate-500 text-[11px]">
-                        <span>Gateway:</span>
-                        <span className="text-slate-700">{rec.method}</span>
-                      </div>
-                      <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
-                        <span className="font-medium text-slate-600">
-                          Total Settled:
-                        </span>
-                        <span className="text-base font-black text-slate-900">
-                          LKR {rec.amount.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedReceipt(rec)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow-xs cursor-pointer"
-                    >
-                      <Eye size={14} />
-                      <span>Open Official Receipt</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: NOTIFICATIONS */}
-      {activeTab === "notifications" && (
-        <div className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-100 p-5 sm:p-6 bg-slate-50/60">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">
-                Billing & Payment Notification Dispatch Center
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Audited timeline of payment confirmations, rejection alerts, and invoice issuances.
-              </p>
-            </div>
-            <span className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
-              {notifications.length} Logs
-            </span>
-          </div>
-
-          <div className="divide-y divide-slate-100">
-            {notifications.map((notif) => (
+            {filteredReceipts.map((rec) => (
               <div
-                key={notif.id}
-                className="p-5 flex items-start gap-4 hover:bg-slate-50/50 transition"
+                key={rec.receiptNo}
+                className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between"
               >
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white shadow-xs ${
-                    notif.type === "success"
-                      ? "bg-emerald-600 shadow-emerald-600/20"
-                      : notif.type === "danger"
-                        ? "bg-rose-600 shadow-rose-600/20"
-                        : notif.type === "warning"
-                          ? "bg-amber-600 shadow-amber-600/20"
-                          : "bg-blue-600 shadow-blue-600/20"
-                  }`}
-                >
-                  {notif.type === "success" ? (
-                    <CheckCircle2 size={18} />
-                  ) : notif.type === "danger" ? (
-                    <AlertTriangle size={18} />
-                  ) : notif.type === "warning" ? (
-                    <Clock size={18} />
-                  ) : (
-                    <Info size={18} />
-                  )}
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-slate-900">
-                      {notif.title}
-                    </h3>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {notif.date}
+                <div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-extrabold text-xs shadow-xs">
+                        SS
+                      </div>
+                      <div>
+                        <span className="text-xs font-mono font-bold text-slate-900 block">
+                          {rec.receiptNo}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {rec.date}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                      Paid
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    {notif.message}
-                  </p>
-                  {notif.refNo && (
-                    <p className="text-[11px] font-mono text-slate-400 mt-1">
-                      Ref: {notif.refNo}
-                    </p>
-                  )}
+
+                  <div className="mt-4 space-y-2 text-xs">
+                    <p className="font-bold text-slate-900">{rec.title}</p>
+                    <div className="flex justify-between text-slate-500 text-[11px]">
+                      <span>Student Reg:</span>
+                      <span className="font-mono text-slate-700">
+                        SEU/IS/22/ICT/090
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 text-[11px]">
+                      <span>Gateway:</span>
+                      <span className="text-slate-700">{rec.method}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
+                      <span className="font-medium text-slate-600">
+                        Total Settled:
+                      </span>
+                      <span className="text-base font-black text-slate-900">
+                        LKR {rec.amount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedReceipt(rec)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow-xs cursor-pointer"
+                  >
+                    <Eye size={14} />
+                    <span>Open Official Receipt</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -968,8 +1129,322 @@ export default function Payments() {
         </div>
       )}
 
+      {/* TAB 4: PAYMENT NOTIFICATIONS (Proposal Requirements 9, 10, 11, 12) */}
+      {activeTab === "notifications" && (
+        <div className="rounded-3xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 p-5 sm:p-6 bg-slate-50/60 gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">
+                  Payment Notifications &amp; Transaction History
+                </h2>
+                <span className="rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5">
+                  Req 9, 10, 11, 12
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Displays paid amount, transaction date, payment method, reference number, and receipt code with read/unread tracking.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {unreadNotifCount > 0 && (
+                <button
+                  onClick={handleMarkAllRead}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-2xs cursor-pointer"
+                >
+                  <CheckCheck size={14} className="text-blue-600" />
+                  <span>Mark All as Read</span>
+                </button>
+              )}
+              <span className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
+                {unreadNotifCount} Unread / {notifications.length} Total
+              </span>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="p-3 border-b border-slate-100 bg-white flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-xs font-semibold text-slate-500 px-2 flex items-center gap-1">
+              <Filter size={12} /> Filter:
+            </span>
+            {["All", "Unread", "Success", "Declined", "Overdue", "Refund"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setNotifFilter(f)}
+                className={`rounded-xl px-3 py-1 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  notifFilter === f
+                    ? "bg-slate-900 text-white shadow-2xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Notifications List */}
+          <div className="divide-y divide-slate-100">
+            {filteredNotifications.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-xs">
+                No notifications found in this category.
+              </div>
+            ) : (
+              filteredNotifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className={`p-5 flex items-start gap-4 transition ${
+                    notif.read ? "bg-white hover:bg-slate-50/50" : "bg-blue-50/30 hover:bg-blue-50/50"
+                  }`}
+                >
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-white shadow-xs ${
+                      notif.type === "success"
+                        ? "bg-emerald-600 shadow-emerald-600/20"
+                        : notif.type === "danger"
+                          ? "bg-rose-600 shadow-rose-600/20"
+                          : notif.type === "warning"
+                            ? "bg-amber-600 shadow-amber-600/20"
+                            : notif.type === "refund"
+                              ? "bg-purple-600 shadow-purple-600/20"
+                              : "bg-blue-600 shadow-blue-600/20"
+                    }`}
+                  >
+                    {notif.type === "success" ? (
+                      <CheckCircle2 size={18} />
+                    ) : notif.type === "danger" ? (
+                      <AlertTriangle size={18} />
+                    ) : notif.type === "warning" ? (
+                      <Clock size={18} />
+                    ) : notif.type === "refund" ? (
+                      <RotateCcw size={18} />
+                    ) : (
+                      <Info size={18} />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-bold text-slate-900">
+                          {notif.title}
+                        </h3>
+                        {!notif.read && (
+                          <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+                        {notif.date}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      {notif.message}
+                    </p>
+
+                    {/* Metadata Strip mandated by Proposal Requirement 11 */}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-slate-50/80 border border-slate-100 p-2 text-[11px] text-slate-600">
+                      {notif.amount && (
+                        <span>
+                          Amount: <strong className="text-slate-900">LKR {Number(notif.amount).toLocaleString()}</strong>
+                        </span>
+                      )}
+                      {notif.paymentDate && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span>Date: <strong className="text-slate-800">{notif.paymentDate}</strong></span>
+                        </>
+                      )}
+                      {notif.paymentMethod && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span>Method: <strong className="text-slate-800">{notif.paymentMethod}</strong></span>
+                        </>
+                      )}
+                      {notif.refNo && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span className="font-mono text-slate-500">Ref: {notif.refNo}</span>
+                        </>
+                      )}
+                      {notif.receiptNo && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span className="font-mono text-blue-600 font-bold">Receipt #{notif.receiptNo}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleRead(notif.id)}
+                        className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                      >
+                        {notif.read ? "Mark as unread" : "Mark as read"}
+                      </button>
+
+                      {notif.receiptNo && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <button
+                            onClick={() => {
+                              const found = history.find((h) => h.receiptNo === notif.receiptNo);
+                              if (found) setSelectedReceipt(found);
+                            }}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+                          >
+                            <Eye size={12} />
+                            <span>View Linked Receipt</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* TAB 5: MODULE 3 TEST CASES SUITE */}
       {activeTab === "tests" && <Module3TestSuite />}
+
+      {/* GENERATE BILL MODAL (Proposal Requirement 6) */}
+      {isGenerateBillOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/80">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+                  <Plus size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Generate Hostel Bill &amp; Invoices
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Requirement 6: Monthly fees, semester fees, utilities, damage charges
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsGenerateBillOpen(false)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleGenerateBillSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Bill Classification / Type
+                </label>
+                <select
+                  value={newBillForm.type}
+                  onChange={(e) => setNewBillForm({ ...newBillForm, type: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                >
+                  <option value="Room Fee">Monthly Room Rent &amp; Hostel Fee</option>
+                  <option value="Semester Fee">Semester Accommodation Fee</option>
+                  <option value="Utilities">Electricity &amp; Air-Conditioning Surcharge</option>
+                  <option value="Maintenance">Water &amp; Common Maintenance Charge</option>
+                  <option value="Damage Charge">Hostel Property Damage / Disciplinary Fine</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Bill Title
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Electricity Surcharge - October"
+                  value={newBillForm.title}
+                  onChange={(e) => setNewBillForm({ ...newBillForm, title: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Base Amount (LKR)
+                  </label>
+                  <input
+                    type="number"
+                    min="100"
+                    step="100"
+                    value={newBillForm.amount}
+                    onChange={(e) => setNewBillForm({ ...newBillForm, amount: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Late Overdue Fee (LKR)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={newBillForm.lateFee}
+                    onChange={(e) => setNewBillForm({ ...newBillForm, lateFee: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Billing Cycle / Period
+                  </label>
+                  <input
+                    type="text"
+                    value={newBillForm.period}
+                    onChange={(e) => setNewBillForm({ ...newBillForm, period: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    Payment Due Date
+                  </label>
+                  <input
+                    type="text"
+                    value={newBillForm.dueDate}
+                    onChange={(e) => setNewBillForm({ ...newBillForm, dueDate: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsGenerateBillOpen(false)}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-5 py-2 text-xs font-bold text-white hover:bg-blue-500 shadow-md shadow-blue-500/20 cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span>Issue Bill &amp; Notify Student</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Payment Modal */}
       {selectedBillForPayment && (
