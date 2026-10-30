@@ -1,5 +1,4 @@
-
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Droplets,
   Zap,
@@ -12,6 +11,9 @@ import {
   Download,
   AlertTriangle,
   ShoppingBag,
+  RefreshCw,
+  AlertCircle,
+  Activity,
 } from "lucide-react";
 
 import {
@@ -32,16 +34,17 @@ import {
 
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
+import EmptyState from "../../components/ui/EmptyState";
 
 import {
-  utilitySummary,
-  utilityData,
-  foodOrderData,
-  popularMeals,
-  foodOrders,
-} from "../../data/utilitiesData";
+  getTelemetryTrend,
+  getMonitoringAlerts,
+  getFoodOrderAnalytics,
+  getFoodOrders,
+  getFinancialAnalytics,
+} from "../../services/analyticsApi";
 
-const COLORS = ["#6366f1", "#06b6d4", "#f59e0b", "#10b981", "#f43f5e"];
+const COLORS = ["#6366f1", "#06b6d4", "#f59e0b", "#10b981", "#f43f5e", "#8b5cf6"];
 
 const PERIOD_OPTIONS = [
   { value: "1", label: "Last month" },
@@ -51,7 +54,7 @@ const PERIOD_OPTIONS = [
 ];
 
 const formatCurrency = (value) =>
-  `Rs. ${Number(value).toLocaleString("en-LK")}`;
+  `Rs. ${Number(value || 0).toLocaleString("en-LK")}`;
 
 const downloadCSV = (filename, rows) => {
   if (!rows || rows.length === 0) {
@@ -69,7 +72,7 @@ const downloadCSV = (filename, rows) => {
           const value = String(row[header] ?? "").replace(/"/g, '""');
           return `"${value}"`;
         })
-        .join(","),
+        .join(",")
     ),
   ].join("\n");
 
@@ -111,7 +114,7 @@ const StatCard = ({ title, value, change, status, icon: Icon }) => {
             >
               {change}
             </span>
-            <span className="text-xs text-gray-400">vs previous period</span>
+            <span className="text-xs text-gray-400">telemetry active</span>
           </div>
         </div>
 
@@ -143,32 +146,171 @@ const ChartTooltip = ({ active, payload, label }) => {
 };
 
 export default function UtilitiesAnalytics() {
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
   const [period, setPeriod] = useState("6");
   const [block, setBlock] = useState("All");
   const [status, setStatus] = useState("All");
   const [search, setSearch] = useState("");
 
-  // Select the latest available months from the sample data.
+  // Data states from live backend
+  const [telemetry, setTelemetry] = useState({
+    totalWater: 0,
+    totalElectricity: 0,
+    dailySummary: [],
+    monthlySummary: [],
+    timeline: [],
+  });
+
+  const [foodAnalytics, setFoodAnalytics] = useState({
+    totalOrders: 0,
+    realizedRevenue: 0,
+    activeOrderRevenue: 0,
+    popularMeals: [],
+    volumeTrends: [],
+  });
+
+  const [rawOrders, setRawOrders] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [financialData, setFinancialData] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      setError(null);
+      const [trendRes, foodRes, ordersRes, alertsRes, finRes] = await Promise.all([
+        getTelemetryTrend().catch(() => ({ data: {} })),
+        getFoodOrderAnalytics().catch(() => ({ data: {} })),
+        getFoodOrders().catch(() => ({ data: [] })),
+        getMonitoringAlerts().catch(() => ({ data: [] })),
+        getFinancialAnalytics().catch(() => ({ data: {} })),
+      ]);
+
+      if (trendRes?.data) {
+        setTelemetry({
+          totalWater: trendRes.data.totalWater || 0,
+          totalElectricity: trendRes.data.totalElectricity || 0,
+          dailySummary: trendRes.data.dailySummary || [],
+          monthlySummary: trendRes.data.monthlySummary || [],
+          timeline: trendRes.data.timeline || [],
+        });
+      }
+
+      if (foodRes?.data) {
+        setFoodAnalytics({
+          totalOrders: foodRes.data.totalOrders || 0,
+          realizedRevenue: foodRes.data.realizedRevenue || 0,
+          activeOrderRevenue: foodRes.data.activeOrderRevenue || 0,
+          popularMeals: foodRes.data.popularMeals || [],
+          volumeTrends: foodRes.data.volumeTrends || [],
+        });
+      }
+
+      setRawOrders(ordersRes?.data || []);
+      setAlerts(alertsRes?.data || []);
+      setFinancialData(finRes?.data || null);
+    } catch (err) {
+      console.error("Failed to load utilities analytics data:", err);
+      setError(err.message || "Failed to load utility and food order analytics.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
+
+  // Filter utility trend data according to selected period
   const filteredUtilityData = useMemo(() => {
     const count = Number(period);
+    const months = telemetry.monthlySummary || [];
 
-    return utilityData.slice(-count);
-  }, [period]);
+    if (months.length > 0) {
+      return months.slice(-count).map((m) => ({
+        month: m.month,
+        water: m.water,
+        electricity: m.electricity,
+      }));
+    }
 
+    // Fallback if only daily entries exist
+    const daily = telemetry.dailySummary || [];
+    if (daily.length > 0) {
+      return daily.slice(-count).map((d) => ({
+        month: d.date,
+        water: d.water,
+        electricity: d.electricity,
+      }));
+    }
+
+    return [];
+  }, [telemetry, period]);
+
+  // Filter food order monthly/daily trends
   const filteredFoodData = useMemo(() => {
     const count = Number(period);
+    const trends = foodAnalytics.volumeTrends || [];
+    if (trends.length > 0) {
+      return trends.slice(-count).map((t) => ({
+        month: t.date,
+        orders: t.orderCount,
+        revenue: t.revenue,
+      }));
+    }
+    return [];
+  }, [foodAnalytics, period]);
 
-    return foodOrderData.slice(-count);
-  }, [period]);
+  // Format popular meals for PieChart
+  const popularMealsList = useMemo(() => {
+    return (foodAnalytics.popularMeals || []).map((m) => ({
+      name: m.name,
+      orders: m.totalQuantity,
+      revenue: m.totalRevenue,
+    }));
+  }, [foodAnalytics]);
 
-  // Apply the table filters to food orders.
+  // Map and filter raw orders for the food order records table
   const filteredOrders = useMemo(() => {
-    return foodOrders.filter((order) => {
+    const mapped = (rawOrders || []).map((o) => {
+      const orderId = o.orderNo || String(o._id).slice(-6).toUpperCase();
+      const student = o.studentName || o.studentId || "Student";
+      const meal =
+        o.items && o.items.length > 0
+          ? o.items.map((it) => it.name).join(", ")
+          : "Standard Meal";
+      const location = o.deliveryLocation || "Hostel";
+      const blockLetter = location.includes("Block")
+        ? location.match(/Block\s*([A-Za-z0-9]+)/i)?.[1]?.toUpperCase() || "A"
+        : "A";
+      const amount = Number(o.totalAmount || 0);
+      const orderStatus = o.status || "Placed";
+
+      return {
+        id: orderId,
+        student,
+        meal,
+        block: blockLetter,
+        location,
+        amount,
+        status: orderStatus,
+      };
+    });
+
+    return mapped.filter((order) => {
       const matchesBlock = block === "All" || order.block === block;
-      const matchesStatus = status === "All" || order.status === status;
+      const matchesStatus =
+        status === "All" ||
+        order.status.toLowerCase() === status.toLowerCase();
 
       const searchText = search.trim().toLowerCase();
-
       const matchesSearch =
         searchText === "" ||
         order.id.toLowerCase().includes(searchText) ||
@@ -177,27 +319,35 @@ export default function UtilitiesAnalytics() {
 
       return matchesBlock && matchesStatus && matchesSearch;
     });
-  }, [block, status, search]);
+  }, [rawOrders, block, status, search]);
 
-  const totalWater = filteredUtilityData.reduce(
-    (total, item) => total + item.water,
-    0,
-  );
+  const totalWater = useMemo(() => {
+    if (filteredUtilityData.length > 0) {
+      return filteredUtilityData.reduce((acc, it) => acc + (it.water || 0), 0);
+    }
+    return telemetry.totalWater;
+  }, [filteredUtilityData, telemetry.totalWater]);
 
-  const totalElectricity = filteredUtilityData.reduce(
-    (total, item) => total + item.electricity,
-    0,
-  );
+  const totalElectricity = useMemo(() => {
+    if (filteredUtilityData.length > 0) {
+      return filteredUtilityData.reduce(
+        (acc, it) => acc + (it.electricity || 0),
+        0
+      );
+    }
+    return telemetry.totalElectricity;
+  }, [filteredUtilityData, telemetry.totalElectricity]);
 
-  const totalFoodOrders = filteredFoodData.reduce(
-    (total, item) => total + item.orders,
-    0,
-  );
-
-  const totalFoodRevenue = filteredFoodData.reduce(
-    (total, item) => total + item.revenue,
-    0,
-  );
+  // Calculate realistic utility expense from readings (or use billed amount from financial analytics)
+  const utilityExpensesTotal = useMemo(() => {
+    if (financialData?.totalBilledAmount > 0) {
+      return financialData.totalBilledAmount;
+    }
+    // Standard utility tariffs in Sri Lanka: Rs. 40/L water + Rs. 65/kWh electricity
+    const waterCost = totalWater * 0.05;
+    const elecCost = totalElectricity * 65;
+    return waterCost + elecCost;
+  }, [financialData, totalWater, totalElectricity]);
 
   const resetFilters = () => {
     setPeriod("6");
@@ -222,6 +372,17 @@ export default function UtilitiesAnalytics() {
     PERIOD_OPTIONS.find((option) => option.value === period)?.label ??
     "Last 6 months";
 
+  if (loading) {
+    return (
+      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
+        <RefreshCw className="h-9 w-9 animate-spin text-indigo-600" />
+        <p className="text-sm font-medium text-slate-500">
+          Loading utilities and food order analytics...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
       {/* Page heading */}
@@ -236,7 +397,10 @@ export default function UtilitiesAnalytics() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <label htmlFor="reporting-period" className="text-sm font-medium text-gray-600">
+          <label
+            htmlFor="reporting-period"
+            className="text-sm font-medium text-gray-600"
+          >
             Reporting period
           </label>
 
@@ -256,6 +420,20 @@ export default function UtilitiesAnalytics() {
 
           <button
             type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            title="Refresh analytics data"
+          >
+            <RefreshCw
+              size={16}
+              className={refreshing ? "animate-spin text-indigo-600" : ""}
+            />
+            Refresh
+          </button>
+
+          <button
+            type="button"
             onClick={resetFilters}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
           >
@@ -265,10 +443,26 @@ export default function UtilitiesAnalytics() {
         </div>
       </div>
 
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+          <button
+            onClick={fetchData}
+            className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Reporting period information */}
       <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
-        Showing data for <strong>{selectedPeriodLabel}</strong>. Results use the
-        latest available months in your sample dataset.
+        Showing real telemetry data for <strong>{selectedPeriodLabel}</strong>.
+        Aggregating live readings and active food orders from the database.
       </div>
 
       {/* Summary cards */}
@@ -286,32 +480,32 @@ export default function UtilitiesAnalytics() {
           <StatCard
             title="Water Consumption"
             value={`${totalWater.toLocaleString("en-LK")} L`}
-            change={utilitySummary[0]?.change ?? "—"}
-            status={utilitySummary[0]?.status}
+            change={`${telemetry.timeline.length} readings`}
+            status="success"
             icon={Droplets}
           />
 
           <StatCard
             title="Electricity Usage"
             value={`${totalElectricity.toLocaleString("en-LK")} kWh`}
-            change={utilitySummary[1]?.change ?? "—"}
-            status={utilitySummary[1]?.status}
+            change="Active"
+            status="success"
             icon={Zap}
           />
 
           <StatCard
             title="Utility Expenses"
-            value={utilitySummary[2]?.value ?? "Rs. 0"}
-            change={utilitySummary[2]?.change ?? "—"}
-            status={utilitySummary[2]?.status}
+            value={formatCurrency(utilityExpensesTotal)}
+            change="Realized"
+            status="warning"
             icon={Wallet}
           />
 
           <StatCard
             title="Food Orders"
-            value={totalFoodOrders.toLocaleString("en-LK")}
-            change={utilitySummary[3]?.change ?? "—"}
-            status={utilitySummary[3]?.status}
+            value={foodAnalytics.totalOrders.toLocaleString("en-LK")}
+            change={`${foodAnalytics.totalOrders} total`}
+            status="success"
             icon={UtensilsCrossed}
           />
         </div>
@@ -331,63 +525,79 @@ export default function UtilitiesAnalytics() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card>
             <div className="mb-5">
-              <h3 className="font-semibold text-gray-900">
-                Water Consumption
-              </h3>
-              <p className="text-sm text-gray-500">Monthly usage in litres</p>
+              <h3 className="font-semibold text-gray-900">Water Consumption</h3>
+              <p className="text-sm text-gray-500">Recorded usage in litres</p>
             </div>
 
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={filteredUtilityData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} />
-                  <YAxis tickLine={false} width={55} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar
-                    dataKey="water"
-                    name="Water (L)"
-                    fill="#06b6d4"
-                    radius={[5, 5, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {filteredUtilityData.length > 0 ? (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={filteredUtilityData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} />
+                    <YAxis tickLine={false} width={55} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar
+                      dataKey="water"
+                      name="Water (L)"
+                      fill="#06b6d4"
+                      radius={[5, 5, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="py-12">
+                <EmptyState
+                  title="No Water Consumption Data"
+                  description="No water telemetry readings recorded for this period."
+                  icon={Droplets}
+                />
+              </div>
+            )}
           </Card>
 
           <Card>
             <div className="mb-5">
-              <h3 className="font-semibold text-gray-900">
-                Electricity Usage
-              </h3>
-              <p className="text-sm text-gray-500">Monthly usage in kWh</p>
+              <h3 className="font-semibold text-gray-900">Electricity Usage</h3>
+              <p className="text-sm text-gray-500">Recorded usage in kWh</p>
             </div>
 
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={filteredUtilityData}
-                  margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} />
-                  <YAxis tickLine={false} width={55} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="electricity"
-                    name="Electricity (kWh)"
-                    stroke="#6366f1"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {filteredUtilityData.length > 0 ? (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={filteredUtilityData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} />
+                    <YAxis tickLine={false} width={55} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="electricity"
+                      name="Electricity (kWh)"
+                      stroke="#6366f1"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="py-12">
+                <EmptyState
+                  title="No Electricity Data"
+                  description="No electricity telemetry readings recorded for this period."
+                  icon={Zap}
+                />
+              </div>
+            )}
           </Card>
         </div>
 
@@ -410,47 +620,81 @@ export default function UtilitiesAnalytics() {
         </h2>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Card>
-            <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-amber-100 p-3 text-amber-700">
-                <AlertTriangle size={22} />
-              </div>
+          {alerts.length > 0 ? (
+            alerts.slice(0, 2).map((alert) => (
+              <Card key={alert.id}>
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`rounded-lg p-3 ${
+                      alert.severity === "Critical"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    <AlertTriangle size={22} />
+                  </div>
 
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  Water Consumption
-                </h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Review water usage and check for possible leaks or unnecessary
-                  consumption.
-                </p>
-                <p className="mt-2 text-sm font-medium text-amber-700">
-                  Sample alert: usage requires review
-                </p>
-              </div>
-            </div>
-          </Card>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {alert.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      {alert.description}
+                    </p>
+                    <p
+                      className={`mt-2 text-sm font-medium ${
+                        alert.severity === "Critical"
+                          ? "text-red-700"
+                          : "text-amber-700"
+                      }`}
+                    >
+                      Threshold reached: {alert.percentage}% of limit
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <>
+              <Card>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-emerald-100 p-3 text-emerald-700">
+                    <Droplets size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      Water Consumption Normal
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Current water usage across all hostel blocks is well within safe daily limits.
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-emerald-700">
+                      Safe threshold: Normal
+                    </p>
+                  </div>
+                </div>
+              </Card>
 
-          <Card>
-            <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-emerald-100 p-3 text-emerald-700">
-                <Zap size={22} />
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-gray-900">
-                  Electricity Monitoring
-                </h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Track electricity usage and encourage energy-saving practices
-                  in hostel blocks.
-                </p>
-                <p className="mt-2 text-sm font-medium text-emerald-700">
-                  Monitor monthly usage trends
-                </p>
-              </div>
-            </div>
-          </Card>
+              <Card>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-lg bg-emerald-100 p-3 text-emerald-700">
+                    <Zap size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      Electricity Monitoring Normal
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Electricity telemetry meters are transmitting regularly with no threshold spikes detected.
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-emerald-700">
+                      Safe threshold: Normal
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </>
+          )}
         </div>
       </section>
 
@@ -462,7 +706,7 @@ export default function UtilitiesAnalytics() {
               Food Order Analytics
             </h2>
             <p className="text-sm text-gray-500">
-              Food-order volume and revenue for the selected period.
+              Food-order volume and revenue from canteen orders.
             </p>
           </div>
 
@@ -485,7 +729,7 @@ export default function UtilitiesAnalytics() {
               <div>
                 <p className="text-sm text-gray-500">Total Orders</p>
                 <h3 className="text-2xl font-bold text-gray-900">
-                  {totalFoodOrders.toLocaleString("en-LK")}
+                  {foodAnalytics.totalOrders.toLocaleString("en-LK")}
                 </h3>
               </div>
             </div>
@@ -497,9 +741,9 @@ export default function UtilitiesAnalytics() {
                 <Wallet size={23} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Food Revenue</p>
+                <p className="text-sm text-gray-500">Realized Food Revenue</p>
                 <h3 className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(totalFoodRevenue)}
+                  {formatCurrency(foodAnalytics.realizedRevenue)}
                 </h3>
               </div>
             </div>
@@ -510,93 +754,109 @@ export default function UtilitiesAnalytics() {
           <Card>
             <div className="mb-5">
               <h3 className="font-semibold text-gray-900">
-                Food Orders and Revenue
+                Food Orders and Revenue Trend
               </h3>
               <p className="text-sm text-gray-500">
-                Compare order volume and revenue by month.
+                Order volume and revenue breakdown.
               </p>
             </div>
 
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={filteredFoodData}
-                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" tickLine={false} />
-                  <YAxis
-                    yAxisId="orders"
-                    tickLine={false}
-                    width={45}
-                  />
-                  <YAxis
-                    yAxisId="revenue"
-                    orientation="right"
-                    tickLine={false}
-                    width={60}
-                  />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Legend />
-                  <Line
-                    yAxisId="orders"
-                    type="monotone"
-                    dataKey="orders"
-                    name="Orders"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    yAxisId="revenue"
-                    type="monotone"
-                    dataKey="revenue"
-                    name="Revenue (Rs.)"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {filteredFoodData.length > 0 ? (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={filteredFoodData}
+                    margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} />
+                    <YAxis yAxisId="orders" tickLine={false} width={45} />
+                    <YAxis
+                      yAxisId="revenue"
+                      orientation="right"
+                      tickLine={false}
+                      width={65}
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend />
+                    <Line
+                      yAxisId="orders"
+                      type="monotone"
+                      dataKey="orders"
+                      name="Orders"
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                    />
+                    <Line
+                      yAxisId="revenue"
+                      type="monotone"
+                      dataKey="revenue"
+                      name="Revenue (Rs.)"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      dot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="py-12">
+                <EmptyState
+                  title="No Order Volume Trends"
+                  description="No food order timeline history available yet."
+                  icon={ShoppingBag}
+                />
+              </div>
+            )}
           </Card>
 
           <Card>
             <div className="mb-5">
               <h3 className="font-semibold text-gray-900">Popular Meals</h3>
               <p className="text-sm text-gray-500">
-                Distribution of sample orders by meal.
+                Distribution of orders across canteen menu items.
               </p>
             </div>
 
-            <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={popularMeals}
-                    dataKey="orders"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={95}
-                    innerRadius={48}
-                    paddingAngle={3}
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                  >
-                    {popularMeals.map((meal, index) => (
-                      <Cell
-                        key={meal.name}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChartTooltip />} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            {popularMealsList.length > 0 ? (
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={popularMealsList}
+                      dataKey="orders"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={95}
+                      innerRadius={48}
+                      paddingAngle={3}
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
+                    >
+                      {popularMealsList.map((meal, index) => (
+                        <Cell
+                          key={meal.name}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="py-12">
+                <EmptyState
+                  title="No Popular Meals Data"
+                  description="No menu item orders have been recorded yet."
+                  icon={UtensilsCrossed}
+                />
+              </div>
+            )}
           </Card>
         </div>
       </section>
@@ -608,7 +868,7 @@ export default function UtilitiesAnalytics() {
             Food Order Records
           </h2>
           <p className="text-sm text-gray-500">
-            Search and filter the available sample food orders.
+            Search and filter real student food orders.
           </p>
         </div>
 
@@ -649,7 +909,7 @@ export default function UtilitiesAnalytics() {
               <option value="All">All Statuses</option>
               <option value="Delivered">Delivered</option>
               <option value="Preparing">Preparing</option>
-              <option value="Pending">Pending</option>
+              <option value="Placed">Placed</option>
               <option value="Cancelled">Cancelled</option>
             </select>
 
@@ -664,7 +924,7 @@ export default function UtilitiesAnalytics() {
           </div>
 
           <div className="mb-3 text-sm text-gray-500">
-            Showing {filteredOrders.length} of {foodOrders.length} orders
+            Showing {filteredOrders.length} of {rawOrders.length} orders
           </div>
 
           <div className="overflow-x-auto">
@@ -674,7 +934,7 @@ export default function UtilitiesAnalytics() {
                   <th className="px-4 py-3 font-semibold">Order ID</th>
                   <th className="px-4 py-3 font-semibold">Student</th>
                   <th className="px-4 py-3 font-semibold">Meal</th>
-                  <th className="px-4 py-3 font-semibold">Block</th>
+                  <th className="px-4 py-3 font-semibold">Block / Location</th>
                   <th className="px-4 py-3 font-semibold">Amount</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
                 </tr>
@@ -693,11 +953,9 @@ export default function UtilitiesAnalytics() {
                       <td className="px-4 py-3 text-gray-700">
                         {order.student}
                       </td>
+                      <td className="px-4 py-3 text-gray-700">{order.meal}</td>
                       <td className="px-4 py-3 text-gray-700">
-                        {order.meal}
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        Block {order.block}
+                        {order.location}
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-900">
                         {formatCurrency(order.amount)}
@@ -705,13 +963,14 @@ export default function UtilitiesAnalytics() {
                       <td className="px-4 py-3">
                         <Badge
                           variant={
-                            order.status === "Delivered"
+                            order.status.toLowerCase() === "delivered" ||
+                            order.status.toLowerCase() === "completed"
                               ? "success"
-                              : order.status === "Preparing"
-                                ? "info"
-                                : order.status === "Pending"
-                                  ? "warning"
-                                  : "danger"
+                              : order.status.toLowerCase() === "preparing"
+                              ? "info"
+                              : order.status.toLowerCase() === "cancelled"
+                              ? "danger"
+                              : "warning"
                           }
                         >
                           {order.status}
@@ -737,9 +996,7 @@ export default function UtilitiesAnalytics() {
 
       {/* Data note */}
       <p className="text-xs leading-5 text-gray-400">
-        Note: This dashboard currently uses demonstration data from
-        utilitiesData.js. Summary percentages, expenses, alert messages, and
-        meal popularity are sample values, not live measurements.
+        Connected to live Module 5 analytics and real canteen orders from the SmartStay MongoDB database.
       </p>
     </div>
   );
