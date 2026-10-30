@@ -128,7 +128,25 @@ function NotificationsCenter() {
         });
       }
 
-      setNotifications(unified);
+      // Reconcile status with localStorage read records
+      let readList = [];
+      try {
+        readList = JSON.parse(
+          localStorage.getItem("smartstay_read_notifications") || "[]"
+        );
+      } catch {
+        // fallback
+      }
+      const readSet = new Set(readList);
+
+      const processedNotifications = unified.map((n) => {
+        if (readSet.has(n.id)) {
+          return { ...n, status: "Read" };
+        }
+        return n;
+      });
+
+      setNotifications(processedNotifications);
     } catch (err) {
       console.error("Failed to load notifications:", err);
       setError(err.message || "Failed to load notifications.");
@@ -172,8 +190,22 @@ function NotificationsCenter() {
     });
   }, [notifications, search, category, status]);
 
-  // Mark one notification as read
+  // Mark one notification as read with persistence
   const markAsRead = (id) => {
+    try {
+      const readList = JSON.parse(
+        localStorage.getItem("smartstay_read_notifications") || "[]"
+      );
+      if (!readList.includes(id)) {
+        localStorage.setItem(
+          "smartstay_read_notifications",
+          JSON.stringify([...readList, id])
+        );
+      }
+    } catch {
+      // fallback
+    }
+
     setNotifications((previous) =>
       previous.map((item) =>
         item.id === id ? { ...item, status: "Read" } : item
@@ -181,8 +213,18 @@ function NotificationsCenter() {
     );
   };
 
-  // Mark all notifications as read
+  // Mark all notifications as read with persistence
   const markAllAsRead = () => {
+    try {
+      const allIds = notifications.map((n) => n.id);
+      localStorage.setItem(
+        "smartstay_read_notifications",
+        JSON.stringify(allIds)
+      );
+    } catch {
+      // fallback
+    }
+
     setNotifications((previous) =>
       previous.map((item) => ({
         ...item,

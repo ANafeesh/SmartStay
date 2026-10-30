@@ -78,7 +78,25 @@ function SmartMonitoring() {
 
       setSummaryData(sumRes.data || []);
       setBlocksData(blkRes.data || []);
-      setAlerts(altRes.data || []);
+
+      // Reconcile alert status with localStorage persistence
+      let ackList = [];
+      let resList = [];
+      try {
+        ackList = JSON.parse(localStorage.getItem("smartstay_acknowledged_alerts") || "[]");
+        resList = JSON.parse(localStorage.getItem("smartstay_resolved_alerts") || "[]");
+      } catch {
+        // fallback
+      }
+      const ackSet = new Set(ackList);
+      const resSet = new Set(resList);
+
+      const loadedAlerts = (altRes.data || []).map((a) => {
+        if (resSet.has(a.id)) return { ...a, status: "Resolved" };
+        if (ackSet.has(a.id)) return { ...a, status: "Acknowledged" };
+        return a;
+      });
+      setAlerts(loadedAlerts);
 
       // Build unified timeline for chart (group by timestamp/time)
       const rawTimeline = trendRes?.data?.timeline || [];
@@ -146,12 +164,40 @@ function SmartMonitoring() {
   ).length;
 
   const acknowledgeAlert = (id) => {
+    try {
+      const ackList = JSON.parse(
+        localStorage.getItem("smartstay_acknowledged_alerts") || "[]"
+      );
+      if (!ackList.includes(id)) {
+        localStorage.setItem(
+          "smartstay_acknowledged_alerts",
+          JSON.stringify([...ackList, id])
+        );
+      }
+    } catch {
+      // fallback
+    }
+
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "Acknowledged" } : a))
     );
   };
 
   const resolveAlert = (id) => {
+    try {
+      const resList = JSON.parse(
+        localStorage.getItem("smartstay_resolved_alerts") || "[]"
+      );
+      if (!resList.includes(id)) {
+        localStorage.setItem(
+          "smartstay_resolved_alerts",
+          JSON.stringify([...resList, id])
+        );
+      }
+    } catch {
+      // fallback
+    }
+
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "Resolved" } : a))
     );
@@ -172,8 +218,9 @@ function SmartMonitoring() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.value || Number(formData.value) <= 0) {
-      setFormError("Please enter a valid positive numeric reading value.");
+    const numVal = Number(formData.value);
+    if (formData.value === "" || isNaN(numVal) || numVal < 0) {
+      setFormError("Please enter a valid non-negative reading value (0 or higher).");
       return;
     }
 
@@ -182,7 +229,7 @@ function SmartMonitoring() {
       setFormError(null);
       await createMonitoringReading({
         utilityType: formData.utilityType,
-        value: Number(formData.value),
+        value: numVal,
         unit: formData.unit,
         blockName: formData.blockName,
         location: formData.location || `${formData.blockName} Main Meter`,

@@ -572,14 +572,20 @@ const getTelemetryTrend = async (req, res) => {
       filter.blockName = blockName;
     }
 
-    if (period) {
+    if (period && period !== "all") {
       const now = Date.now();
       if (period === "24h") {
         filter.recordedAt = { $gte: new Date(now - 24 * 60 * 60 * 1000) };
       } else if (period === "7d") {
         filter.recordedAt = { $gte: new Date(now - 7 * 24 * 60 * 60 * 1000) };
-      } else if (period === "30d") {
+      } else if (period === "30d" || period === "1" || period === "1m") {
         filter.recordedAt = { $gte: new Date(now - 30 * 24 * 60 * 60 * 1000) };
+      } else if (period === "90d" || period === "3" || period === "3m") {
+        filter.recordedAt = { $gte: new Date(now - 90 * 24 * 60 * 60 * 1000) };
+      } else if (period === "180d" || period === "6" || period === "6m") {
+        filter.recordedAt = { $gte: new Date(now - 180 * 24 * 60 * 60 * 1000) };
+      } else if (period === "365d" || period === "12" || period === "1y") {
+        filter.recordedAt = { $gte: new Date(now - 365 * 24 * 60 * 60 * 1000) };
       }
     }
 

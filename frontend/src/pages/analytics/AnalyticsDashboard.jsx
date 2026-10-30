@@ -299,13 +299,19 @@ function AnalyticsDashboard() {
   // Revenue chart data (from actual monthly collection summary)
   const revenueChartData = useMemo(() => {
     if (!financialData?.monthlySummary?.length) return [];
-    return financialData.monthlySummary.map((m) => ({
+    let list = financialData.monthlySummary;
+    if (reportingPeriod === "current") {
+      list = list.slice(-1);
+    } else if (reportingPeriod === "30days") {
+      list = list.slice(-2);
+    }
+    return list.map((m) => ({
       month: m.month || m.yearMonth,
       revenue: m.collectedAmount || 0,
       billed: m.billedAmount || 0,
       transactions: m.transactionCount || 0,
     }));
-  }, [financialData]);
+  }, [financialData, reportingPeriod]);
 
   // Complaint category chart data
   const complaintChartData = useMemo(() => {
