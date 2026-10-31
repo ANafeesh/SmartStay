@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
 import { useAuth } from "../../context/AuthContext";
+import RoleSwitcherModal from "../auth/RoleSwitcherModal";
 import {
   Activity,
   AlertTriangle,
@@ -19,6 +20,7 @@ import {
   LayoutDashboard,
   Menu,
   QrCode,
+  RefreshCw,
   ShoppingBag,
   Store,
   User,
@@ -32,6 +34,7 @@ import {
 const navigationGroups = [
   {
     title: "Student Portal",
+    role: "student",
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Payments & Bills", href: "/payments", icon: CreditCard },
@@ -44,6 +47,7 @@ const navigationGroups = [
   },
   {
     title: "Vendor Portal",
+    role: "vendor",
     items: [
       { name: "Vendor Dashboard", href: "/vendor/dashboard", icon: Store },
       { name: "Food Items", href: "/vendor/food-items", icon: UtensilsCrossed },
@@ -54,6 +58,7 @@ const navigationGroups = [
   },
   {
     title: "Hostel Management",
+    role: "warden",
     items: [
       { name: "Hostel Dashboard", href: "/hostel", icon: Building },
       { name: "Buildings", href: "/hostel/buildings", icon: Building },
@@ -65,6 +70,7 @@ const navigationGroups = [
   },
   {
     title: "Maintenance",
+    role: "maintenance",
     items: [
       { name: "Maintenance Overview", href: "/maintenance", icon: Wrench },
       { name: "Submit a Complaint", href: "/maintenance/submit-complaint", icon: ClipboardList },
@@ -72,6 +78,7 @@ const navigationGroups = [
   },
   {
     title: "Analytics & Monitoring",
+    role: "executive",
     items: [
       { name: "Analytics Overview", href: "/analytics", icon: BarChart3 },
       { name: "Reports", href: "/reports", icon: FileText },
@@ -89,6 +96,7 @@ const navigationGroups = [
 function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const sidebarCollapsed = false;
   const location = useLocation();
   const currentPage = navigationGroups
@@ -169,71 +177,81 @@ function DashboardLayout() {
           aria-label="Primary navigation"
           className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-3 py-4"
         >
-          {navigationGroups.map((group) => (
-            <div key={group.title}>
-              {!sidebarCollapsed && (
-                <div className="flex items-center justify-between mb-2 px-2.5">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">
-                    {group.title}
-                  </p>
-                  {group.title === "Student Portal" && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                  )}
-                  {group.title === "Vendor Portal" && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  )}
-                </div>
-              )}
-              <div className="space-y-1">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const active = location.pathname === item.href;
+          {navigationGroups.map((group) => {
+            const isUserPrimaryGroup = user?.roleKey === group.role;
 
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      aria-current={active ? "page" : undefined}
-                      onClick={() => setSidebarOpen(false)}
-                      title={sidebarCollapsed ? item.name : undefined}
-                      className={`group relative flex items-center ${
-                        sidebarCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
-                      } rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                        active
-                          ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-1 ring-inset ring-blue-500 font-bold"
-                          : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
-                      }`}
-                    >
-                      <Icon
-                        size={17}
-                        className={`shrink-0 transition-colors ${
-                          active ? "text-white" : "text-slate-400 group-hover:text-slate-700"
+            return (
+              <div key={group.title}>
+                {!sidebarCollapsed && (
+                  <div className="flex items-center justify-between mb-2 px-2.5">
+                    <p className={`text-[10px] font-extrabold uppercase tracking-[0.18em] ${
+                      isUserPrimaryGroup ? "text-blue-600 font-black" : "text-slate-400"
+                    }`}>
+                      {group.title}
+                    </p>
+                    {isUserPrimaryGroup && (
+                      <span className="rounded-full bg-blue-100 px-1.5 py-0.2 text-[9px] font-bold text-blue-700">
+                        Active Role
+                      </span>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = location.pathname === item.href;
+
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        aria-current={active ? "page" : undefined}
+                        onClick={() => setSidebarOpen(false)}
+                        title={sidebarCollapsed ? item.name : undefined}
+                        className={`group relative flex items-center ${
+                          sidebarCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
+                        } rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                          active
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-1 ring-inset ring-blue-500 font-bold"
+                            : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
                         }`}
-                      />
-                      {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
+                      >
+                        <Icon
+                          size={17}
+                          className={`shrink-0 transition-colors ${
+                            active ? "text-white" : "text-slate-400 group-hover:text-slate-700"
+                          }`}
+                        />
+                        {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
 
-                      {/* Subtle indicators for key Module 3 pages */}
-                      {!sidebarCollapsed && item.name === "Payments & Bills" && !active && (
-                        <span className="ml-auto rounded-full bg-blue-100 px-1.5 py-0.2 text-[9px] font-bold text-blue-700">
-                          Due
-                        </span>
-                      )}
-                      {!sidebarCollapsed && item.name === "Marketplace" && !active && (
-                        <span className="ml-auto rounded-full bg-emerald-100 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
-                          Food
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
+                        {/* Subtle indicators for key Module 3 pages */}
+                        {!sidebarCollapsed && item.name === "Payments & Bills" && !active && (
+                          <span className="ml-auto rounded-full bg-blue-100 px-1.5 py-0.2 text-[9px] font-bold text-blue-700">
+                            Due
+                          </span>
+                        )}
+                        {!sidebarCollapsed && item.name === "Marketplace" && !active && (
+                          <span className="ml-auto rounded-full bg-emerald-100 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
+                            Food
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
-        {/* User / Member ID Footer */}
+        {/* User / Member ID Footer & Persona Switcher */}
         <div className="border-t border-slate-100 p-3 bg-slate-50/50">
-          <div className="flex items-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setShowRoleSwitcher(true)}
+            title="Click to switch demo persona"
+            className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer"
+          >
             <div className={`flex min-w-0 items-center ${sidebarCollapsed ? "w-full justify-center" : "gap-2.5"}`}>
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-xs font-black text-white shadow-xs">
                 {user?.initials || "AN"}
@@ -245,13 +263,19 @@ function DashboardLayout() {
                       {user?.name || "Ahamed Nafeesh"}
                     </p>
                   </div>
-                  <p className="truncate font-mono text-[10px] font-semibold text-blue-600">
+                  <p className="truncate text-[10px] font-semibold text-blue-600">
+                    {user?.roleBadge || user?.role || "Student account"}
+                  </p>
+                  <p className="truncate font-mono text-[9px] text-slate-400">
                     {user?.studentId || "SEU/IS/22/ICT/090"}
                   </p>
                 </div>
               )}
             </div>
-          </div>
+            {!sidebarCollapsed && (
+              <RefreshCw size={13} className="text-slate-400 shrink-0 ml-1.5 hover:rotate-180 transition-transform duration-300" />
+            )}
+          </button>
         </div>
       </aside>
 
@@ -312,6 +336,12 @@ function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Role Switcher Modal */}
+      <RoleSwitcherModal
+        isOpen={showRoleSwitcher}
+        onClose={() => setShowRoleSwitcher(false)}
+      />
     </div>
   );
 }

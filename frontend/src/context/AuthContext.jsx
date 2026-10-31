@@ -1,21 +1,25 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { getDemoAccount, DEMO_ACCOUNTS } from "../data/demoAccounts";
 
 const AuthContext = createContext(null);
 
 const DEFAULT_USER = {
-  name: "Nafeesh",
-  initials: "AN",
-  email: "nafeesh@campus.edu",
-  studentId: "SEU/IS/22/ICT/090",
-  role: "Student account",
-  room: "Block B - Room 204",
+  ...DEMO_ACCOUNTS[0],
+  role: "Student account", // Backward-compatibility
 };
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem("smartstay_auth");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Ensure roleKey exists
+        if (!parsed.roleKey) {
+          parsed.roleKey = "student";
+        }
+        return parsed;
+      }
     } catch {
       // ignore
     }
@@ -41,8 +45,28 @@ export function AuthProvider({ children }) {
   }, [user, isLoggedIn]);
 
   const login = (newUser = DEFAULT_USER) => {
-    setUser(newUser);
+    // If newUser is a string (e.g. roleKey), lookup the full account
+    if (typeof newUser === "string") {
+      const account = getDemoAccount(newUser);
+      setUser({ ...account, role: account.roleBadge });
+    } else {
+      setUser({
+        roleKey: "student",
+        ...newUser,
+      });
+    }
     setIsLoggedIn(true);
+  };
+
+  const switchRole = (roleKey) => {
+    const account = getDemoAccount(roleKey);
+    const enrichedUser = {
+      ...account,
+      role: account.roleBadge,
+    };
+    setUser(enrichedUser);
+    setIsLoggedIn(true);
+    return enrichedUser;
   };
 
   const logout = () => {
@@ -50,7 +74,16 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoggedIn,
+        login,
+        logout,
+        switchRole,
+        availableRoles: DEMO_ACCOUNTS,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -59,12 +92,13 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    // Return fallback if outside provider
     return {
       user: DEFAULT_USER,
       isLoggedIn: true,
       login: () => {},
       logout: () => {},
+      switchRole: () => DEFAULT_USER,
+      availableRoles: DEMO_ACCOUNTS,
     };
   }
   return context;
