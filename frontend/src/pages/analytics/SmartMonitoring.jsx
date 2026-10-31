@@ -377,13 +377,12 @@ function SmartMonitoring() {
           </div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                waterSummary.percentage >= 90
-                  ? "bg-red-500"
-                  : waterSummary.percentage >= 80
+              className={`h-full rounded-full transition-all duration-500 ${waterSummary.percentage >= 90
+                ? "bg-red-500"
+                : waterSummary.percentage >= 80
                   ? "bg-amber-500"
                   : "bg-cyan-500"
-              }`}
+                }`}
               style={{ width: `${Math.min(waterSummary.percentage, 100)}%` }}
             />
           </div>
@@ -407,13 +406,12 @@ function SmartMonitoring() {
           </div>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                electricitySummary.percentage >= 90
-                  ? "bg-red-500"
-                  : electricitySummary.percentage >= 80
+              className={`h-full rounded-full transition-all duration-500 ${electricitySummary.percentage >= 90
+                ? "bg-red-500"
+                : electricitySummary.percentage >= 80
                   ? "bg-amber-500"
                   : "bg-smart-blue"
-              }`}
+                }`}
               style={{
                 width: `${Math.min(electricitySummary.percentage, 100)}%`,
               }}
@@ -434,11 +432,10 @@ function SmartMonitoring() {
               </p>
             </div>
             <div
-              className={`rounded-xl p-3 ${
-                activeCount > 0
-                  ? "bg-red-50 text-red-600"
-                  : "bg-emerald-50 text-emerald-600"
-              }`}
+              className={`rounded-xl p-3 ${activeCount > 0
+                ? "bg-red-50 text-red-600"
+                : "bg-emerald-50 text-emerald-600"
+                }`}
             >
               <AlertTriangle size={22} />
             </div>
@@ -454,8 +451,8 @@ function SmartMonitoring() {
                 {criticalCount > 0
                   ? "Limit Exceeded"
                   : activeCount > 0
-                  ? "Threshold Warning"
-                  : "Operational"}
+                    ? "Threshold Warning"
+                    : "Operational"}
               </h2>
               <p className="mt-2 text-xs text-slate-500">
                 Monitoring engine active
@@ -623,11 +620,10 @@ function SmartMonitoring() {
 
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          waterPercent >= 90
-                            ? "bg-red-500"
-                            : "bg-cyan-500"
-                        }`}
+                        className={`h-full rounded-full transition-all duration-500 ${waterPercent >= 90
+                          ? "bg-red-500"
+                          : "bg-cyan-500"
+                          }`}
                         style={{
                           width: `${Math.min(waterPercent, 100)}%`,
                         }}
@@ -653,11 +649,10 @@ function SmartMonitoring() {
 
                     <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          elecPercent >= 90
-                            ? "bg-red-500"
-                            : "bg-amber-500"
-                        }`}
+                        className={`h-full rounded-full transition-all duration-500 ${elecPercent >= 90
+                          ? "bg-red-500"
+                          : "bg-amber-500"
+                          }`}
                         style={{
                           width: `${Math.min(elecPercent, 100)}%`,
                         }}
@@ -711,11 +706,10 @@ function SmartMonitoring() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex gap-3">
                   <div
-                    className={`mt-1 rounded-xl p-3 ${
-                      alert.severity === "Critical"
-                        ? "bg-red-50 text-red-600"
-                        : "bg-amber-50 text-amber-600"
-                    }`}
+                    className={`mt-1 rounded-xl p-3 ${alert.severity === "Critical"
+                      ? "bg-red-50 text-red-600"
+                      : "bg-amber-50 text-amber-600"
+                      }`}
                   >
                     <AlertTriangle size={20} />
                   </div>
