@@ -1,5 +1,5 @@
-
 const express = require("express");
+const { protect, authorizeRole } = require("../middleware/authMiddleware");
 
 const {
   getTransfers,
@@ -11,10 +11,15 @@ const {
 
 const router = express.Router();
 
-router.get("/", getTransfers);
-router.get("/:id", getTransferById);
-router.post("/", createTransfer);
-router.patch("/:id/approve", approveTransfer);
-router.patch("/:id/reject", rejectTransfer);
+// Authenticated users can list and view transfers
+router.get("/", protect, getTransfers);
+router.get("/:id", protect, getTransferById);
+
+// Students can apply for transfers
+router.post("/", protect, authorizeRole("student", "admin"), createTransfer);
+
+// Wardens and Admins approve or reject transfers
+router.patch("/:id/approve", protect, authorizeRole("admin", "warden"), approveTransfer);
+router.patch("/:id/reject", protect, authorizeRole("admin", "warden"), rejectTransfer);
 
 module.exports = router;

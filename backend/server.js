@@ -1,12 +1,13 @@
-
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
 const connectDB = require("./config/db");
 
+const authRoutes = require("./routes/authRoutes");
 const billRoutes = require("./routes/billRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const receiptRoutes = require("./routes/receiptRoutes");
@@ -28,9 +29,19 @@ const complaintRoutes = require("./routes/complaintRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+app.use(cookieParser());
 app.use(express.json());
 
+// Authentication APIs
+app.use("/api/auth", authRoutes);
+
+// Core Modules APIs
 app.use("/api/bills", billRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/receipts", receiptRoutes);
@@ -47,7 +58,7 @@ app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
 app.use("/api/complaints", complaintRoutes);
 
-// Your Module 5: Monitoring and Analytics APIs
+// Module 5: Monitoring and Analytics APIs
 app.use("/api/monitoring", monitoringRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
@@ -69,6 +80,10 @@ app.use((req, res) => {
 
 connectDB();
 
-app.listen(PORT, () => {
-  console.log(`SmartStay backend running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`SmartStay backend running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

@@ -1,65 +1,92 @@
-import { Navigate, useLocation, Outlet } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { ShieldAlert, ArrowRight, UserCheck } from "lucide-react";
+import { Navigate, useLocation, Outlet, Link } from "react-router-dom";
+import { useAuth, normalizeRole } from "../../context/AuthContext";
+import { ShieldAlert, ArrowLeft, LogIn, Lock } from "lucide-react";
 
 /**
- * Frontend-Only Route Guard for SmartStay
- * Verifies logged-in status and provides friendly evaluation-mode role switching.
+ * Strict Full-Stack Route Guard for SmartStay
+ * - Enforces active JWT authentication
+ * - Prevents unauthenticated access with redirect to /login (preserving intended path)
+ * - Restricts access based on server-verified user roles
  */
 function ProtectedRoute({ allowedRoles = null, children = null }) {
-  const { user, isLoggedIn, switchRole } = useAuth();
+  const { user, isLoggedIn, isLoading } = useAuth();
   const location = useLocation();
 
-  if (!isLoggedIn) {
+  // 1. Session verification in progress
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <span
+            aria-hidden="true"
+            className="h-8 w-8 animate-spin rounded-full border-3 border-blue-200 border-t-blue-600"
+          />
+          <p className="text-xs font-bold text-slate-700 tracking-wide uppercase">
+            Verifying Security Credentials...
+          </p>
+          <p className="text-[11px] text-slate-400">SmartStay Secure Authentication Gate</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Not authenticated: Strict redirect to Login
+  if (!isLoggedIn || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If role check is needed and user role is not in allowedRoles
-  const isRoleAllowed =
-    !allowedRoles ||
-    allowedRoles.length === 0 ||
-    allowedRoles.includes(user?.roleKey);
+  // 3. Role-Based Access Control
+  if (allowedRoles && allowedRoles.length > 0) {
+    const currentRole = normalizeRole(user.role || user.roleKey);
+    const normalizedAllowed = allowedRoles.map(normalizeRole);
 
-  if (!isRoleAllowed) {
-    const targetRole = allowedRoles[0];
+    const isAuthorized =
+      currentRole === "admin" || normalizedAllowed.includes(currentRole);
 
-    return (
-      <div className="space-y-6">
-        {/* Soft Role Mismatch Banner (Evaluation Friendly) */}
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5 text-amber-900 shadow-xs">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-200/80 text-amber-800">
-                <ShieldAlert size={20} />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold">
-                  Role Demonstration Notice
-                </h4>
-                <p className="mt-0.5 text-xs text-amber-800 leading-relaxed">
-                  You are currently logged in as{" "}
-                  <strong>{user?.name} ({user?.role || user?.roleKey})</strong>.
-                  This workspace typically requires <strong>{targetRole.toUpperCase()}</strong> permissions.
-                </p>
-              </div>
-            </div>
+    if (!isAuthorized) {
+      const targetRoleName = allowedRoles[0].toUpperCase();
 
-            <button
-              type="button"
-              onClick={() => switchRole(targetRole)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition shrink-0"
+      return (
+        <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-rose-50 text-rose-600 shadow-sm border border-rose-100">
+            <Lock size={36} />
+          </div>
+
+          <span className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700">
+            <ShieldAlert size={14} />
+            <span>HTTP 403 Forbidden Access</span>
+          </span>
+
+          <h2 className="mt-3 text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+            Access Restricted to {targetRoleName}
+          </h2>
+
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 leading-relaxed">
+            You are signed in as <strong>{user.name}</strong> with role{" "}
+            <span className="font-semibold text-slate-900">{user.roleBadge || user.role}</span>.
+            Your account does not possess permission to access this protected workspace.
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              to={user.defaultPath || "/dashboard"}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm shadow-blue-500/20 hover:bg-blue-700 transition"
             >
-              <UserCheck size={14} />
-              <span>Switch to {targetRole} persona</span>
-              <ArrowRight size={13} />
-            </button>
+              <ArrowLeft size={15} />
+              <span>Return to My Authorized Dashboard</span>
+            </Link>
+
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+            >
+              <LogIn size={15} className="text-slate-500" />
+              <span>Switch Account</span>
+            </Link>
           </div>
         </div>
-
-        {/* Still render the content so examiners are never locked out */}
-        {children || <Outlet />}
-      </div>
-    );
+      );
+    }
   }
 
   return children || <Outlet />;

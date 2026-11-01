@@ -17,7 +17,9 @@ import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 
-const API_URL = "http://localhost:5000/api";
+import { API_BASE_URL } from "../../services/apiClient";
+
+const API_URL = API_BASE_URL;
 
 const getRows = (result) => {
   if (Array.isArray(result)) return result;

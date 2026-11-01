@@ -1,4 +1,6 @@
 const express = require("express");
+const { protect, authorizeRole } = require("../middleware/authMiddleware");
+
 const {
   createPayment,
   getPayments,
@@ -8,9 +10,16 @@ const {
 
 const router = express.Router();
 
-router.post("/", createPayment);
-router.get("/", getPayments);
-router.get("/:id", getPayment);
-router.patch("/:id/status", updatePaymentStatus);
+// Students and finance staff can record payments
+router.post("/", protect, createPayment);
+
+// Finance staff, Wardens, Admins can view all payments
+router.get("/", protect, authorizeRole("admin", "finance", "warden"), getPayments);
+
+// Authenticated users can view payment receipts
+router.get("/:id", protect, getPayment);
+
+// Finance staff can verify or update payment status
+router.patch("/:id/status", protect, authorizeRole("admin", "finance"), updatePaymentStatus);
 
 module.exports = router;

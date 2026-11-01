@@ -1,0 +1,86 @@
+/**
+ * Centralized API Client for SmartStay
+ * Supports environment-aware base URL, automatic JWT Bearer header attachment,
+ * and cross-origin cookie credentials.
+ */
+
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+
+export function getAuthToken() {
+  try {
+    return localStorage.getItem("smartstay_token") || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token) {
+  try {
+    if (token) {
+      localStorage.setItem("smartstay_token", token);
+    } else {
+      localStorage.removeItem("smartstay_token");
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+/**
+ * Universal fetch wrapper with authentication and error handling
+ */
+export async function apiFetch(endpoint, options = {}) {
+  const url = endpoint.startsWith("http")
+    ? endpoint
+    : `${API_BASE_URL}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
+
+  const headers = {
+    ...options.headers,
+  };
+
+  // Add JSON Content-Type if body is an object and not FormData
+  if (
+    options.body &&
+    typeof options.body === "object" &&
+    !(options.body instanceof FormData)
+  ) {
+    headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(options.body);
+  }
+
+  // Attach JWT Bearer token if present
+  const token = getAuthToken();
+  if (token && !headers["Authorization"]) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const fetchOptions = {
+    ...options,
+    headers,
+    credentials: options.credentials || "include",
+  };
+
+  const response = await fetch(url, fetchOptions);
+
+  // Parse JSON response
+  let data;
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    data = { success: response.ok, message: await response.text() };
+  }
+
+  if (!response.ok) {
+    const errorMsg = data?.message || `Request failed with HTTP status ${response.status}`;
+    const err = new Error(errorMsg);
+    err.status = response.status;
+    err.data = data;
+    throw err;
+  }
+
+  return data;
+}
+
+export default apiFetch;

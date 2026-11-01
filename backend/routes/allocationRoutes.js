@@ -1,5 +1,5 @@
-
 const express = require("express");
+const { protect, authorizeRole } = require("../middleware/authMiddleware");
 
 const {
   getAllocations,
@@ -11,19 +11,15 @@ const {
 
 const router = express.Router();
 
-// GET: Get all allocations
-router.get("/", getAllocations);
+// GET: Get all allocations (Staff, Warden, Admin)
+router.get("/", protect, authorizeRole("admin", "warden", "finance"), getAllocations);
 
-// GET: Get allocation by ID
-router.get("/:id", getAllocationById);
+// GET: Get allocation by ID (Authenticated users)
+router.get("/:id", protect, getAllocationById);
 
-// POST: Create a new allocation
-router.post("/", createAllocation);
-
-// PUT: Update an allocation
-router.put("/:id", updateAllocation);
-
-// PATCH: Check out a student
-router.patch("/:id/checkout", checkoutAllocation);
+// POST, PUT, PATCH: Administrative allocation management
+router.post("/", protect, authorizeRole("admin", "warden"), createAllocation);
+router.put("/:id", protect, authorizeRole("admin", "warden"), updateAllocation);
+router.patch("/:id/checkout", protect, authorizeRole("admin", "warden"), checkoutAllocation);
 
 module.exports = router;

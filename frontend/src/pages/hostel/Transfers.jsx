@@ -17,7 +17,9 @@ import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 
-const API_URL = "http://localhost:5000/api/transfers";
+import { API_BASE_URL } from "../../services/apiClient";
+
+const API_URL = `${API_BASE_URL}/transfers`;
 
 function formatDate(date) {
   if (!date) return "—";
