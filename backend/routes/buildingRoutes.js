@@ -1,5 +1,5 @@
-
 const express = require("express");
+const { protect, authorizeRole } = require("../middleware/authMiddleware");
 
 const {
   createBuilding,
@@ -11,19 +11,13 @@ const {
 
 const router = express.Router();
 
-// Create a building
-router.post("/", createBuilding);
-
-// Get all buildings
+// Read building directory
 router.get("/", getAllBuildings);
-
-// Get one building by ID
 router.get("/:id", getBuildingById);
 
-// Update a building
-router.put("/:id", updateBuilding);
-
-// Delete a building
-router.delete("/:id", deleteBuilding);
+// Administrative mutations
+router.post("/", protect, authorizeRole("admin", "warden"), createBuilding);
+router.put("/:id", protect, authorizeRole("admin", "warden"), updateBuilding);
+router.delete("/:id", protect, authorizeRole("admin"), deleteBuilding);
 
 module.exports = router;

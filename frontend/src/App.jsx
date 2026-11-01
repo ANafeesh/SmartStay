@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -94,7 +94,7 @@ function App() {
             />
             <Route
               path="/login/admin"
-              element={<RoleLoginPage forcedRoleKey="warden" />}
+              element={<RoleLoginPage forcedRoleKey="admin" />}
             />
             <Route
               path="/login/maintenance"
@@ -108,6 +108,10 @@ function App() {
               path="/login/executive"
               element={<RoleLoginPage forcedRoleKey="executive" />}
             />
+            <Route
+              path="/register"
+              element={<RoleLoginPage forcedRoleKey="student" />}
+            />
 
             {/* Authenticated Dashboard Workspace */}
             <Route
@@ -118,50 +122,87 @@ function App() {
               }
             >
               {/* Module 2 & 3: Student Portal */}
-              <Route path="/dashboard" element={<StudentDashboard />} />
-              <Route path="/payments" element={<Payments />} />
-              <Route path="/room" element={<Room />} />
-              <Route path="/complaints" element={<Complaints />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/marketplace" element={<Marketplace />} />
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={["student", "admin"]} />
+                }
+              >
+                <Route path="/dashboard" element={<StudentDashboard />} />
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/room" element={<Room />} />
+                <Route path="/complaints" element={<Complaints />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+              </Route>
 
               {/* Module 3: Vendor Portal */}
-              <Route path="/vendor/dashboard" element={<VendorDashboard />} />
               <Route
-                path="/vendor/applications"
-                element={<VendorApplications />}
-              />
-              <Route path="/vendor/food-items" element={<FoodItems />} />
-              <Route path="/vendor/orders" element={<VendorOrders />} />
-              <Route path="/vendor/pass" element={<VendorPass />} />
-              <Route path="/vendor/earnings" element={<VendorEarnings />} />
+                element={
+                  <ProtectedRoute allowedRoles={["vendor", "admin"]} />
+                }
+              >
+                <Route path="/vendor/dashboard" element={<VendorDashboard />} />
+                <Route
+                  path="/vendor/applications"
+                  element={<VendorApplications />}
+                />
+                <Route path="/vendor/food-items" element={<FoodItems />} />
+                <Route path="/vendor/orders" element={<VendorOrders />} />
+                <Route path="/vendor/pass" element={<VendorPass />} />
+                <Route path="/vendor/earnings" element={<VendorEarnings />} />
+              </Route>
 
               {/* Module 1: Hostel Management */}
-              <Route path="/hostel" element={<HostelDashboard />} />
-              <Route path="/hostel/buildings" element={<Buildings />} />
-              <Route path="/hostel/rooms" element={<RoomsBeds />} />
-              <Route path="/hostel/allocations" element={<Allocations />} />
-              <Route path="/hostel/transfers" element={<Transfers />} />
-              <Route path="/hostel/occupancy" element={<Occupancy />} />
+              <Route
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "warden"]} />
+                }
+              >
+                <Route path="/hostel" element={<HostelDashboard />} />
+                <Route path="/hostel/buildings" element={<Buildings />} />
+                <Route path="/hostel/rooms" element={<RoomsBeds />} />
+                <Route path="/hostel/allocations" element={<Allocations />} />
+                <Route path="/hostel/transfers" element={<Transfers />} />
+                <Route path="/hostel/occupancy" element={<Occupancy />} />
+              </Route>
 
               {/* Module 4: Maintenance */}
-              <Route path="/maintenance" element={<MaintenanceHome />} />
               <Route
-                path="/maintenance/submit-complaint"
-                element={<SubmitComplaint />}
-              />
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["maintenance", "admin", "warden", "student"]}
+                  />
+                }
+              >
+                <Route path="/maintenance" element={<MaintenanceHome />} />
+                <Route
+                  path="/maintenance/submit-complaint"
+                  element={<SubmitComplaint />}
+                />
+              </Route>
 
               {/* Module 5: Smart Monitoring & Analytics */}
-              <Route path="/analytics" element={<AnalyticsDashboard />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/utilities" element={<UtilitiesAnalytics />} />
-              <Route path="/monitoring" element={<SmartMonitoring />} />
               <Route
-                path="/notifications-center"
-                element={<NotificationsCenter />}
-              />
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["admin", "warden", "executive", "finance"]}
+                  />
+                }
+              >
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/utilities" element={<UtilitiesAnalytics />} />
+                <Route path="/monitoring" element={<SmartMonitoring />} />
+                <Route
+                  path="/notifications-center"
+                  element={<NotificationsCenter />}
+                />
+              </Route>
             </Route>
+
+            {/* Catch-all route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

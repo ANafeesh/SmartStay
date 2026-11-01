@@ -1,76 +1,214 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { getDemoAccount, DEMO_ACCOUNTS } from "../data/demoAccounts";
+import {
+  loginUser,
+  registerUser,
+  getCurrentUser,
+  logoutUser,
+} from "../services/authApi";
+import { getAuthToken, setAuthToken } from "../services/apiClient";
 
 const AuthContext = createContext(null);
 
-const DEFAULT_USER = {
-  ...DEMO_ACCOUNTS[0],
-  role: "Student account", // Backward-compatibility
+/**
+ * Standardize role strings across system variations
+ */
+export const normalizeRole = (role) => {
+  if (!role) return "student";
+  const r = String(role).toLowerCase().trim();
+  if (r === "hostel_admin" || r === "administrator") return "admin";
+  if (r === "security_officer") return "security";
+  if (r === "maintenance_staff") return "maintenance";
+  if (r === "finance_staff") return "finance";
+  if (r === "delivery_person") return "delivery";
+  return r;
+};
+
+/**
+ * Maps role key to user-facing badge label
+ */
+export const getRoleBadge = (role) => {
+  const norm = normalizeRole(role);
+  const map = {
+    student: "Student Account",
+    admin: "Hostel Administrator",
+    warden: "Administrative Authority",
+    maintenance: "Technical Staff",
+    vendor: "Approved Vendor",
+    finance: "Finance Officer",
+    security: "Security Officer",
+    delivery: "Delivery Associate",
+    executive: "Executive Oversight",
+  };
+  return map[norm] || "Authenticated User";
+};
+
+/**
+ * Enrich backend user record with frontend presentation helpers
+ */
+const enrichUser = (backendUser) => {
+  if (!backendUser) return null;
+  const roleKey = normalizeRole(backendUser.role);
+  const demoFallback = getDemoAccount(roleKey);
+
+  return {
+    ...demoFallback,
+    ...backendUser,
+    roleKey,
+    role: backendUser.role || roleKey,
+    roleBadge: getRoleBadge(backendUser.role),
+    initials:
+      backendUser.name
+        ?.split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
+        .toUpperCase() || "SU",
+    studentId:
+      backendUser.studentId ||
+      backendUser.registrationNumber ||
+      demoFallback?.studentId ||
+      "",
+  };
 };
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem("smartstay_auth");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Ensure roleKey exists
-        if (!parsed.roleKey) {
-          parsed.roleKey = "student";
-        }
-        return parsed;
+      const savedUser = localStorage.getItem("smartstay_user");
+      const token = getAuthToken();
+      if (token && savedUser) {
+        return enrichUser(JSON.parse(savedUser));
       }
     } catch {
-      // ignore
+      // Ignore cache parse error
     }
-    return DEFAULT_USER;
+    return null;
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    try {
-      const saved = localStorage.getItem("smartstay_logged_in");
-      return saved !== null ? JSON.parse(saved) : true;
-    } catch {
-      return true;
-    }
+    return !!getAuthToken() && !!user;
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("smartstay_auth", JSON.stringify(user));
-      localStorage.setItem("smartstay_logged_in", JSON.stringify(isLoggedIn));
-    } catch {
-      // ignore
-    }
-  }, [user, isLoggedIn]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (newUser = DEFAULT_USER) => {
-    // If newUser is a string (e.g. roleKey), lookup the full account
-    if (typeof newUser === "string") {
-      const account = getDemoAccount(newUser);
-      setUser({ ...account, role: account.roleBadge });
-    } else {
-      setUser({
-        roleKey: "student",
-        ...newUser,
-      });
+  // Validate session against backend /api/auth/me on app launch
+  const verifySession = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setUser(null);
+      setIsLoggedIn(false);
+      setIsLoading(false);
+      return;
     }
+
+    try {
+      const response = await getCurrentUser();
+      if (response?.success && response.user) {
+        const enriched = enrichUser(response.user);
+        setUser(enriched);
+        setIsLoggedIn(true);
+        localStorage.setItem("smartstay_user", JSON.stringify(response.user));
+      } else {
+        throw new Error("Invalid session response");
+      }
+    } catch (err) {
+      console.warn("Session expired or invalid. Clearing active session:", err.message);
+      setAuthToken(null);
+      localStorage.removeItem("smartstay_user");
+      setUser(null);
+      setIsLoggedIn(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    verifySession();
+  }, [verifySession]);
+
+  /**
+   * Real backend login
+   */
+  const login = async (credentials) => {
+    // If credentials is a string roleKey (for testing/demo quick-fill), map it to demo account
+    if (typeof credentials === "string") {
+      const account = getDemoAccount(credentials);
+      // Try logging in with demo account credentials against backend
+      try {
+        const response = await loginUser({
+          identifier: account.email,
+          password: account.demoPassword,
+        });
+        const enriched = enrichUser(response.user);
+        setUser(enriched);
+        setIsLoggedIn(true);
+        localStorage.setItem("smartstay_user", JSON.stringify(response.user));
+        return enriched;
+      } catch (err) {
+        // Fallback for dev testing if user not in DB yet
+        console.warn("Backend login failed for quick-fill persona:", err.message);
+        const enriched = enrichUser(account);
+        setUser(enriched);
+        setIsLoggedIn(true);
+        return enriched;
+      }
+    }
+
+    // Real object credentials { identifier, password }
+    const response = await loginUser(credentials);
+    if (!response?.success) {
+      throw new Error(response?.message || "Login failed");
+    }
+
+    const enriched = enrichUser(response.user);
+    setUser(enriched);
     setIsLoggedIn(true);
+    localStorage.setItem("smartstay_user", JSON.stringify(response.user));
+    return enriched;
   };
 
+  /**
+   * Real backend registration
+   */
+  const register = async (userData) => {
+    const response = await registerUser(userData);
+    if (!response?.success) {
+      throw new Error(response?.message || "Registration failed");
+    }
+
+    const enriched = enrichUser(response.user);
+    setUser(enriched);
+    setIsLoggedIn(true);
+    localStorage.setItem("smartstay_user", JSON.stringify(response.user));
+    return enriched;
+  };
+
+  /**
+   * Developer role switch helper (for evaluation testing)
+   */
   const switchRole = (roleKey) => {
     const account = getDemoAccount(roleKey);
-    const enrichedUser = {
-      ...account,
-      role: account.roleBadge,
-    };
-    setUser(enrichedUser);
+    const enriched = enrichUser(account);
+    setUser(enriched);
     setIsLoggedIn(true);
-    return enrichedUser;
+    return enriched;
   };
 
-  const logout = () => {
-    setIsLoggedIn(false);
+  /**
+   * Real backend logout
+   */
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.warn("Logout error:", err.message);
+    } finally {
+      setAuthToken(null);
+      localStorage.removeItem("smartstay_user");
+      setUser(null);
+      setIsLoggedIn(false);
+    }
   };
 
   return (
@@ -78,10 +216,13 @@ export function AuthProvider({ children }) {
       value={{
         user,
         isLoggedIn,
+        isLoading,
         login,
+        register,
         logout,
         switchRole,
         availableRoles: DEMO_ACCOUNTS,
+        verifySession,
       }}
     >
       {children}
@@ -93,12 +234,15 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     return {
-      user: DEFAULT_USER,
-      isLoggedIn: true,
-      login: () => {},
-      logout: () => {},
-      switchRole: () => DEFAULT_USER,
+      user: null,
+      isLoggedIn: false,
+      isLoading: false,
+      login: async () => {},
+      register: async () => {},
+      logout: async () => {},
+      switchRole: () => null,
       availableRoles: DEMO_ACCOUNTS,
+      verifySession: async () => {},
     };
   }
   return context;

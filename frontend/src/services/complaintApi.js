@@ -1,5 +1,4 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+import { apiFetch, API_BASE_URL, getAuthToken } from "./apiClient";
 
 /**
  * Upload photos to Cloudinary via backend API
@@ -14,8 +13,16 @@ export async function uploadComplaintPhotos(files) {
     formData.append("photos", file);
   }
 
+  const token = getAuthToken();
+  const headers = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE_URL}/complaints/upload`, {
     method: "POST",
+    headers,
+    credentials: "include",
     body: formData,
   });
 
@@ -33,18 +40,10 @@ export async function uploadComplaintPhotos(files) {
  * @returns {Promise<object>} Created complaint record
  */
 export async function submitComplaintToDB(complaintData) {
-  const response = await fetch(`${API_BASE_URL}/complaints`, {
+  const data = await apiFetch("/complaints", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(complaintData),
+    body: complaintData,
   });
-
-  const data = await response.json();
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || "Failed to submit complaint to database.");
-  }
 
   return data.data;
 }
@@ -56,14 +55,8 @@ export async function submitComplaintToDB(complaintData) {
  */
 export async function getComplaintsFromDB(params = {}) {
   const query = new URLSearchParams(params).toString();
-  const url = `${API_BASE_URL}/complaints${query ? `?${query}` : ""}`;
+  const endpoint = `/complaints${query ? `?${query}` : ""}`;
 
-  const response = await fetch(url);
-  const data = await response.json();
-
-  if (!response.ok || !data.success) {
-    throw new Error(data.message || "Failed to retrieve complaints.");
-  }
-
+  const data = await apiFetch(endpoint);
   return data.data;
 }

@@ -1,26 +1,10 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+import { apiFetch } from "./apiClient";
 
 /**
- * Reusable JSON fetch utility with informative error extraction
+ * Reusable JSON fetch utility with centralized authentication
  */
 async function fetchJSON(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-
-  if (!response.ok) {
-    let errorMsg = `API request failed (${response.status})`;
-    try {
-      const errData = await response.json();
-      if (errData && errData.message) {
-        errorMsg = errData.message;
-      }
-    } catch {
-      // Use fallback error message
-    }
-    throw new Error(errorMsg);
-  }
-
-  return response.json();
+  return await apiFetch(endpoint, options);
 }
 
 /**

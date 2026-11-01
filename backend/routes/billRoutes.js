@@ -1,4 +1,5 @@
 const express = require("express");
+const { protect, authorizeRole } = require("../middleware/authMiddleware");
 
 const {
   createBill,
@@ -10,21 +11,19 @@ const {
 
 const router = express.Router();
 
-// Create a new bill
-router.post("/", createBill);
+// Financial staff and administrators can create bills
+router.post("/", protect, authorizeRole("admin", "finance", "warden"), createBill);
 
-// Get all bills
-router.get("/", getAllBills);
+// Financial staff and administrators can list all bills
+router.get("/", protect, authorizeRole("admin", "finance", "warden"), getAllBills);
 
-// Get bills for a specific student
-router.get("/student/:studentId", getStudentBills);
+// Students can fetch their own bills; Staff can fetch any student's bills
+router.get("/student/:studentId", protect, getStudentBills);
 
-// Get one bill
-router.get("/:id", getBillById);
+// Get single bill by ID
+router.get("/:id", protect, getBillById);
 
-// Update bill status
-router.patch("/:id", updateBillStatus);
-
-
+// Update bill status (Finance, Admin)
+router.patch("/:id", protect, authorizeRole("admin", "finance"), updateBillStatus);
 
 module.exports = router;

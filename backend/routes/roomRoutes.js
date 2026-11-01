@@ -1,5 +1,5 @@
-
 const express = require("express");
+const { protect, authorizeRole } = require("../middleware/authMiddleware");
 
 const {
   createRoom,
@@ -11,19 +11,13 @@ const {
 
 const router = express.Router();
 
-// Create a room
-router.post("/", createRoom);
-
-// Get all rooms
+// Read room inventory
 router.get("/", getAllRooms);
-
-// Get one room by ID
 router.get("/:id", getRoomById);
 
-// Update a room
-router.put("/:id", updateRoom);
-
-// Delete a room
-router.delete("/:id", deleteRoom);
+// Administrative mutations
+router.post("/", protect, authorizeRole("admin", "warden"), createRoom);
+router.put("/:id", protect, authorizeRole("admin", "warden"), updateRoom);
+router.delete("/:id", protect, authorizeRole("admin"), deleteRoom);
 
 module.exports = router;
