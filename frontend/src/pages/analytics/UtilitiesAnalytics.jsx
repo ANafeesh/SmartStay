@@ -176,11 +176,11 @@ export default function UtilitiesAnalytics() {
   const [alerts, setAlerts] = useState([]);
   const [financialData, setFinancialData] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = async (targetPeriod = period) => {
     try {
       setError(null);
       const [trendRes, foodRes, ordersRes, alertsRes, finRes] = await Promise.all([
-        getTelemetryTrend().catch(() => ({ data: {} })),
+        getTelemetryTrend({ period: targetPeriod }).catch(() => ({ data: {} })),
         getFoodOrderAnalytics().catch(() => ({ data: {} })),
         getFoodOrders().catch(() => ({ data: [] })),
         getMonitoringAlerts().catch(() => ({ data: [] })),
@@ -220,8 +220,8 @@ export default function UtilitiesAnalytics() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(period);
+  }, [period]);
 
   const handleRefresh = () => {
     setRefreshing(true);

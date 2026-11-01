@@ -180,7 +180,20 @@ export default function Reports() {
         description: "Disciplinary reports and hostel rule violations logged by wardens.",
       },
     ];
-    setReports(initialReportsList);
+
+    let savedReports = [];
+    try {
+      savedReports = JSON.parse(
+        localStorage.getItem("smartstay_generated_reports") || "[]"
+      );
+    } catch {
+      // fallback
+    }
+
+    // Avoid duplicate reports if saved reports and initial reports share an ID
+    const initialIds = new Set(initialReportsList.map((r) => r.id));
+    const uniqueSaved = savedReports.filter((r) => !initialIds.has(r.id));
+    setReports([...uniqueSaved, ...initialReportsList]);
   }, []);
 
   const periods = useMemo(
@@ -451,6 +464,18 @@ export default function Reports() {
 
       setReports((prev) => [newReport, ...prev]);
       setGeneratedReport(newReport);
+
+      try {
+        const existing = JSON.parse(
+          localStorage.getItem("smartstay_generated_reports") || "[]"
+        );
+        localStorage.setItem(
+          "smartstay_generated_reports",
+          JSON.stringify([newReport, ...existing])
+        );
+      } catch {
+        // fallback
+      }
     } catch (err) {
       console.error("Failed to generate report:", err);
       window.alert(`Failed to compile report: ${err.message}`);

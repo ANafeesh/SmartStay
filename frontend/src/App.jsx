@@ -1,8 +1,11 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const Home = lazy(() => import("./pages/Home"));
+const LoginHub = lazy(() => import("./pages/login/LoginHub"));
+const RoleLoginPage = lazy(() => import("./pages/login/RoleLoginPage"));
 const DashboardLayout = lazy(() => import("./components/layout/DashboardLayout"));
 
 const HostelDashboard = lazy(() => import("./pages/hostel/HostelDashboard"));
@@ -44,6 +47,13 @@ const NotificationsCenter = lazy(
   () => import("./pages/analytics/NotificationsCenter"),
 );
 
+const MaintenanceHome = lazy(
+  () => import("./pages/maintance/MaintenanceHome"),
+);
+const SubmitComplaint = lazy(
+  () => import("./pages/maintance/Student/SubmitComplaint"),
+);
+
 function RouteLoading() {
   return (
     <div
@@ -62,22 +72,52 @@ function RouteLoading() {
   );
 }
 
-const MaintenanceHome = lazy(
-  () => import("./pages/maintance/MaintenanceHome"),
-);
-const SubmitComplaint = lazy(
-  () => import("./pages/maintance/Student/SubmitComplaint"),
-);
-
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
+            {/* Public Entry Landing */}
             <Route path="/" element={<Home />} />
 
-            <Route element={<DashboardLayout />}>
+            {/* Role-Based Login Hub & Persona Login Pages */}
+            <Route path="/login" element={<LoginHub />} />
+            <Route path="/login/:roleKey" element={<RoleLoginPage />} />
+            <Route
+              path="/login/student"
+              element={<RoleLoginPage forcedRoleKey="student" />}
+            />
+            <Route
+              path="/login/warden"
+              element={<RoleLoginPage forcedRoleKey="warden" />}
+            />
+            <Route
+              path="/login/admin"
+              element={<RoleLoginPage forcedRoleKey="warden" />}
+            />
+            <Route
+              path="/login/maintenance"
+              element={<RoleLoginPage forcedRoleKey="maintenance" />}
+            />
+            <Route
+              path="/login/vendor"
+              element={<RoleLoginPage forcedRoleKey="vendor" />}
+            />
+            <Route
+              path="/login/executive"
+              element={<RoleLoginPage forcedRoleKey="executive" />}
+            />
+
+            {/* Authenticated Dashboard Workspace */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              {/* Module 2 & 3: Student Portal */}
               <Route path="/dashboard" element={<StudentDashboard />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/room" element={<Room />} />
@@ -86,6 +126,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/marketplace" element={<Marketplace />} />
 
+              {/* Module 3: Vendor Portal */}
               <Route path="/vendor/dashboard" element={<VendorDashboard />} />
               <Route
                 path="/vendor/applications"
@@ -96,6 +137,7 @@ function App() {
               <Route path="/vendor/pass" element={<VendorPass />} />
               <Route path="/vendor/earnings" element={<VendorEarnings />} />
 
+              {/* Module 1: Hostel Management */}
               <Route path="/hostel" element={<HostelDashboard />} />
               <Route path="/hostel/buildings" element={<Buildings />} />
               <Route path="/hostel/rooms" element={<RoomsBeds />} />
@@ -103,12 +145,14 @@ function App() {
               <Route path="/hostel/transfers" element={<Transfers />} />
               <Route path="/hostel/occupancy" element={<Occupancy />} />
 
+              {/* Module 4: Maintenance */}
               <Route path="/maintenance" element={<MaintenanceHome />} />
               <Route
                 path="/maintenance/submit-complaint"
                 element={<SubmitComplaint />}
               />
 
+              {/* Module 5: Smart Monitoring & Analytics */}
               <Route path="/analytics" element={<AnalyticsDashboard />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/utilities" element={<UtilitiesAnalytics />} />
