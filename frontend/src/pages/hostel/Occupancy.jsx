@@ -14,7 +14,9 @@ import {
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 
-const API_URL = "http://localhost:5000/api";
+import { API_BASE_URL } from "../../services/apiClient";
+
+const API_URL = API_BASE_URL;
 
 // Extract an array from the API response.
 function getList(result, key) {
