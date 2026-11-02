@@ -3,9 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
-const Home = lazy(() => import("./pages/Home"));
-const LoginHub = lazy(() => import("./pages/login/LoginHub"));
-const RoleLoginPage = lazy(() => import("./pages/login/RoleLoginPage"));
+const AuthPortal = lazy(() => import("./pages/auth/AuthPortal"));
 const DashboardLayout = lazy(() => import("./components/layout/DashboardLayout"));
 
 const HostelDashboard = lazy(() => import("./pages/hostel/HostelDashboard"));
@@ -78,40 +76,13 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-            {/* Public Entry Landing */}
-            <Route path="/" element={<Home />} />
+            {/* Primary Entry Point: Authentication Portal (Login & Sign Up) */}
+            <Route path="/" element={<AuthPortal initialTab="login" />} />
+            <Route path="/login" element={<AuthPortal initialTab="login" />} />
+            <Route path="/register" element={<AuthPortal initialTab="register" />} />
+            <Route path="/signup" element={<AuthPortal initialTab="register" />} />
+            <Route path="/login/:roleKey" element={<AuthPortal initialTab="login" />} />
 
-            {/* Role-Based Login Hub & Persona Login Pages */}
-            <Route path="/login" element={<LoginHub />} />
-            <Route path="/login/:roleKey" element={<RoleLoginPage />} />
-            <Route
-              path="/login/student"
-              element={<RoleLoginPage forcedRoleKey="student" />}
-            />
-            <Route
-              path="/login/warden"
-              element={<RoleLoginPage forcedRoleKey="warden" />}
-            />
-            <Route
-              path="/login/admin"
-              element={<RoleLoginPage forcedRoleKey="admin" />}
-            />
-            <Route
-              path="/login/maintenance"
-              element={<RoleLoginPage forcedRoleKey="maintenance" />}
-            />
-            <Route
-              path="/login/vendor"
-              element={<RoleLoginPage forcedRoleKey="vendor" />}
-            />
-            <Route
-              path="/login/executive"
-              element={<RoleLoginPage forcedRoleKey="executive" />}
-            />
-            <Route
-              path="/register"
-              element={<RoleLoginPage forcedRoleKey="student" />}
-            />
 
             {/* Authenticated Dashboard Workspace */}
             <Route

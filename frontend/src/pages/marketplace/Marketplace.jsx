@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   Search,
   ShoppingCart,
@@ -175,9 +176,12 @@ const dropLocations = [
 ];
 
 export default function Marketplace() {
+  const { user } = useAuth();
+  const studentRegId = user?.studentId || "STD-2026-090";
+  const studentDisplayName = user?.name || "Student";
   const [items] = useState(initialFoodItems);
   const [myOrders, setMyOrders] = useState(() =>
-    readFoodOrders().filter((order) => order.studentId === "SEU/IS/22/ICT/090"),
+    readFoodOrders().filter((order) => order.studentId === studentRegId),
   );
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -195,7 +199,7 @@ export default function Marketplace() {
   useEffect(() => {
     const refreshOrders = () => {
       setMyOrders(
-        readFoodOrders().filter((order) => order.studentId === "SEU/IS/22/ICT/090"),
+        readFoodOrders().filter((order) => order.studentId === studentRegId),
       );
     };
     window.addEventListener("storage", refreshOrders);
@@ -258,9 +262,9 @@ export default function Marketplace() {
     const orderNo = createOrderId();
     const newOrder = {
       id: orderNo,
-      studentId: "SEU/IS/22/ICT/090",
-      studentName: "Ahamed Nafeesh",
-      regNo: "SEU/IS/22/ICT/090",
+      studentId: studentRegId,
+      studentName: studentDisplayName,
+      regNo: studentRegId,
       vendorId: cart[0].vendorId,
       vendor: cart[0].vendor,
       timeSlot: selectedSlot,
@@ -290,7 +294,7 @@ export default function Marketplace() {
 
     const updatedOrders = [newOrder, ...readFoodOrders()];
     setMyOrders(
-      updatedOrders.filter((order) => order.studentId === "SEU/IS/22/ICT/090"),
+      updatedOrders.filter((order) => order.studentId === studentRegId),
     );
     try {
       saveFoodOrders(updatedOrders);
@@ -315,7 +319,7 @@ export default function Marketplace() {
       return o;
     });
     saveFoodOrders(updated);
-    setMyOrders(updated.filter((o) => o.studentId === "SEU/IS/22/ICT/090"));
+    setMyOrders(updated.filter((o) => o.studentId === studentRegId));
   };
 
   const filteredItems = items.filter((item) => {
@@ -359,8 +363,8 @@ export default function Marketplace() {
             Campus Dining & Gate Delivery
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Student: <strong>Ahamed Nafeesh</strong> (ID:{" "}
-            <span className="font-mono text-blue-600 font-semibold">SEU/IS/22/ICT/090</span>) · Drop-off at Hostel Block B
+            Student: <strong>{studentDisplayName}</strong> (ID:{" "}
+            <span className="font-mono text-blue-600 font-semibold">{studentRegId}</span>) Â· Drop-off at Hostel Block B
           </p>
         </div>
 
@@ -420,10 +424,10 @@ export default function Marketplace() {
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-950">
                   <span>Total: LKR {orderConfirmed.totalAmount.toLocaleString()}</span>
-                  <span>•</span>
+                  <span>â€¢</span>
                   <span>Payment: {orderConfirmed.paymentMethod}</span>
-                  <span>•</span>
-                  <span>Student: Ahamed Nafeesh (SEU/IS/22/ICT/090)</span>
+                  <span>â€¢</span>
+                  <span>Student: {studentDisplayName} ({studentRegId})</span>
                 </div>
               </div>
             </div>
@@ -454,7 +458,7 @@ export default function Marketplace() {
               onClick={() =>
                 setMyOrders(
                   readFoodOrders().filter(
-                    (order) => order.studentId === "SEU/IS/22/ICT/090",
+                    (order) => order.studentId === studentRegId,
                   ),
                 )
               }
@@ -499,13 +503,13 @@ export default function Marketplace() {
                           <span className="font-mono text-xs font-bold text-blue-600">
                             {order.id}
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <h3 className="text-sm font-bold text-slate-900">
                             {order.vendor || "Campus Vendor"}
                           </h3>
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Placed: {order.createdAt} · Delivery Slot: <strong>{order.timeSlot}</strong>
+                          Placed: {order.createdAt} Â· Delivery Slot: <strong>{order.timeSlot}</strong>
                         </p>
                         <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
                           <MapPin size={12} className="text-rose-500" />
@@ -614,13 +618,13 @@ export default function Marketplace() {
                           <div>
                             <h4 className="text-sm font-bold text-slate-900">{v.name}</h4>
                             <p className="text-[11px] text-slate-500">
-                              ⏱ {v.deliveryTime} · Grade {v.hygieneGrade}
+                              â± {v.deliveryTime} Â· Grade {v.hygieneGrade}
                             </p>
                           </div>
                         </div>
 
                         <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                          ★ {v.rating}
+                          â˜… {v.rating}
                         </span>
                       </div>
 
@@ -697,8 +701,8 @@ export default function Marketplace() {
                         : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    {diet === "Veg" && "🌱 "}
-                    {diet === "Spicy" && "🌶️ "}
+                    {diet === "Veg" && "ðŸŒ± "}
+                    {diet === "Spicy" && "ðŸŒ¶ï¸ "}
                     {diet}
                   </button>
                 ))}
@@ -751,7 +755,7 @@ export default function Marketplace() {
 
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="rounded-lg bg-slate-900/85 backdrop-blur-md px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
-                        ★ {item.rating}
+                        â˜… {item.rating}
                       </span>
                       {item.isHalal && (
                         <span className="rounded-lg bg-emerald-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-emerald-200 shadow-xs">
@@ -765,13 +769,13 @@ export default function Marketplace() {
                       )}
                       {item.isSpicy && (
                         <span className="rounded-lg bg-rose-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-rose-200 shadow-xs">
-                          🌶️ Spicy
+                          ðŸŒ¶ï¸ Spicy
                         </span>
                       )}
                     </div>
 
                     <span className="absolute bottom-3 right-3 rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-xs">
-                      ⏱ {item.prepTime}
+                      â± {item.prepTime}
                     </span>
                   </div>
 
@@ -843,7 +847,7 @@ export default function Marketplace() {
               <div className="flex items-center gap-2">
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                 <span className="text-xs font-bold text-white">
-                  {totalCartCount} {totalCartCount === 1 ? "item" : "items"} · {cart[0]?.vendor}
+                  {totalCartCount} {totalCartCount === 1 ? "item" : "items"} Â· {cart[0]?.vendor}
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 mt-0.5">

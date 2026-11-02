@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   ShieldCheck,
   Building2,
@@ -14,8 +14,8 @@ import {
 const vendorPassDetails = {
   vendorId: "VND-2026-09",
   shopName: "Campus Diner & Cafe",
-  ownerName: "Ahamed Nafeesh",
-  regNo: "SEU/IS/22/ICT/090",
+  ownerName: "Campus Canteen Staff",
+  regNo: "STD-2026-090",
   deliveryPerson: "Kamal Perera",
   riderNic: "199420912401",
   vehicleNo: "WP BCD-4821",
@@ -117,13 +117,11 @@ export default function VendorPass() {
               QR Vendor Pass & Gate Verification
             </h1>
             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
-              Module 3 Security
+              Security Clearance
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Proprietor: <strong className="text-slate-800">Ahamed Nafeesh</strong> (Reg:{" "}
-            <span className="font-mono text-blue-600 font-semibold">SEU/IS/22/ICT/090</span>) · Real-time Security Gate Access Clearance
-          </p>
+            Commercial Operator Pass &middot; University Security &amp; Delivery Clearance</p>
         </div>
 
         <button

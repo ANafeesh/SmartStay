@@ -88,7 +88,7 @@ const dashboards = [
     title: "Student Dashboard",
     description: "Submit complaints, track status and report lost items.",
     icon: GraduationCap,
-    path: "/maintenance/student",
+    path: "/maintenance/submit-complaint",
     color: "text-smart-blue",
     bg: "bg-smart-blue/10",
   },
@@ -96,7 +96,7 @@ const dashboards = [
     title: "Maintenance Staff",
     description: "Manage assigned tasks and update repair progress.",
     icon: HardHat,
-    path: "/maintenance/staff",
+    path: "/maintenance",
     color: "text-smart-teal",
     bg: "bg-smart-teal/10",
   },
@@ -104,7 +104,7 @@ const dashboards = [
     title: "Admin Dashboard",
     description: "Assign staff, manage priorities and monitor escalations.",
     icon: ShieldCheck,
-    path: "/maintenance/admin",
+    path: "/maintenance",
     color: "text-smart-primary",
     bg: "bg-smart-primary/10",
   },
@@ -399,10 +399,7 @@ function MaintenanceHome() {
         </div>
       </Card>
 
-      <p className="mt-4 text-center text-xs text-smart-secondary">
-        Demo data for UI development. Live complaint data
-        will be connected through the backend API.
-      </p>
+      <p className="mt-4 text-center text-xs text-smart-secondary">SmartStay Facilities Management &amp; SLA Compliance Division</p>
     </div>
   );
 }

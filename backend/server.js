@@ -26,6 +26,13 @@ const monitoringRoutes = require("./routes/monitoringRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const complaintRoutes = require("./routes/complaintRoutes");
 
+// Module 2: Student Security & Digital Pass Routes
+const digitalPassRoutes = require("./routes/digitalPassRoutes");
+const gateLogRoutes = require("./routes/gateLogRoutes");
+const leaveRequestRoutes = require("./routes/leaveRequestRoutes");
+const visitorRoutes = require("./routes/visitorRoutes");
+const violationRoutes = require("./routes/violationRoutes");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -57,6 +64,14 @@ app.use("/api/beds", bedRoutes);
 app.use("/api/allocations", allocationRoutes);
 app.use("/api/transfers", transferRoutes);
 app.use("/api/complaints", complaintRoutes);
+
+// Module 2: Student Security & Digital Pass APIs
+app.use("/api/digital-passes", digitalPassRoutes);
+app.use("/api/gate-logs", gateLogRoutes);
+app.use("/api/leave-requests", leaveRequestRoutes);
+app.use("/api/visitors", visitorRoutes);
+app.use("/api/violations", violationRoutes);
+
 
 // Module 5: Monitoring and Analytics APIs
 app.use("/api/monitoring", monitoringRoutes);

@@ -1,4 +1,5 @@
-import { useState } from "react";
+﻿import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   User,
   Mail,
@@ -22,11 +23,11 @@ import Badge from "../../components/ui/Badge";
 const initialProfile = {
   name: "Ahamed Nafeesh",
   studentId: "ICT/2024/012",
-  email: "nafeesh@student.seusl.edu.lk",
+  email: "student@smartstay.edu",
   phone: "+94 77 123 4567",
-  address: "South Eastern University of Sri Lanka",
+  address: "Campus Student Residence Block B",
   course: "BICT (Hons)",
-  faculty: "Faculty of Technology",
+  faculty: "Faculty of Applied Sciences",
   year: "Second Year",
   hostel: "Block B",
   room: "B-204",
@@ -114,7 +115,7 @@ function Profile() {
             </div>
 
             <p className="mt-2 text-smart-secondary">
-              {profile.course} · {profile.faculty}
+              {profile.course} Â· {profile.faculty}
             </p>
 
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-smart-secondary">
@@ -125,7 +126,7 @@ function Profile() {
 
               <span className="flex items-center gap-1.5">
                 <Building2 size={16} />
-                {profile.hostel} · {profile.room}
+                {profile.hostel} Â· {profile.room}
               </span>
             </div>
           </div>

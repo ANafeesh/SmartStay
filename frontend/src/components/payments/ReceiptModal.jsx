@@ -1,4 +1,4 @@
-import { useRef } from "react";
+﻿import { useRef } from "react";
 import {
   X,
   Printer,
@@ -53,12 +53,12 @@ export default function ReceiptModal({ receipt, onClose }) {
         <img src="/smartstay-mark.png" alt="SmartStay" width="44" height="44" style="border-radius: 10px; border: 1px solid #cbd5e1; object-fit: cover;" onerror="this.style.display='none'" />
         <div>
           <h1 class="logo-title" style="margin: 0; font-size: 20px;">SmartStay</h1>
-          <p class="subtitle" style="margin: 2px 0 0 0;">South Eastern University of Sri Lanka · Hostel Bursary Division</p>
-          <p class="subtitle" style="margin: 0;">Module 3: Payments &amp; Financial Records Management</p>
+          <p class="subtitle" style="margin: 2px 0 0 0;">Campus Hostel Bursary Division</p>
+          <p class="subtitle" style="margin: 0;">Official Bursary Receipt &amp; Settlement Record</p>
         </div>
       </div>
       <div>
-        <span class="badge-paid">✓ Verified & Paid</span>
+        <span class="badge-paid">âœ“ Verified & Paid</span>
       </div>
     </div>
 
@@ -73,11 +73,11 @@ export default function ReceiptModal({ receipt, onClose }) {
       </div>
       <div>
         <dt>Student Name</dt>
-        <dd>${receipt.studentName || "Ahamed Nafeesh"}</dd>
+        <dd>${receipt.studentName || "Student"}</dd>
       </div>
       <div>
         <dt>Student Registration No</dt>
-        <dd>${receipt.studentRegNo || "SEU/IS/22/ICT/090"}</dd>
+        <dd>${receipt.studentRegNo || "STD-2026-090"}</dd>
       </div>
       <div>
         <dt>Hostel Accommodation</dt>
@@ -85,7 +85,7 @@ export default function ReceiptModal({ receipt, onClose }) {
       </div>
       <div>
         <dt>Payment Date & Time</dt>
-        <dd>${receipt.date} · 10:42 AM</dd>
+        <dd>${receipt.date} Â· 10:42 AM</dd>
       </div>
       <div>
         <dt>Payment Gateway</dt>
@@ -133,7 +133,7 @@ export default function ReceiptModal({ receipt, onClose }) {
 
     <div class="footer">
       <p>This is a computer-generated official payment receipt for SmartStay Hostel Management System.</p>
-      <p>Student: Ahamed Nafeesh (SEU/IS/22/ICT/090) · South Eastern University of Sri Lanka</p>
+      <p>Student Accommodation &amp; Bursary Services</p>
     </div>
   </div>
 </body>
@@ -205,7 +205,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 variant="horizontal"
                 size="md"
                 badge="Bursary"
-                subtitle="South Eastern University · Hostel Billing Gateway"
+                subtitle="Campus Hostel Billing Gateway"
               />
             </div>
 
@@ -230,7 +230,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Student Name
               </span>
               <span className="font-semibold text-slate-800">
-                {receipt.studentName || "Ahamed Nafeesh"}
+                {receipt.studentName || "Student"}
               </span>
             </div>
 
@@ -239,7 +239,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Student ID / Reg
               </span>
               <span className="font-mono font-semibold text-slate-800">
-                {receipt.studentRegNo || "SEU/IS/22/ICT/090"}
+                {receipt.studentRegNo || "STD-2026-090"}
               </span>
             </div>
 
@@ -272,10 +272,10 @@ export default function ReceiptModal({ receipt, onClose }) {
 
             <div>
               <span className="text-slate-400 block text-[11px] font-medium">
-                Module Component
+                Issuing Division
               </span>
               <span className="font-semibold text-slate-800">
-                Module 3 (Payments & Bills)
+                Hostel Bursary Division
               </span>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Bursary Accounts Division
               </p>
               <p className="text-[10px] text-emerald-400 font-mono mt-0.5">
-                ✓ Digitally Signed & Sealed
+                âœ“ Digitally Signed & Sealed
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Search,
   Plus,
@@ -188,12 +188,11 @@ export default function FoodItems() {
               Food Menus & Catalog Inventory
             </h1>
             <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
-              Module 3 Menus
+              Canteen Menu Catalog
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> · Proprietor: <strong>Ahamed Nafeesh (SEU/IS/22/ICT/090)</strong>
-          </p>
+            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> &middot; Daily Meal Items &amp; Pricing</p>
         </div>
 
         <button
@@ -260,7 +259,7 @@ export default function FoodItems() {
                       {item.name}
                     </h3>
                     <p className="text-[11px] font-mono font-semibold text-slate-400">
-                      {item.id} · {item.category}
+                      {item.id} Â· {item.category}
                     </p>
                   </div>
                 </div>
@@ -301,7 +300,7 @@ export default function FoodItems() {
                 )}
                 {item.isSpicy && (
                   <span className="rounded-md bg-rose-50 px-2 py-0.5 font-bold text-rose-700 border border-rose-100">
-                    🌶️ Spicy
+                    ðŸŒ¶ï¸ Spicy
                   </span>
                 )}
               </div>

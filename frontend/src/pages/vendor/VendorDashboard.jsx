@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   DollarSign,
@@ -69,12 +69,11 @@ export default function VendorDashboard() {
               Vendor Operations Portal
             </h1>
             <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
-              Module 3 Vendor Hub
+              Canteen Operations Hub
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> · Proprietor: <strong>Ahamed Nafeesh (SEU/IS/22/ICT/090)</strong>
-          </p>
+            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> &middot; Central Student Canteen Complex</p>
         </div>
 
         {/* Live Store Status Switch */}
@@ -281,7 +280,7 @@ export default function VendorDashboard() {
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{item.name}</h4>
                   <p className="text-[11px] text-slate-400 font-mono">
-                    {item.id} · {item.category} · {item.ordersToday} orders today
+                    {item.id} Â· {item.category} Â· {item.ordersToday} orders today
                   </p>
                 </div>
               </div>

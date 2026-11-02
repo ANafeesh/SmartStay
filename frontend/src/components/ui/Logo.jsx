@@ -9,7 +9,7 @@ import logoMark from "../../assets/smartstay-mark.png";
  * @param {'horizontal' | 'mark' | 'full'} variant - Display layout of the logo
  * @param {'xs' | 'sm' | 'md' | 'lg' | 'xl'} size - Dimension scale
  * @param {'light' | 'dark'} theme - Color scheme for background context
- * @param {string} badge - Optional badge tag (e.g. "Group L", "v2.0", "SEU")
+ * @param {string} badge - Optional badge tag (e.g. "v2.0", "PRO")
  * @param {string} subtitle - Optional tagline beneath brand name
  * @param {boolean} asLink - Whether to wrap the logo in a react-router Link to '/'
  * @param {string} className - Additional custom class names

@@ -996,7 +996,7 @@ export default function UtilitiesAnalytics() {
 
       {/* Data note */}
       <p className="text-xs leading-5 text-gray-400">
-        Connected to live Module 5 analytics and real canteen orders from the SmartStay MongoDB database.
+        SmartStay Energy &amp; Utilities Management Division.
       </p>
     </div>
   );

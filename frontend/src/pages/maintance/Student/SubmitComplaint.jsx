@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Wrench,
@@ -63,10 +63,10 @@ const PRIORITIES = [
 ];
 
 const BUILDINGS = [
-  "Block A – Aurora Hall",
-  "Block B – Horizon Hall",
-  "Block C – Lakeside Residence",
-  "Block D – Co-Living Annex",
+  "Block A â€“ Aurora Hall",
+  "Block B â€“ Horizon Hall",
+  "Block C â€“ Lakeside Residence",
+  "Block D â€“ Co-Living Annex",
 ];
 
 const FLOORS = [
@@ -86,7 +86,7 @@ const EMPTY = {
   category: "Plumbing",
   priority: "Medium",
   description: "",
-  building: "Block B – Horizon Hall",
+  building: "Block B â€“ Horizon Hall",
   floor: "2nd Floor",
   room: "B-204",
   spot: "",
@@ -329,15 +329,15 @@ export default function SubmitComplaint() {
           publicId: img.publicId,
           name: img.name,
         })),
-        studentId: user?.studentId || "SEU/IS/22/ICT/090",
-        studentName: user?.name || "Ahamed Nafeesh",
+        studentId: user?.studentId || "STD-2026-090",
+        studentName: user?.name || "Student User",
       };
 
       const result = await submitComplaintToDB(complaintPayload);
 
       setToast({
         type: "success",
-        text: `Complaint ${result.complaintId} has been successfully recorded in MongoDB Atlas and queued with Maintenance!`,
+        text: `Complaint ${result.complaintId} has been successfully recorded and queued with Maintenance!`,
         ref: result.complaintId,
       });
 
@@ -434,7 +434,7 @@ export default function SubmitComplaint() {
                   to="/complaints"
                   className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
                 >
-                  View in My Complaints →
+                  View in My Complaints â†’
                 </Link>
               </div>
             )}
@@ -727,7 +727,7 @@ export default function SubmitComplaint() {
                             {img.name}
                           </p>
                           <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
-                            ✓ Cloud
+                            âœ“ Cloud
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-400 mt-0.5">{img.size} MB</p>
@@ -758,7 +758,7 @@ export default function SubmitComplaint() {
                 </div>
                 <div className="min-w-0">
                   <p className="font-bold text-slate-900 leading-tight truncate">
-                    {user?.name || "Ahamed Nafeesh"}
+                    {user?.name || "Student User"}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5 truncate">
                     {user?.role || "Student account"}
@@ -770,12 +770,12 @@ export default function SubmitComplaint() {
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Student ID</dt>
                   <dd className="font-mono font-bold text-slate-700">
-                    {user?.studentId || "SEU/IS/22/ICT/090"}
+                    {user?.studentId || "STD-2026-090"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Hostel</dt>
-                  <dd className="font-semibold text-slate-700">Block B – Horizon Hall</dd>
+                  <dd className="font-semibold text-slate-700">Block B â€“ Horizon Hall</dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Allocated Room</dt>

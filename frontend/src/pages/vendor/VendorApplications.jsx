@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   CheckCircle2,
   Store,
@@ -16,8 +16,8 @@ const initialApplications = [
     id: "VAPP-2026-014",
     vendorId: "VND-2026-09",
     businessName: "Campus Diner & Cafe",
-    ownerName: "Ahamed Nafeesh",
-    regNo: "SEU/IS/22/ICT/090",
+    ownerName: "Canteen Operator",
+    regNo: "STD-2026-090",
     email: "diner@example.com",
     phone: "+94 77 123 4567",
     category: "Meals",
@@ -34,7 +34,7 @@ const initialApplications = [
     vendorId: null,
     businessName: "Royal Spice Biryani Point",
     ownerName: "M. Farhan",
-    regNo: "SEU/IS/22/ICT/118",
+    regNo: "STD-2026-118",
     email: "farhan@royalspice.lk",
     phone: "+94 71 890 1234",
     category: "Meals",
@@ -75,7 +75,7 @@ export default function VendorApplications() {
   const [form, setForm] = useState({
     businessName: "",
     ownerName: "",
-    regNo: "SEU/IS/22/ICT/090",
+    regNo: "STD-2026-090",
     email: "",
     phone: "",
     category: "Meals",
@@ -101,8 +101,8 @@ export default function VendorApplications() {
   const handleAutofill = () => {
     setForm({
       businessName: "Campus Diner & Cafe",
-      ownerName: "Ahamed Nafeesh",
-      regNo: "SEU/IS/22/ICT/090",
+      ownerName: "Canteen Operator",
+      regNo: "STD-2026-090",
       email: "ahamed.nafeesh@seu.ac.lk",
       phone: "+94 77 123 4567",
       category: "Meals",
@@ -132,7 +132,7 @@ export default function VendorApplications() {
     setForm({
       businessName: "",
       ownerName: "",
-      regNo: "SEU/IS/22/ICT/090",
+      regNo: "STD-2026-090",
       email: "",
       phone: "",
       category: "Meals",
@@ -201,13 +201,11 @@ export default function VendorApplications() {
               Vendor Registration & Approval
             </h1>
             <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
-              Module 3 Vendor Portal
+              Commercial Services Directorate
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Developer: <strong className="text-slate-800">Ahamed Nafeesh</strong> (Reg:{" "}
-            <span className="font-mono text-blue-600 font-semibold">SEU/IS/22/ICT/090</span>) · Food Merchant Permitting & Gate Security Pass Integration
-          </p>
+            University Canteen Administration &middot; Commercial Food Merchant Licensing</p>
         </div>
 
         <button
@@ -215,7 +213,7 @@ export default function VendorApplications() {
           className="inline-flex items-center gap-2 rounded-2xl bg-indigo-50 border border-indigo-200 px-4 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition shadow-2xs cursor-pointer"
         >
           <Sparkles size={14} />
-          <span>Autofill Sample (Nafeesh)</span>
+          <span>Autofill Sample Application</span>
         </button>
       </div>
 
@@ -297,7 +295,7 @@ export default function VendorApplications() {
                     required
                     value={form.ownerName}
                     onChange={(e) => setForm({ ...form, ownerName: e.target.value })}
-                    placeholder="Ahamed Nafeesh"
+                    placeholder="e.g. Vendor Representative"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -464,10 +462,10 @@ export default function VendorApplications() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Owner: <strong>{app.ownerName}</strong> ({app.regNo}) · Category: {app.category}
+                      Owner: <strong>{app.ownerName}</strong> ({app.regNo}) Â· Category: {app.category}
                     </p>
                     <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                      Hygiene Cert: {app.hygieneCert || "Pending"} · Rider: {app.deliveryPerson} ({app.vehicleNo})
+                      Hygiene Cert: {app.hygieneCert || "Pending"} Â· Rider: {app.deliveryPerson} ({app.vehicleNo})
                     </p>
                   </div>
 
@@ -585,7 +583,7 @@ export default function VendorApplications() {
                     {selectedApplicationForView.qrPassToken}
                   </p>
                   <span className="inline-block mt-1 text-[10px] text-emerald-400">
-                    ✓ Valid for Hostel Drop-off
+                    âœ“ Valid for Hostel Drop-off
                   </span>
                 </div>
               </div>

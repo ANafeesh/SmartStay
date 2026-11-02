@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Wallet,
@@ -8,7 +9,11 @@ import {
   ChevronRight,
   ShieldCheck,
   Users,
+  QrCode,
+  X,
+  CheckCircle2,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const stats = [
   {
@@ -50,19 +55,39 @@ const stats = [
 ];
 
 function StudentDashboard() {
+  const { user } = useAuth();
+  const [showPassModal, setShowPassModal] = useState(false);
+
+  const studentName = user?.name || "Student User";
+  const studentRegId = user?.studentId || "STD-2026-090";
+  const roomNumber = user?.room || "B-204";
+
   return (
     <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 pb-12">
-      {/* Title Header */}
-      <div>
-        <h1 className="text-xl sm:text-3xl font-black tracking-tight text-slate-900">
-          Student Dashboard
-        </h1>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
-          Here is a quick overview of your hostel services and balance.
-        </p>
+      {/* Title Header with Pass Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-3xl font-black tracking-tight text-slate-900">
+            Student Dashboard
+          </h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
+            Overview of hostel services, fees, room allocation, and security pass.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setShowPassModal(true)}
+          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-500 transition cursor-pointer self-start sm:self-auto"
+        >
+          <QrCode size={16} />
+          <span>Digital Gate Pass</span>
+          <span className="rounded-full bg-emerald-700/60 px-1.5 py-0.5 text-[10px]">
+            Active
+          </span>
+        </button>
       </div>
 
-      {/* Stat Cards (2x2 on mobile, 4 cols on desktop) */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -114,7 +139,7 @@ function StudentDashboard() {
                   Recent Payments
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Your latest payment activity & receipts
+                  Your latest payment activity &amp; receipts
                 </p>
               </div>
 
@@ -168,7 +193,7 @@ function StudentDashboard() {
                 Current Room
               </p>
               <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                Room B-204
+                Room {roomNumber}
               </h2>
               <p className="text-xs text-slate-500">Block B · Second Floor</p>
             </div>
@@ -197,6 +222,49 @@ function StudentDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Digital Gate Pass Modal */}
+      {showPassModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={18} className="text-emerald-600" />
+                <h3 className="font-bold text-slate-900 text-sm">
+                  Digital Student Gate Pass
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowPassModal(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="text-center py-5">
+              <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-2xl bg-slate-50 border-2 border-dashed border-emerald-300 p-3">
+                <QrCode size={120} className="text-slate-800" />
+              </div>
+
+              <div className="mt-4">
+                <h4 className="text-base font-bold text-slate-900">{studentName}</h4>
+                <p className="font-mono text-xs text-blue-600 font-semibold">{studentRegId}</p>
+                <p className="text-xs text-slate-500 mt-1">Hostel Room {roomNumber}</p>
+              </div>
+
+              <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">
+                <CheckCircle2 size={13} />
+                <span>Security Clearance: ACTIVE</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-center text-slate-400 pb-1">
+              Present this pass at campus security checkpoints.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

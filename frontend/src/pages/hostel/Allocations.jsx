@@ -17,7 +17,9 @@ import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 
-import { API_BASE_URL } from "../../services/apiClient";
+import { API_BASE_URL, getAuthToken } from "../../services/apiClient";
+import { SAMPLE_ALLOCATIONS, SAMPLE_ROOMS, SAMPLE_BEDS, SAMPLE_BUILDINGS } from "../../services/hostelFallbackData";
+
 
 const API_URL = API_BASE_URL;
 
@@ -793,7 +795,7 @@ function Allocations() {
                     id="allocation-student-id"
                     value={studentId}
                     onChange={(event) => setStudentId(event.target.value)}
-                    placeholder="e.g. SEU/IS/22/ICT/069"
+                    placeholder="e.g. STD-2026-069"
                     className="h-11 w-full rounded-xl border border-black/10 bg-white px-4 text-sm outline-none focus:border-smart-blue"
                     required
                   />

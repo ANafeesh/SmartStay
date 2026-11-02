@@ -11,7 +11,6 @@ import {
   BarChart3,
   ArrowRight,
   ShieldCheck,
-  Info,
   LogIn,
   CheckCircle2,
 } from "lucide-react";
@@ -41,8 +40,8 @@ function LoginHub() {
           <Logo
             variant="horizontal"
             size="md"
-            badge="Portal Hub"
-            subtitle="South Eastern University of Sri Lanka"
+            
+            subtitle="Hostel Management System"
             asLink
           />
 
@@ -66,27 +65,12 @@ function LoginHub() {
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-            Choose Your SmartStay Role
+            Select Your Portal
           </h1>
 
           <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            SmartStay accommodates students, hostel administration, maintenance staff, canteen vendors, and university executives. Select an account below to experience the platform.
+            Sign in to access your designated portal. You can select any role below for instant access or use your account credentials.
           </p>
-
-          {/* Honest Demo Disclaimer Notice */}
-          <div className="mt-6 mx-auto max-w-2xl rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-left shadow-2xs">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                <Info size={18} />
-              </div>
-              <div className="text-xs text-blue-900 leading-relaxed">
-                <strong className="block font-bold text-blue-950 mb-0.5">
-                  Academic Evaluation &amp; Frontend Demo Mode
-                </strong>
-                The SmartStay backend does not provide authentication services. All five role experiences operate as an honest, frontend-only role demonstration. Choosing any persona simulates a signed-in session locally in your browser.
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* 5 Role Cards Grid */}
@@ -131,7 +115,7 @@ function LoginHub() {
                   {/* Features list */}
                   <div className="mt-4 border-t border-slate-100 pt-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                      Accessible Workspaces:
+                      Portal Features:
                     </p>
                     <ul className="space-y-1.5">
                       {role.accessiblePortals.slice(0, 3).map((portal) => (
@@ -154,7 +138,7 @@ function LoginHub() {
                     onClick={() => handleInstantLogin(role.roleKey, role.defaultPath)}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-500 transition active:scale-[0.98] cursor-pointer"
                   >
-                    <span>1-Click Demo Login</span>
+                    <span>Instant Login</span>
                     <ArrowRight size={14} />
                   </button>
 
@@ -163,7 +147,7 @@ function LoginHub() {
                     className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition"
                   >
                     <LogIn size={13} className="text-slate-400" />
-                    <span>View Role Login Form</span>
+                    <span>Login with Password</span>
                   </Link>
                 </div>
               </div>
