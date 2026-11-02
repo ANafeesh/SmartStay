@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Clock,
   Search,
@@ -12,7 +12,7 @@ const initialOrders = [
   {
     id: "ORD-9041",
     studentName: "Ahamed Nafeesh",
-    regNo: "SEU/IS/22/ICT/090",
+    regNo: "STD-2026-090",
     phone: "+94 77 123 4567",
     timeSlot: "12:30 PM - 01:00 PM (Lunch)",
     deliveryLocation: "Hostel Block B - Room 204",
@@ -28,7 +28,7 @@ const initialOrders = [
   {
     id: "ORD-9038",
     studentName: "M.I.M Izni",
-    regNo: "SEU/IS/22/ICT/112",
+    regNo: "STD-2026-112",
     phone: "+94 71 456 7890",
     timeSlot: "12:30 PM - 01:00 PM (Lunch)",
     deliveryLocation: "Hostel Block A - Foyer",
@@ -41,7 +41,7 @@ const initialOrders = [
   {
     id: "ORD-9025",
     studentName: "A. Kanesalingam",
-    regNo: "SEU/IS/22/ICT/069",
+    regNo: "STD-2026-069",
     phone: "+94 75 998 1234",
     timeSlot: "01:00 PM - 01:30 PM (Lunch)",
     deliveryLocation: "Hostel Block B - Room 102",
@@ -54,7 +54,7 @@ const initialOrders = [
   {
     id: "ORD-9011",
     studentName: "M.H.U Hafrath",
-    regNo: "SEU/IS/22/ICT/102",
+    regNo: "STD-2026-102",
     phone: "+94 76 332 5544",
     timeSlot: "11:30 AM - 12:00 PM",
     deliveryLocation: "Campus Gate 01 Hub",
@@ -114,12 +114,11 @@ export default function VendorOrders() {
               Live Food Orders & Delivery Slots
             </h1>
             <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">
-              Module 3 Order Ops
+              Live Kitchen Orders
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> · Student: <strong>Ahamed Nafeesh (SEU/IS/22/ICT/090)</strong>
-          </p>
+            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> &middot; Order Tracking &amp; Delivery Management</p>
         </div>
       </div>
 
@@ -221,7 +220,7 @@ export default function VendorOrders() {
                     <span className="font-mono text-sm font-bold text-blue-600">
                       {order.id}
                     </span>
-                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-300">â€¢</span>
                     <h3 className="text-sm font-bold text-slate-900">
                       {order.studentName}
                     </h3>
@@ -233,7 +232,7 @@ export default function VendorOrders() {
                   <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                     <Clock size={13} className="text-blue-600" />
                     <span>Slot: <strong>{order.timeSlot}</strong></span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>Received: {order.createdAt}</span>
                   </p>
 

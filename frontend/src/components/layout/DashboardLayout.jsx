@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, normalizeRole } from "../../context/AuthContext";
 import RoleSwitcherModal from "../auth/RoleSwitcherModal";
 import {
   Activity,
@@ -21,6 +21,7 @@ import {
   Menu,
   QrCode,
   RefreshCw,
+  ShieldCheck,
   ShoppingBag,
   Store,
   User,
@@ -35,6 +36,7 @@ const navigationGroups = [
   {
     title: "Student Portal",
     role: "student",
+    allowedRoles: ["student", "admin"],
     items: [
       { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { name: "Payments & Bills", href: "/payments", icon: CreditCard },
@@ -48,6 +50,7 @@ const navigationGroups = [
   {
     title: "Vendor Portal",
     role: "vendor",
+    allowedRoles: ["vendor", "admin"],
     items: [
       { name: "Vendor Dashboard", href: "/vendor/dashboard", icon: Store },
       { name: "Food Items", href: "/vendor/food-items", icon: UtensilsCrossed },
@@ -59,6 +62,7 @@ const navigationGroups = [
   {
     title: "Hostel Management",
     role: "warden",
+    allowedRoles: ["warden", "admin"],
     items: [
       { name: "Hostel Dashboard", href: "/hostel", icon: Building },
       { name: "Buildings", href: "/hostel/buildings", icon: Building },
@@ -71,6 +75,7 @@ const navigationGroups = [
   {
     title: "Maintenance",
     role: "maintenance",
+    allowedRoles: ["maintenance", "warden", "admin"],
     items: [
       { name: "Maintenance Overview", href: "/maintenance", icon: Wrench },
       { name: "Submit a Complaint", href: "/maintenance/submit-complaint", icon: ClipboardList },
@@ -79,16 +84,46 @@ const navigationGroups = [
   {
     title: "Analytics & Monitoring",
     role: "executive",
+    allowedRoles: ["executive", "finance", "admin"],
     items: [
-      { name: "Analytics Overview", href: "/analytics", icon: BarChart3 },
-      { name: "Reports", href: "/reports", icon: FileText },
-      { name: "Utilities Analytics", href: "/utilities", icon: Zap },
-      { name: "Smart Monitoring", href: "/monitoring", icon: Activity },
+      {
+        name: "Analytics Overview",
+        href: "/analytics",
+        icon: BarChart3,
+        allowedRoles: ["executive", "finance", "admin"],
+      },
+      {
+        name: "Reports",
+        href: "/reports",
+        icon: FileText,
+        allowedRoles: ["executive", "finance", "admin"],
+      },
+      {
+        name: "Utilities Analytics",
+        href: "/utilities",
+        icon: Zap,
+        allowedRoles: ["executive", "admin"],
+      },
+      {
+        name: "Smart Monitoring",
+        href: "/monitoring",
+        icon: Activity,
+        allowedRoles: ["executive", "admin"],
+      },
       {
         name: "Notifications Center",
         href: "/notifications-center",
         icon: Bell,
+        allowedRoles: ["executive", "finance", "admin"],
       },
+    ],
+  },
+  {
+    title: "Security Portal",
+    role: "security",
+    allowedRoles: ["security", "admin"],
+    items: [
+      { name: "Digital Gate Passes", href: "/vendor/pass", icon: QrCode }, { name: "Gate Clearance", href: "/dashboard", icon: ShieldCheck }
     ],
   },
 ];
@@ -99,6 +134,29 @@ function DashboardLayout() {
   const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
   const sidebarCollapsed = false;
   const location = useLocation();
+
+  const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
+
+  // Filter navigation groups according to authenticated user's role
+  const visibleGroups = navigationGroups
+    .filter((group) => {
+      if (currentRole === "admin") return true;
+      if (group.allowedRoles) {
+        return group.allowedRoles.includes(currentRole);
+      }
+      return group.role === currentRole;
+    })
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (currentRole === "admin") return true;
+        if (item.allowedRoles) {
+          return item.allowedRoles.includes(currentRole);
+        }
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
   const currentPage = navigationGroups
     .flatMap((group) => group.items)
     .find((item) => item.href === location.pathname);
@@ -109,7 +167,7 @@ function DashboardLayout() {
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 lg:flex-row antialiased font-sans">
       {/* Mobile Top Navigation Header */}
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/90 bg-white/95 px-3.5 py-2.5 text-slate-900 shadow-xs backdrop-blur-md lg:hidden">
-        <Logo variant="horizontal" size="sm" badge="SEU" asLink />
+        <Logo variant="horizontal" size="sm" asLink />
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
             to="/notifications"
@@ -157,8 +215,8 @@ function DashboardLayout() {
           <Logo
             variant="horizontal"
             size="md"
-            badge="v2.0"
-            subtitle="Hostel Management OS"
+            
+            subtitle="Hostel Living OS"
             asLink
           />
 
@@ -177,8 +235,10 @@ function DashboardLayout() {
           aria-label="Primary navigation"
           className="no-scrollbar flex-1 space-y-6 overflow-y-auto px-3 py-4"
         >
-          {navigationGroups.map((group) => {
-            const isUserPrimaryGroup = user?.roleKey === group.role;
+          {visibleGroups.map((group) => {
+            const isUserPrimaryGroup =
+              currentRole === group.role ||
+              (currentRole === "admin" && group.role === "admin");
 
             return (
               <div key={group.title}>
@@ -260,14 +320,14 @@ function DashboardLayout() {
                 <div className="min-w-0 truncate">
                   <div className="flex items-center gap-1.5">
                     <p className="truncate text-xs font-bold text-slate-900">
-                      {user?.name || "Ahamed Nafeesh"}
+                      {user?.name || "Student User"}
                     </p>
                   </div>
                   <p className="truncate text-[10px] font-semibold text-blue-600">
                     {user?.roleBadge || user?.role || "Student account"}
                   </p>
                   <p className="truncate font-mono text-[9px] text-slate-400">
-                    {user?.studentId || "SEU/IS/22/ICT/090"}
+                    {user?.studentId || "Student Account"}
                   </p>
                 </div>
               )}
@@ -287,11 +347,11 @@ function DashboardLayout() {
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Campus Network
+                SmartStay Living
               </span>
               <span className="text-[11px] font-medium text-slate-400">•</span>
               <span className="text-[11px] font-semibold text-slate-500">
-                SEU SmartStay Platform
+                Hostel Management Portal
               </span>
             </div>
             <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 mt-0.5">
@@ -320,15 +380,13 @@ function DashboardLayout() {
           <div>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Campus Network
+              SmartStay Living
             </div>
             <h1 className="text-xl font-black tracking-tight text-slate-900 mt-0.5">
               {pageTitle}
             </h1>
           </div>
-          <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">
-            SEU
-          </span>
+          <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[10px] font-bold text-blue-700">SmartStay</span>
         </div>
 
         {/* Viewport Router Outlet */}

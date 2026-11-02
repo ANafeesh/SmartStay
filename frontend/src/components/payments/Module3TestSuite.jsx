@@ -72,9 +72,9 @@ const testSuiteDefinitions = [
     name: "Receipt Integrity & Cryptographic QR Stamp",
     module: "Receipt Functions",
     description:
-      "Validate that official receipts bind student credentials (SEU/IS/22/ICT/090) and emit a verifiable tamper-proof QR code.",
+      "Validate that official receipts bind student credentials (STD-2026-090) and emit a verifiable tamper-proof QR code.",
     run: () => {
-      const studentId = "SEU/IS/22/ICT/090";
+      const studentId = "STD-2026-090";
       const studentName = "Ahamed Nafeesh";
       const qrData = `SMARTSTAY-VERIFY-RCT-90421-${studentId}`;
       const hasCorrectSignature = qrData.includes(studentId) && qrData.startsWith("SMARTSTAY-VERIFY");
@@ -134,7 +134,7 @@ const testSuiteDefinitions = [
       "Verify students can assemble a cart, select valid lunch/dinner delivery time slots, and register the drop-off hostel block.",
     run: () => {
       const order = {
-        studentId: "SEU/IS/22/ICT/090",
+        studentId: "STD-2026-090",
         timeSlot: "12:30 PM - 01:00 PM (Lunch)",
         deliveryLocation: "Hostel Block B Entrance",
         itemsCount: 2,
@@ -146,7 +146,7 @@ const testSuiteDefinitions = [
         expected: "Valid slot & non-empty items payload",
         actual: `Slot: ${order.timeSlot}, Drop-off: ${order.deliveryLocation}`,
         durationMs: 7,
-        details: "Delivery slot capacity successfully reserved. Order registered for student SEU/IS/22/ICT/090.",
+        details: "Delivery slot capacity successfully reserved. Order registered for student STD-2026-090.",
       };
     },
   },
@@ -236,7 +236,7 @@ export default function Module3TestSuite() {
     const reportData = {
       project: "SmartStay Hostel Management System",
       module: "Module 3: Payments, Food and Marketplace",
-      assignee: "Ahamed Nafeesh (SEU/IS/22/ICT/090)",
+      assignee: "Ahamed Nafeesh (STD-2026-090)",
       timestamp: new Date().toISOString(),
       summary: {
         totalTests: testSuiteDefinitions.length,
@@ -284,7 +284,7 @@ export default function Module3TestSuite() {
             <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-mono text-blue-300">
               <span>Developer: <strong>Ahamed Nafeesh</strong></span>
               <span>•</span>
-              <span>Reg: <strong>SEU/IS/22/ICT/090</strong></span>
+              <span>Reg: <strong>STD-2026-090</strong></span>
               <span>•</span>
               <span>Specification: <strong>Module 3 Core</strong></span>
             </div>
@@ -351,7 +351,7 @@ export default function Module3TestSuite() {
             <FileCode size={18} className="text-blue-600" />
             <h3 className="text-sm font-bold text-slate-900">Module 3 Test Case Matrix</h3>
           </div>
-          <span className="text-xs text-slate-500 font-mono">SEU/IS/22/ICT/090</span>
+          <span className="text-xs text-slate-500 font-mono">STD-2026-090</span>
         </div>
 
         <div className="divide-y divide-slate-100">

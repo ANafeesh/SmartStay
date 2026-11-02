@@ -118,7 +118,6 @@ function Sidebar({ isOpen, onClose }) {
     currentRole === "maintenance" || currentRole === "admin" || currentRole === "warden";
   const showAnalytics =
     currentRole === "admin" ||
-    currentRole === "warden" ||
     currentRole === "executive" ||
     currentRole === "finance";
 

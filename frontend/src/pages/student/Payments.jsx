@@ -1,4 +1,5 @@
-import { useState } from "react";
+﻿import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   CreditCard,
   CheckCircle2,
@@ -26,7 +27,7 @@ import {
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
-import Module3TestSuite from "../../components/payments/Module3TestSuite";
+// Module3TestSuite retired from user view
 
 const initialBills = [
   {
@@ -75,8 +76,8 @@ const initialPaymentHistory = [
     refNo: "TXN-88492019",
     receiptNo: "RCT-90421",
     status: "Success",
-    studentName: "Ahamed Nafeesh",
-    studentRegNo: "SEU/IS/22/ICT/090",
+    studentName: "Student User",
+    studentRegNo: "STD-2026-090",
     hostelRoom: "Block B - Room 204",
   },
   {
@@ -92,8 +93,8 @@ const initialPaymentHistory = [
     refNo: "TXN-77310249",
     receiptNo: "RCT-88210",
     status: "Success",
-    studentName: "Ahamed Nafeesh",
-    studentRegNo: "SEU/IS/22/ICT/090",
+    studentName: "Student User",
+    studentRegNo: "STD-2026-090",
     hostelRoom: "Block B - Room 204",
   },
   {
@@ -109,8 +110,8 @@ const initialPaymentHistory = [
     refNo: "TXN-66190241",
     receiptNo: "RCT-87502",
     status: "Success",
-    studentName: "Ahamed Nafeesh",
-    studentRegNo: "SEU/IS/22/ICT/090",
+    studentName: "Student User",
+    studentRegNo: "STD-2026-090",
     hostelRoom: "Block B - Room 204",
   },
 ];
@@ -145,12 +146,12 @@ const initialNotifications = [
   {
     id: "NOTIF-03",
     title: "Bursary Subsidy Credited",
-    message: "South Eastern University student welfare meal subsidy applied to account.",
+    message: "Student welfare meal subsidy applied to account.",
     date: "15 Sep 2026, 02:15 PM",
     type: "info",
     amount: 5000,
     paymentDate: "15 Sep 2026",
-    paymentMethod: "SEU Bursary Welfare",
+    paymentMethod: "Campus Bursary Welfare",
     refNo: "SUB-2026-09",
     receiptNo: null,
     read: false,
@@ -158,6 +159,7 @@ const initialNotifications = [
 ];
 
 export default function Payments() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [bills, setBills] = useState(initialBills);
   const [history, setHistory] = useState(initialPaymentHistory);
@@ -409,7 +411,7 @@ export default function Payments() {
                 Bursary Standing: Good
               </span>
               <span className="rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-[11px] font-bold text-blue-700">
-                Module 3: Finance &amp; Billing
+                Hostel Bursary Division
               </span>
             </div>
 
@@ -419,15 +421,15 @@ export default function Payments() {
 
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
               <span className="font-semibold text-slate-800">
-                Ahamed Nafeesh
+                {user?.name || "Student User"}
               </span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300">â€¢</span>
               <span className="font-mono font-medium text-blue-600">
-                SEU/IS/22/ICT/090
+                STD-2026-090
               </span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300">â€¢</span>
               <span>Hostel Block B, Room 204</span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300">â€¢</span>
               <span className="text-slate-400">Academic Year 2026/27</span>
             </div>
           </div>
@@ -441,20 +443,7 @@ export default function Payments() {
               <span>Generate / Issue Bill</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab("tests")}
-              className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition shadow-xs cursor-pointer ${
-                activeTab === "tests"
-                  ? "bg-indigo-600 text-white shadow-indigo-500/25 ring-2 ring-indigo-400/30"
-                  : "bg-indigo-50/80 border border-indigo-200/80 text-indigo-700 hover:bg-indigo-100"
-              }`}
-            >
-              <Sparkles size={15} />
-              <span>Module 3 Test Suite</span>
-              <span className="rounded-full bg-indigo-200/80 px-1.5 py-0.2 text-[10px] font-extrabold text-indigo-900">
-                9 Tests
-              </span>
-            </button>
+            
           </div>
         </div>
       </div>
@@ -629,26 +618,7 @@ export default function Payments() {
             )}
           </button>
 
-          <button
-            onClick={() => setActiveTab("tests")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-              activeTab === "tests"
-                ? "bg-indigo-600 text-white shadow-xs shadow-indigo-500/25"
-                : "text-indigo-700 hover:text-indigo-900 hover:bg-white/40"
-            }`}
-          >
-            <Sparkles size={15} />
-            <span>Test Suite</span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                activeTab === "tests"
-                  ? "bg-white/20 text-white"
-                  : "bg-indigo-100 text-indigo-700"
-              }`}
-            >
-              9 TCs
-            </span>
-          </button>
+          
         </div>
       </div>
 
@@ -751,7 +721,7 @@ export default function Payments() {
               </div>
               <div className="mt-2.5 flex items-center gap-1.5">
                 <span className="inline-flex items-center gap-1 rounded-full bg-purple-100/70 border border-purple-200/60 px-2 py-0.5 text-[11px] font-semibold text-purple-700">
-                  SEU Student Welfare Subsidized
+                  Student Welfare Subsidized
                 </span>
               </div>
             </div>
@@ -843,9 +813,9 @@ export default function Payments() {
                               {bill.id}
                             </span>
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>Cycle: {bill.period}</span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>
                             Due Date:{" "}
                             <strong className="text-slate-700">
@@ -971,7 +941,7 @@ export default function Payments() {
                             <span>Ref: {rec.refNo}</span>
                             {rec.receiptNo && (
                               <>
-                                <span>•</span>
+                                <span>â€¢</span>
                                 <span className="text-blue-600 font-semibold">
                                   {rec.receiptNo}
                                 </span>
@@ -1096,7 +1066,7 @@ export default function Payments() {
                     <div className="flex justify-between text-slate-500 text-[11px]">
                       <span>Student Reg:</span>
                       <span className="font-mono text-slate-700">
-                        SEU/IS/22/ICT/090
+                        STD-2026-090
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-500 text-[11px]">
@@ -1251,25 +1221,25 @@ export default function Payments() {
                       )}
                       {notif.paymentDate && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>Date: <strong className="text-slate-800">{notif.paymentDate}</strong></span>
                         </>
                       )}
                       {notif.paymentMethod && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>Method: <strong className="text-slate-800">{notif.paymentMethod}</strong></span>
                         </>
                       )}
                       {notif.refNo && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span className="font-mono text-slate-500">Ref: {notif.refNo}</span>
                         </>
                       )}
                       {notif.receiptNo && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span className="font-mono text-blue-600 font-bold">Receipt #{notif.receiptNo}</span>
                         </>
                       )}
@@ -1286,7 +1256,7 @@ export default function Payments() {
 
                       {notif.receiptNo && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <button
                             onClick={() => {
                               const found = history.find((h) => h.receiptNo === notif.receiptNo);
@@ -1309,7 +1279,7 @@ export default function Payments() {
       )}
 
       {/* TAB 5: MODULE 3 TEST CASES SUITE */}
-      {activeTab === "tests" && <Module3TestSuite />}
+      
 
       {/* GENERATE BILL MODAL (Proposal Requirement 6) */}
       {isGenerateBillOpen && (

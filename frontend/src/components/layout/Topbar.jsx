@@ -1,6 +1,9 @@
 import { Bell, Menu, Search } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 function Topbar({ onMenuClick }) {
+  const { user } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
       <div className="flex min-h-[72px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -21,7 +24,7 @@ function Topbar({ onMenuClick }) {
               Welcome back,
             </p>
             <h2 className="truncate text-base font-bold text-slate-800 sm:text-lg">
-              Ahamed Nafeesh
+              {user?.name || "Student"}
             </h2>
           </div>
         </div>
@@ -60,7 +63,7 @@ function Topbar({ onMenuClick }) {
           {/* User Profile Avatar */}
           <div className="flex items-center gap-3 pl-1">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-xs font-bold text-white shadow-xs shadow-blue-500/20">
-              AN
+              {user?.initials || (user?.name ? user.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "ST")}
             </div>
           </div>
         </div>

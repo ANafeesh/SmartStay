@@ -1,4 +1,5 @@
-import { useState } from "react";
+﻿import { useState } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   X,
   CreditCard,
@@ -25,7 +26,7 @@ export default function PaymentModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [simulationOutcome, setSimulationOutcome] = useState("success");
   const [failureReason, setFailureReason] = useState("Insufficient Funds");
-  const [cardNumber, setCardNumber] = useState("4532 •••• •••• 8842");
+  const [cardNumber, setCardNumber] = useState("4532 â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ 8842");
   const [cardExpiry, setCardExpiry] = useState("09/28");
   const [cardCvv, setCardCvv] = useState("489");
   const [slipFile, setSlipFile] = useState(null);
@@ -84,8 +85,8 @@ export default function PaymentModal({
               ? "Refunded"
               : "Failed",
         failureReason: isSuccess || isPending ? null : failureReason,
-        studentName: "Ahamed Nafeesh",
-        studentRegNo: "SEU/IS/22/ICT/090",
+        studentName: user?.name || "Student User",
+        studentRegNo: user?.studentId || "STD-2026-090",
         hostelRoom: "Block B - Room 204",
       };
 
@@ -107,7 +108,7 @@ export default function PaymentModal({
                 Secure Bill Settlement Gateway
               </h2>
               <p className="text-xs text-slate-500">
-                Module 3 Financial Engine · Ahamed Nafeesh (SEU/IS/22/ICT/090)
+                Campus Hostel Bursary Division
               </p>
             </div>
           </div>
@@ -133,7 +134,7 @@ export default function PaymentModal({
                   {bill.title}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Bill #{bill.id} · Due: {bill.dueDate} · Period: {bill.period}
+                  Bill #{bill.id} Â· Due: {bill.dueDate} Â· Period: {bill.period}
                 </p>
               </div>
               <div className="text-right">
@@ -295,7 +296,7 @@ export default function PaymentModal({
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-800 focus:border-blue-600 focus:outline-none"
-                  placeholder="4532 •••• •••• 8842"
+                  placeholder="4532 â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ 8842"
                   required
                 />
               </div>
@@ -338,7 +339,7 @@ export default function PaymentModal({
                 Upload Bank Deposit Slip / Online Transfer Slip
               </p>
               <p className="text-[11px] text-slate-500 mt-1">
-                SEU Hostel Account · Bank of Ceylon (BOC) A/C: 00921820
+                Hostel Bursary Account · Bank of Ceylon (BOC) A/C: 00921820
               </p>
               <input
                 type="file"
@@ -362,7 +363,7 @@ export default function PaymentModal({
                 <h4 className="text-xs font-bold text-amber-950">Bursary Cashier Receipt Terminal</h4>
               </div>
               <p className="text-[11px] text-amber-800">
-                Payment made directly at South Eastern University Student Welfare &amp; Bursary Office Counter.
+                Payment made directly at Campus Student Welfare &amp; Bursary Office Counter.
               </p>
               <div>
                 <label className="text-[11px] font-semibold text-slate-600 block mb-1">
@@ -384,7 +385,7 @@ export default function PaymentModal({
               <div className="flex items-center gap-2">
                 <Sparkles size={16} className="text-purple-600" />
                 <h4 className="text-xs font-bold text-purple-950 uppercase tracking-wider">
-                  Module 3 Gateway Simulator
+                  Payment Status Simulator
                 </h4>
               </div>
               <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">

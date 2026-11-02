@@ -379,7 +379,7 @@ function AnalyticsDashboard() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-200 border border-blue-400/30 mb-3">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Module 5 Live Engine
+              Executive Intelligence
             </div>
 
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -423,7 +423,7 @@ function AnalyticsDashboard() {
 
           <span className="inline-flex items-center gap-2">
             <CheckCircle2 size={14} />
-            MongoDB live aggregations
+            Campus Live Telemetry
           </span>
 
           <span className="text-blue-200/60">•</span>
@@ -1114,7 +1114,7 @@ function AnalyticsDashboard() {
       </section>
 
       <p className="px-1 text-center text-xs text-smart-secondary">
-        SmartStay Module 5 · Live Analytics Engine · Connected to MongoDB Atlas API endpoints.
+        SmartStay Campus Operations &amp; Executive Analytics
       </p>
     </div>
   );
