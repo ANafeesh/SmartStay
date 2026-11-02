@@ -20,6 +20,7 @@ import Button from "../../components/ui/Button";
 import { API_BASE_URL, getAuthToken } from "../../services/apiClient";
 import { SAMPLE_ALLOCATIONS, SAMPLE_ROOMS, SAMPLE_BEDS, SAMPLE_BUILDINGS } from "../../services/hostelFallbackData";
 
+
 const API_URL = API_BASE_URL;
 
 const getRows = (result) => {

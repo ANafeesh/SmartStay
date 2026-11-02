@@ -49,6 +49,7 @@ export const getRoleBadge = (role) => {
 const enrichUser = (backendUser) => {
   if (!backendUser) return null;
   const roleKey = normalizeRole(backendUser.role || backendUser.roleKey);
+
   const demoFallback = getDemoAccount(roleKey);
 
   return {
@@ -57,6 +58,7 @@ const enrichUser = (backendUser) => {
     roleKey,
     role: backendUser.role || roleKey,
     roleBadge: getRoleBadge(backendUser.role || roleKey),
+
     initials:
       backendUser.name
         ?.split(" ")
@@ -119,6 +121,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
+
     try {
       const response = await getCurrentUser();
       if (response?.success && response.user) {
@@ -151,6 +154,7 @@ export function AuthProvider({ children }) {
         setUser(null);
         setIsLoggedIn(false);
       }
+
     } finally {
       setIsLoading(false);
     }
@@ -186,6 +190,7 @@ export function AuthProvider({ children }) {
         setIsLoggedIn(true);
         setAuthToken("demo-token-" + (account?.roleKey || credentials));
         localStorage.setItem("smartstay_user", JSON.stringify(account));
+
         return enriched;
       }
     }
@@ -229,6 +234,7 @@ export function AuthProvider({ children }) {
     setIsLoggedIn(true);
     setAuthToken("demo-token-" + (account?.roleKey || roleKey));
     localStorage.setItem("smartstay_user", JSON.stringify(account));
+
     return enriched;
   };
 

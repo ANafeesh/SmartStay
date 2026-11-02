@@ -17,6 +17,7 @@ import Badge from "../../components/ui/Badge";
 import { API_BASE_URL, getAuthToken } from "../../services/apiClient";
 import { SAMPLE_BUILDINGS, SAMPLE_ROOMS, SAMPLE_BEDS, SAMPLE_TRANSFERS } from "../../services/hostelFallbackData";
 
+
 const API_URL = API_BASE_URL;
 
 const statStyles = [

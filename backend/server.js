@@ -72,6 +72,7 @@ app.use("/api/leave-requests", leaveRequestRoutes);
 app.use("/api/visitors", visitorRoutes);
 app.use("/api/violations", violationRoutes);
 
+
 // Module 5: Monitoring and Analytics APIs
 app.use("/api/monitoring", monitoringRoutes);
 app.use("/api/analytics", analyticsRoutes);

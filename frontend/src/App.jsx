@@ -83,6 +83,7 @@ function App() {
             <Route path="/signup" element={<AuthPortal initialTab="register" />} />
             <Route path="/login/:roleKey" element={<AuthPortal initialTab="login" />} />
 
+
             {/* Authenticated Dashboard Workspace */}
             <Route
               element={

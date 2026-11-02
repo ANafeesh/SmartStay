@@ -15,6 +15,7 @@ import Button from "../../components/ui/Button";
 import { API_BASE_URL, getAuthToken } from "../../services/apiClient";
 import { SAMPLE_BUILDINGS } from "../../services/hostelFallbackData";
 
+
 const API_URL = API_BASE_URL;
 
 async function fetchList(endpoint) {

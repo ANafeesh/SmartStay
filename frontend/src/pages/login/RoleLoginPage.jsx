@@ -215,6 +215,7 @@ function RoleLoginPage({ forcedRoleKey = null }) {
                 <div className="mt-2 text-[11px] text-blue-800">
                   {demoProfile.roleKey === "student"
                     ? `Account: ${demoProfile.name} (${demoProfile.studentId})`
+
                     : `Persona: ${demoProfile.name} • ${demoProfile.studentId}`}
                 </div>
               </div>
@@ -230,6 +231,7 @@ function RoleLoginPage({ forcedRoleKey = null }) {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. First and Last Name"
+
                   icon={User}
                   required
                 />
@@ -242,6 +244,7 @@ function RoleLoginPage({ forcedRoleKey = null }) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={isRegisterMode ? "student@smartstay.edu" : "e.g. izni@gmail.com"}
+
                 icon={User}
                 required
               />
