@@ -238,8 +238,8 @@ export default function VendorPass() {
 
           {/* Camera Viewport Simulation */}
           <div className="relative h-48 w-full rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col items-center justify-center text-center p-4">
-            <Camera size={32} className="text-slate-600 mb-2" />
-            <p className="text-xs font-mono text-slate-400">
+            <Camera size={32} className="text-slate-300 mb-2" />
+            <p className="text-xs font-mono text-slate-200 font-semibold">
               {isScanning ? "Scanning Optical Sensor..." : "Point Scanner at QR Code or Choose Scenario"}
             </p>
 

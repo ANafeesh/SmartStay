@@ -426,7 +426,7 @@ export default function Marketplace() {
                   <span>Total: LKR {orderConfirmed.totalAmount.toLocaleString()}</span>
                   <span>â€¢</span>
                   <span>Payment: {orderConfirmed.paymentMethod}</span>
-                  <span>â€¢</span>
+                  <span>•</span>
                   <span>Student: {studentDisplayName} ({studentRegId})</span>
                 </div>
               </div>

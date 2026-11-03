@@ -48,7 +48,7 @@ function ConfirmDialog({
         type="button"
         disabled={isLoading}
         onClick={onClose}
-        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-smart-primary hover:bg-slate-50 transition disabled:opacity-50"
+        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-smart-primary hover:bg-slate-50 transition disabled:opacity-50 cursor-pointer"
       >
         {cancelText}
       </button>
@@ -57,7 +57,7 @@ function ConfirmDialog({
         type="button"
         disabled={isLoading}
         onClick={onConfirm}
-        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition disabled:opacity-50 ${config.buttonBg}`}
+        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition disabled:opacity-50 cursor-pointer ${config.buttonBg}`}
       >
         {isLoading && <Loader2 size={14} className="animate-spin" />}
         <span>{confirmText}</span>
@@ -80,7 +80,7 @@ function ConfirmDialog({
           <IconComponent size={24} />
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 pr-6">
           <h4 className="text-base font-bold text-smart-primary">
             {title}
           </h4>

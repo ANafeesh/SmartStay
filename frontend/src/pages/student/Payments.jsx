@@ -1212,7 +1212,7 @@ export default function Payments() {
                       {notif.message}
                     </p>
 
-                    {/* Metadata Strip mandated by Proposal Requirement 11 */}
+                    {/* Billing Metadata */}
                     <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-slate-50/80 border border-slate-100 p-2 text-[11px] text-slate-600">
                       {notif.amount && (
                         <span>
@@ -1295,7 +1295,7 @@ export default function Payments() {
                     Generate Hostel Bill &amp; Invoices
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    Requirement 6: Monthly fees, semester fees, utilities, damage charges
+                    Official hostel fee invoicing, utility breakdowns, and damage charges
                   </p>
                 </div>
               </div>
