@@ -42,6 +42,16 @@ export async function getCurrentUser() {
 }
 
 /**
+ * Update authenticated user profile via /api/auth/profile
+ */
+export async function updateUserProfile(profileData) {
+  return await apiFetch("/auth/profile", {
+    method: "PUT",
+    body: profileData,
+  });
+}
+
+/**
  * Terminate session via /api/auth/logout
  */
 export async function logoutUser() {

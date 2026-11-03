@@ -1,4 +1,5 @@
-﻿import { useState } from "react";
+﻿import { useState, useEffect } from "react";
+import { readFoodOrders } from "../../data/foodOrders";
 import { Link } from "react-router-dom";
 import {
   DollarSign,
@@ -48,6 +49,20 @@ const initialMenuItems = [
 ];
 
 export default function VendorDashboard() {
+  const [liveOrders, setLiveOrders] = useState(() => readFoodOrders());
+
+  useEffect(() => {
+    const handleSync = () => setLiveOrders(readFoodOrders());
+    window.addEventListener("smartstay-food-orders-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("smartstay-food-orders-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
+
+  const ordersInQueueCount = liveOrders.filter((o) => o.status !== "Delivered").length;
+  const todayRevenue = liveOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
   const [menuItems, setMenuItems] = useState(initialMenuItems);
   const [storeOpen, setStoreOpen] = useState(true);
 
@@ -112,7 +127,7 @@ export default function VendorDashboard() {
             </div>
           </div>
           <h3 className="mt-3 text-2xl font-black text-slate-900">
-            LKR 14,250
+            LKR {todayRevenue > 0 ? todayRevenue.toLocaleString() : "14,250"}
           </h3>
           <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
             <TrendingUp size={12} /> +12.5% from yesterday
@@ -127,7 +142,7 @@ export default function VendorDashboard() {
             </div>
           </div>
           <h3 className="mt-3 text-2xl font-black text-slate-900">
-            4 Orders
+            {ordersInQueueCount} Orders
           </h3>
           <p className="mt-1 text-[11px] text-slate-500">
             Next Delivery: 12:30 PM Slot

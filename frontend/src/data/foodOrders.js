@@ -21,4 +21,5 @@ export function saveFoodOrders(orders) {
     FOOD_ORDERS_STORAGE_KEY,
     JSON.stringify(orders),
   );
+  window.dispatchEvent(new CustomEvent("smartstay-food-orders-updated", { detail: orders }));
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
@@ -69,6 +69,7 @@ const navigationGroups = [
       { name: "Allocations", href: "/hostel/allocations", icon: Users },
       { name: "Transfers", href: "/hostel/transfers", icon: ArrowLeftRight },
       { name: "Occupancy", href: "/hostel/occupancy", icon: BarChart3 },
+      { name: "Student Complaints", href: "/complaints", icon: AlertTriangle },
     ],
   },
   {
@@ -135,6 +136,30 @@ const navigationGroups = [
 function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(() => {
+    try {
+      const raw = localStorage.getItem("smartstay_student_notifications");
+      if (raw) return JSON.parse(raw).filter(n => !n.read).length;
+    } catch {}
+    return 3;
+  });
+
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const raw = localStorage.getItem("smartstay_student_notifications");
+        if (raw) {
+          setUnreadNotifCount(JSON.parse(raw).filter(n => !n.read).length);
+        }
+      } catch {}
+    };
+    window.addEventListener("smartstay-notifications-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("smartstay-notifications-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
     const sidebarCollapsed = false;
   const location = useLocation();
 
@@ -178,9 +203,11 @@ function DashboardLayout() {
             className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-50 active:scale-95"
           >
             <Bell size={16} />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
-              3
-            </span>
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
+                {unreadNotifCount}
+              </span>
+            )}
           </Link>
           <TopRightAuth compact={true} />
           <button
@@ -361,9 +388,11 @@ function DashboardLayout() {
               className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-blue-300 hover:text-blue-600 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <Bell size={18} />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
-                3
-              </span>
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white">
+                  {unreadNotifCount}
+                </span>
+              )}
             </Link>
             <TopRightAuth />
           </div>

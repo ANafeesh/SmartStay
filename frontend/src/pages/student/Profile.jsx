@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   User,
@@ -34,11 +34,39 @@ const initialProfile = {
   joinedDate: "05 Jan 2026",
 };
 
-function Profile() {
-  const [profile, setProfile] = useState(initialProfile);
-  const [editMode, setEditMode] = useState(false);
+function getInitialProfile(user) {
+  try {
+    const cached = localStorage.getItem("smartstay_student_profile");
+    if (cached) return { ...initialProfile, ...JSON.parse(cached) };
+  } catch {}
+  if (user) {
+    return {
+      ...initialProfile,
+      name: user.name || initialProfile.name,
+      studentId: user.studentId || user.registrationNumber || initialProfile.studentId,
+      email: user.email || initialProfile.email,
+      phone: user.phone || initialProfile.phone,
+      room: user.room || initialProfile.room,
+      hostel: user.building || initialProfile.hostel,
+    };
+  }
+  return initialProfile;
+}
 
-  const [formData, setFormData] = useState(initialProfile);
+function Profile() {
+  const { user, updateUser } = useAuth();
+  const [profile, setProfile] = useState(() => getInitialProfile(user));
+  const [editMode, setEditMode] = useState(false);
+  const [formData, setFormData] = useState(() => getInitialProfile(user));
+  const [savedSuccessMsg, setSavedSuccessMsg] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      const p = getInitialProfile(user);
+      setProfile(p);
+      setFormData(p);
+    }
+  }, [user]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -59,11 +87,22 @@ function Profile() {
     setEditMode(false);
   }
 
-  function handleSave(event) {
+  async function handleSave(event) {
     event.preventDefault();
 
     setProfile(formData);
     setEditMode(false);
+    setSavedSuccessMsg(true);
+    setTimeout(() => setSavedSuccessMsg(false), 3500);
+
+    try {
+      localStorage.setItem("smartstay_student_profile", JSON.stringify(formData));
+      if (updateUser) {
+        await updateUser(formData);
+      }
+    } catch (e) {
+      console.warn("Unable to save profile:", e);
+    }
   }
 
   return (
@@ -100,7 +139,7 @@ function Profile() {
       <Card>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-smart-primary text-3xl font-bold text-white">
-            AN
+            {profile.name?.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() || "AN"}
           </div>
 
           <div className="flex-1">

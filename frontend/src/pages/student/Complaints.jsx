@@ -55,8 +55,33 @@ const categories = [
   "Other",
 ];
 
+const COMPLAINTS_STORAGE_KEY = "smartstay_all_complaints";
+
+export function readStoredComplaints() {
+  try {
+    const raw = localStorage.getItem(COMPLAINTS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+export function saveStoredComplaints(list) {
+  try {
+    localStorage.setItem(COMPLAINTS_STORAGE_KEY, JSON.stringify(list));
+    window.dispatchEvent(new CustomEvent("smartstay-complaints-updated", { detail: list }));
+  } catch {}
+}
+
 function Complaints() {
-  const [complaints, setComplaints] = useState(initialComplaints);
+  const [complaints, setComplaints] = useState(() => {
+    const stored = readStoredComplaints();
+    if (stored && stored.length > 0) {
+      const existingIds = new Set(stored.map((m) => m.id));
+      const remaining = initialComplaints.filter((p) => !existingIds.has(p.id));
+      return [...stored, ...remaining];
+    }
+    return initialComplaints;
+  });
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -147,7 +172,28 @@ function Complaints() {
         status: saved.status,
       };
 
-      setComplaints((previous) => [newComplaint, ...previous]);
+      setComplaints((previous) => {
+        const nextList = [newComplaint, ...previous];
+        saveStoredComplaints(nextList);
+        return nextList;
+      });
+
+      // Add auto-notification for student
+      try {
+        const existingNotifs = JSON.parse(localStorage.getItem("smartstay_student_notifications") || "[]");
+        const notif = {
+          id: Date.now(),
+          title: "Complaint Logged with Warden",
+          message: "Complaint #" + newComplaint.id + " (" + newComplaint.title + ") has been received and routed to Hostel Warden Dr. K. Perera.",
+          date: "Today",
+          time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          type: "maintenance",
+          read: false,
+        };
+        const updatedNotifs = [notif, ...existingNotifs];
+        localStorage.setItem("smartstay_student_notifications", JSON.stringify(updatedNotifs));
+        window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: updatedNotifs }));
+      } catch {}
     } catch (e) {
       const newComplaint = {
         id: `CMP-2026-${String(complaints.length + 4).padStart(3, "0")}`,

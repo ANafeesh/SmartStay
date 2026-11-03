@@ -10,5 +10,6 @@ router.post("/logout", authController.logout);
 
 // Protected Authentication Verification
 router.get("/me", protect, authController.getMe);
+router.put("/profile", protect, authController.updateProfile);
 
 module.exports = router;

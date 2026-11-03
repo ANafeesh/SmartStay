@@ -5,6 +5,7 @@ import {
   registerUser,
   getCurrentUser,
   logoutUser,
+  updateUserProfile,
 } from "../services/authApi";
 import { getAuthToken, setAuthToken } from "../services/apiClient";
 
@@ -241,6 +242,31 @@ export function AuthProvider({ children }) {
   /**
    * Real backend logout
    */
+  /**
+   * Real backend & state user profile update
+   */
+  const updateUser = async (profileData) => {
+    let backendResult = null;
+    try {
+      backendResult = await updateUserProfile(profileData);
+    } catch (err) {
+      console.warn("Backend profile update fallback:", err.message);
+    }
+
+    const updatedUser = {
+      ...(user || {}),
+      ...(backendResult?.user || {}),
+      ...profileData,
+    };
+
+    const enriched = enrichUser(updatedUser);
+    setUser(enriched);
+    localStorage.setItem("smartstay_user", JSON.stringify(enriched));
+    localStorage.setItem("smartstay_student_profile", JSON.stringify(profileData));
+    window.dispatchEvent(new CustomEvent("smartstay-profile-updated", { detail: enriched }));
+    return enriched;
+  };
+
   const logout = async () => {
     try {
       await logoutUser();
@@ -263,6 +289,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        updateUser,
         switchRole,
         availableRoles: DEMO_ACCOUNTS,
         verifySession,
@@ -283,6 +310,7 @@ export function useAuth() {
       login: async () => {},
       register: async () => {},
       logout: async () => {},
+      updateUser: async () => {},
       switchRole: () => null,
       availableRoles: DEMO_ACCOUNTS,
       verifySession: async () => {},
