@@ -40,7 +40,7 @@ export default function TopRightAuth({ compact = false }) {
           aria-label="Switch Demo Persona"
           className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 sm:px-2.5 sm:py-1.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/50 transition cursor-pointer"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-[11px] font-black text-white shadow-2xs">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-[11px] font-black text-white shadow-2xs">
             {user?.initials || "AN"}
           </div>
 

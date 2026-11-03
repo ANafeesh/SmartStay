@@ -313,7 +313,7 @@ function DashboardLayout() {
             className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer"
           >
             <div className={`flex min-w-0 items-center ${sidebarCollapsed ? "w-full justify-center" : "gap-2.5"}`}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-xs font-black text-white shadow-xs">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-xs font-black text-white shadow-xs">
                 {user?.initials || "AN"}
               </div>
               {!sidebarCollapsed && (
