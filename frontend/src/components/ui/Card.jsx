@@ -1,12 +1,12 @@
-function Card({ children, className = "", padding = "p-6", hover = false }) {
+function Card({ children, className = "", padding = "p-5 sm:p-6", hover = false }) {
   return (
     <div
       className={`
         rounded-2xl
-        border border-black/5
-        bg-smart-white
-        shadow-sm
-        ${hover ? "transition duration-200 hover:-translate-y-1 hover:shadow-md" : ""}
+        border border-slate-200/80
+        bg-white
+        shadow-[0_1px_3px_0_rgba(0,0,0,0.03)]
+        ${hover ? "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-slate-300" : ""}
         ${padding}
         ${className}
       `}

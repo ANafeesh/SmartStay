@@ -735,7 +735,7 @@ export default function Payments() {
                   Current Invoices &amp; Payable Charges
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Click 'Pay Now' to launch the secure checkout simulator with instant digital bursary receipt generation.
+                  Click 'Pay Now' to launch the SmartStay PayGate with instant digital bursary receipt generation.
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">

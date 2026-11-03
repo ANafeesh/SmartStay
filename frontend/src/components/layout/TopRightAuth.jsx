@@ -4,13 +4,11 @@ import { useAuth } from "../../context/AuthContext";
 import { LogIn, LogOut, RefreshCw, ChevronDown } from "lucide-react";
 import StatusBadge from "../ui/StatusBadge";
 import ConfirmDialog from "../ui/ConfirmDialog";
-import RoleSwitcherModal from "../auth/RoleSwitcherModal";
 
 export default function TopRightAuth({ compact = false }) {
   const { user, isLoggedIn, logout } = useAuth();
   const [showConfirmLogout, setShowConfirmLogout] = useState(false);
-  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
-
+  
   const handleLogoutConfirm = () => {
     logout();
     setShowConfirmLogout(false);
@@ -32,15 +30,13 @@ export default function TopRightAuth({ compact = false }) {
   return (
     <>
       <div className="flex items-center gap-2 sm:gap-2.5">
-        {/* Active Role Persona Switcher Pill */}
-        <button
-          type="button"
-          onClick={() => setShowRoleSwitcher(true)}
-          title="Switch Demo Persona"
-          aria-label="Switch Demo Persona"
-          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 sm:px-2.5 sm:py-1.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/50 transition cursor-pointer"
+        {/* User Profile Pill */}
+        <Link
+          to="/profile"
+          title="View Profile"
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 sm:px-2.5 sm:py-1.5 shadow-2xs hover:border-blue-300 hover:bg-slate-50 transition cursor-pointer"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-[11px] font-black text-white shadow-2xs">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[11px] font-black text-white shadow-2xs">
             {user?.initials || "AN"}
           </div>
 
@@ -50,16 +46,11 @@ export default function TopRightAuth({ compact = false }) {
                 {user?.name || "User"}
               </span>
               <span className="text-[10px] font-semibold text-blue-600 leading-tight">
-                {user?.roleBadge || user?.role || "Demo User"}
+                {user?.roleBadge || user?.role || "Student"}
               </span>
             </div>
           )}
-
-          <div className="flex items-center gap-1 text-slate-400">
-            <RefreshCw size={12} className="hover:rotate-180 transition-transform duration-300" />
-            <ChevronDown size={13} />
-          </div>
-        </button>
+        </Link>
 
         {/* Sign Out Button */}
         <button
@@ -78,11 +69,7 @@ export default function TopRightAuth({ compact = false }) {
         </button>
       </div>
 
-      {/* Persona Switcher Modal */}
-      <RoleSwitcherModal
-        isOpen={showRoleSwitcher}
-        onClose={() => setShowRoleSwitcher(false)}
-      />
+      
 
       {/* Confirmation Dialog */}
       <ConfirmDialog

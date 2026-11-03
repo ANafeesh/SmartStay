@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
-import RoleSwitcherModal from "../auth/RoleSwitcherModal";
 import {
   Activity,
   AlertTriangle,
@@ -131,8 +130,7 @@ const navigationGroups = [
 function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
-  const sidebarCollapsed = false;
+    const sidebarCollapsed = false;
   const location = useLocation();
 
   const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
@@ -304,16 +302,15 @@ function DashboardLayout() {
           })}
         </nav>
 
-        {/* User / Member ID Footer & Persona Switcher */}
+        {/* User / Member ID Footer */}
         <div className="border-t border-slate-100 p-3 bg-slate-50/50">
-          <button
-            type="button"
-            onClick={() => setShowRoleSwitcher(true)}
-            title="Click to switch demo persona"
-            className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer"
+          <Link
+            to="/profile"
+            title="View Profile"
+            className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/30 transition cursor-pointer"
           >
             <div className={`flex min-w-0 items-center ${sidebarCollapsed ? "w-full justify-center" : "gap-2.5"}`}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-xs font-black text-white shadow-xs">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-xs">
                 {user?.initials || "AN"}
               </div>
               {!sidebarCollapsed && (
@@ -327,15 +324,17 @@ function DashboardLayout() {
                     {user?.roleBadge || user?.role || "Student account"}
                   </p>
                   <p className="truncate font-mono text-[9px] text-slate-400">
-                    {user?.studentId || "Student Account"}
+                    {user?.studentId || user?.email || "STD-2026-090"}
                   </p>
                 </div>
               )}
             </div>
             {!sidebarCollapsed && (
-              <RefreshCw size={13} className="text-slate-400 shrink-0 ml-1.5 hover:rotate-180 transition-transform duration-300" />
+              <span className="text-[10px] font-bold text-slate-400 hover:text-blue-600 ml-1">
+                Profile
+              </span>
             )}
-          </button>
+          </Link>
         </div>
       </aside>
 
@@ -395,11 +394,7 @@ function DashboardLayout() {
         </div>
       </main>
 
-      {/* Role Switcher Modal */}
-      <RoleSwitcherModal
-        isOpen={showRoleSwitcher}
-        onClose={() => setShowRoleSwitcher(false)}
-      />
+      
     </div>
   );
 }

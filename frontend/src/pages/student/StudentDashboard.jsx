@@ -505,10 +505,10 @@ function StudentDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                   <Scan size={15} className="text-blue-600" />
-                  <span>Testing Simulator (Module 2 Verification)</span>
+                  <span>Gate Movement Record</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-semibold">
-                  Simulated Scan Actions
+                  Record Entry / Exit
                 </span>
               </div>
 
@@ -524,7 +524,7 @@ function StudentDashboard() {
                   }`}
                 >
                   <LogOut size={14} />
-                  <span>🧪 Test Simulator: EXIT</span>
+                  <span>Mark Exit</span>
                 </button>
 
                 <button
@@ -538,7 +538,7 @@ function StudentDashboard() {
                   }`}
                 >
                   <LogIn size={14} />
-                  <span>🧪 Test Simulator: ENTER</span>
+                  <span>Mark Entry</span>
                 </button>
               </div>
 
@@ -549,7 +549,7 @@ function StudentDashboard() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
                 >
-                  <span>Open Real Camera Gatekeeper Terminal</span>
+                  <span>Gate Scanner Terminal</span>
                   <ExternalLink size={12} />
                 </Link>
 
