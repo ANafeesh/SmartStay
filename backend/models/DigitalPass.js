@@ -101,4 +101,3 @@ digitalPassSchema.pre("validate", function () {
 });
 
 module.exports = mongoose.model("DigitalPass", digitalPassSchema);
-

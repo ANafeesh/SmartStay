@@ -77,7 +77,7 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-            {/* Primary Entry Point: Root URL always navigates to Login page */}
+            {/* Primary Entry Point: Root URL navigates to Login page */}
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<AuthPortal initialTab="login" />} />
             <Route path="/register" element={<AuthPortal initialTab="register" />} />
@@ -122,6 +122,7 @@ function App() {
                   path="/vendor/applications"
                   element={<VendorApplications />}
                 />
+                <Route path="/food-items" element={<FoodItems />} />
                 <Route path="/vendor/food-items" element={<FoodItems />} />
                 <Route path="/vendor/orders" element={<VendorOrders />} />
                 <Route path="/vendor/pass" element={<VendorPass />} />

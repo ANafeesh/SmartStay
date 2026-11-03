@@ -424,7 +424,7 @@ export default function Marketplace() {
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-950">
                   <span>Total: LKR {orderConfirmed.totalAmount.toLocaleString()}</span>
-                  <span>•</span>
+                  <span>â€¢</span>
                   <span>Payment: {orderConfirmed.paymentMethod}</span>
                   <span>•</span>
                   <span>Student: {studentDisplayName} ({studentRegId})</span>
@@ -503,7 +503,7 @@ export default function Marketplace() {
                           <span className="font-mono text-xs font-bold text-blue-600">
                             {order.id}
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <h3 className="text-sm font-bold text-slate-900">
                             {order.vendor || "Campus Vendor"}
                           </h3>

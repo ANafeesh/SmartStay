@@ -423,13 +423,13 @@ export default function Payments() {
               <span className="font-semibold text-slate-800">
                 {user?.name || "Student User"}
               </span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300">â€¢</span>
               <span className="font-mono font-medium text-blue-600">
                 STD-2026-090
               </span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300">â€¢</span>
               <span>Hostel Block B, Room 204</span>
-              <span className="text-slate-300">•</span>
+              <span className="text-slate-300">â€¢</span>
               <span className="text-slate-400">Academic Year 2026/27</span>
             </div>
           </div>
@@ -813,9 +813,9 @@ export default function Payments() {
                               {bill.id}
                             </span>
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>Cycle: {bill.period}</span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>
                             Due Date:{" "}
                             <strong className="text-slate-700">
@@ -941,7 +941,7 @@ export default function Payments() {
                             <span>Ref: {rec.refNo}</span>
                             {rec.receiptNo && (
                               <>
-                                <span>•</span>
+                                <span>â€¢</span>
                                 <span className="text-blue-600 font-semibold">
                                   {rec.receiptNo}
                                 </span>
@@ -1221,25 +1221,25 @@ export default function Payments() {
                       )}
                       {notif.paymentDate && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>Date: <strong className="text-slate-800">{notif.paymentDate}</strong></span>
                         </>
                       )}
                       {notif.paymentMethod && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span>Method: <strong className="text-slate-800">{notif.paymentMethod}</strong></span>
                         </>
                       )}
                       {notif.refNo && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span className="font-mono text-slate-500">Ref: {notif.refNo}</span>
                         </>
                       )}
                       {notif.receiptNo && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <span className="font-mono text-blue-600 font-bold">Receipt #{notif.receiptNo}</span>
                         </>
                       )}
@@ -1256,7 +1256,7 @@ export default function Payments() {
 
                       {notif.receiptNo && (
                         <>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-slate-300">â€¢</span>
                           <button
                             onClick={() => {
                               const found = history.find((h) => h.receiptNo === notif.receiptNo);

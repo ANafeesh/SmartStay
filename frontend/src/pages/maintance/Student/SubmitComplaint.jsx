@@ -63,10 +63,10 @@ const PRIORITIES = [
 ];
 
 const BUILDINGS = [
-  "Block A “ Aurora Hall",
-  "Block B “ Horizon Hall",
-  "Block C “ Lakeside Residence",
-  "Block D “ Co-Living Annex",
+  "Block A - Aurora Hall",
+  "Block B - Horizon Hall",
+  "Block C - Lakeside Residence",
+  "Block D - Co-Living Annex",
 ];
 
 const FLOORS = [
@@ -86,7 +86,7 @@ const EMPTY = {
   category: "Plumbing",
   priority: "Medium",
   description: "",
-  building: "Block B “ Horizon Hall",
+  building: "Block B - Horizon Hall",
   floor: "2nd Floor",
   room: "B-204",
   spot: "",
@@ -753,7 +753,7 @@ export default function SubmitComplaint() {
               </div>
 
               <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white shadow-xs">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white shadow-xs">
                   {user?.initials || "AN"}
                 </div>
                 <div className="min-w-0">
@@ -775,7 +775,7 @@ export default function SubmitComplaint() {
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Hostel</dt>
-                  <dd className="font-semibold text-slate-700">Block B “ Horizon Hall</dd>
+                  <dd className="font-semibold text-slate-700">Block B - Horizon Hall</dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Allocated Room</dt>
