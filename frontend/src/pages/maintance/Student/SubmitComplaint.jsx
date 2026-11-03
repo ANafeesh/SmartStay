@@ -23,6 +23,8 @@ import {
   MessageSquareWarning,
   Loader2,
   Cloud,
+  ShieldCheck,
+  ClipboardList,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -366,6 +368,83 @@ export default function SubmitComplaint() {
   };
 
   const descLen = f.description.length;
+
+  if (user?.role === "warden") {
+    return (
+      <div className="w-full max-w-4xl mx-auto space-y-6 pb-16 antialiased">
+        {/* Breadcrumb & Navigation */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <nav
+              className="flex items-center gap-1.5 text-xs text-slate-400 mb-1"
+              aria-label="Breadcrumb"
+            >
+              <Link to="/hostel" className="hover:text-slate-600 transition">
+                Hostel Dashboard
+              </Link>
+              <span>/</span>
+              <span className="font-semibold text-blue-600">Student Complaints Oversight</span>
+            </nav>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              Warden Maintenance Oversight
+            </h1>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">
+              Review student facility complaints and dispatch maintenance teams.
+            </p>
+          </div>
+
+          <Link
+            to="/maintenance"
+            className="inline-flex items-center gap-2 self-start sm:self-auto rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700 active:scale-95"
+          >
+            <ClipboardList size={15} />
+            <span>Open Student Complaints Hub</span>
+          </Link>
+        </div>
+
+        <div className="rounded-3xl border border-blue-200 bg-linear-to-br from-blue-50/70 via-white to-indigo-50/40 p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start gap-5">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
+              <ShieldCheck size={28} />
+            </div>
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 mb-2">
+                <Building2 size={13} />
+                Hostel Warden Administrative Authority
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Wardens Do Not Submit Room Complaints
+              </h2>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                You are signed in as <strong className="text-slate-800">{user?.name || "Dr. K. Perera"} (Hostel Warden)</strong>.
+                Hostel room maintenance, plumbing, and electrical issues are submitted directly by hostel students.
+              </p>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                When students submit complaints, you can review them in real time, assign technicians, track repair progress, and record resolution remarks in the <strong>Student Complaints Hub</strong>.
+              </p>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link
+                  to="/maintenance"
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 active:scale-95"
+                >
+                  <ClipboardList size={17} />
+                  View & Manage Student Complaints
+                </Link>
+                <Link
+                  to="/hostel"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs sm:text-sm font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
+                >
+                  <ArrowLeft size={16} />
+                  Return to Hostel Dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-16 antialiased">
