@@ -435,13 +435,7 @@ export default function Payments() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <button
-              onClick={() => setIsGenerateBillOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-50 border border-blue-200 px-3.5 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>Generate / Issue Bill</span>
-            </button>
+            
 
             
           </div>
@@ -739,13 +733,7 @@ export default function Payments() {
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">
-                <button
-                  onClick={() => setIsGenerateBillOpen(true)}
-                  className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition shadow-2xs cursor-pointer flex items-center gap-1.5"
-                >
-                  <Plus size={14} />
-                  <span>Issue New Bill</span>
-                </button>
+                
                 <span className="rounded-xl bg-slate-100 border border-slate-200/90 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
                   {bills.length} Open Invoices
                 </span>
