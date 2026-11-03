@@ -236,13 +236,91 @@ const initialFoodItems = [
 
 const categories = ["All", "Main Dishes", "Fast Food", "Snacks", "Beverages"];
 
-const timeSlots = [
-  "12:30 PM - 01:00 PM (Lunch Slot 1)",
-  "01:00 PM - 01:30 PM (Lunch Slot 2)",
-  "06:30 PM - 07:00 PM (Dinner Slot 1)",
-  "07:30 PM - 08:00 PM (Dinner Slot 2)",
-  "09:30 PM - 10:00 PM (Late Night)",
-];
+export function getAvailableDeliverySlots(now = new Date()) {
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // Full day schedule:
+  // - Morning: available from early morning until 10:00 AM (auto-removed after morning)
+  // - Lunch: available until 2:00 PM (14:00) (auto-removed after 2:00 PM)
+  // - Dinner: available until 8:30 PM (20:30) (auto-removed after dinner)
+  // - Late Night: available until 11:00 PM (23:00) (only slot displayed at 9:50 PM)
+  const baseSlots = [
+    {
+      slot: "08:00 AM - 08:45 AM (Breakfast Slot)",
+      cutoff: 10 * 60, // 10:00 AM
+    },
+    {
+      slot: "12:30 PM - 01:00 PM (Lunch Slot 1)",
+      cutoff: 14 * 60, // 2:00 PM (auto removed after 2:00 PM)
+    },
+    {
+      slot: "01:00 PM - 01:30 PM (Lunch Slot 2)",
+      cutoff: 14 * 60, // 2:00 PM (auto removed after 2:00 PM)
+    },
+    {
+      slot: "06:30 PM - 07:00 PM (Dinner Slot 1)",
+      cutoff: 20 * 60, // 8:00 PM
+    },
+    {
+      slot: "07:30 PM - 08:00 PM (Dinner Slot 2)",
+      cutoff: 20 * 60 + 30, // 8:30 PM
+    },
+    {
+      slot: "09:30 PM - 10:00 PM (Late Night)",
+      cutoff: 23 * 60, // 11:00 PM (Active for night time like 9:50 PM)
+    },
+  ];
+
+  const available = baseSlots
+    .filter((s) => currentMinutes < s.cutoff)
+    .map((s) => s.slot);
+
+  if (available.length > 0) {
+    return available;
+  }
+
+  // If past 11:00 PM until early morning, show tomorrow pre-order slots
+  return [
+    "Tomorrow: 08:00 AM - 08:45 AM (Breakfast)",
+    "Tomorrow: 12:30 PM - 01:00 PM (Lunch Slot 1)",
+    "Tomorrow: 01:00 PM - 01:30 PM (Lunch Slot 2)",
+    "Tomorrow: 06:30 PM - 07:00 PM (Dinner Slot 1)",
+    "Tomorrow: 09:30 PM - 10:00 PM (Late Night)",
+  ];
+}
+
+export function getActiveServiceBanner(now = new Date()) {
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  if (currentMinutes < 10 * 60) {
+    return {
+      title: "Breakfast & Day Delivery Slots Open Now",
+      badgeColor: "bg-emerald-500",
+    };
+  }
+  if (currentMinutes < 14 * 60) {
+    return {
+      title: "Lunch Delivery Slots Open Now",
+      badgeColor: "bg-emerald-500",
+    };
+  }
+  if (currentMinutes < 20 * 60 + 30) {
+    return {
+      title: "Dinner Delivery Slots Open Now",
+      badgeColor: "bg-emerald-500",
+    };
+  }
+  if (currentMinutes < 23 * 60) {
+    return {
+      title: "Late Night Delivery Slots Open Now",
+      badgeColor: "bg-indigo-500",
+    };
+  }
+  return {
+    title: "Kitchen Closed for Today · Pre-Orders Open for Tomorrow",
+    badgeColor: "bg-blue-500",
+  };
+}
 
 const dropLocations = [
   "Hostel Block B - Room 204 (Doorstep)",
@@ -265,7 +343,22 @@ export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dietaryFilter, setDietaryFilter] = useState("All");
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState(timeSlots[0]);
+  const [availableSlots, setAvailableSlots] = useState(() => getAvailableDeliverySlots());
+  const [selectedSlot, setSelectedSlot] = useState(() => getAvailableDeliverySlots()[0]);
+  const [activeBanner, setActiveBanner] = useState(() => getActiveServiceBanner());
+
+  useEffect(() => {
+    const updateSlots = () => {
+      const slots = getAvailableDeliverySlots();
+      setAvailableSlots(slots);
+      setSelectedSlot((prev) => (slots.includes(prev) ? prev : slots[0]));
+      setActiveBanner(getActiveServiceBanner());
+    };
+
+    updateSlots();
+    const interval = setInterval(updateSlots, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
   const [selectedDropLocation, setSelectedDropLocation] = useState(dropLocations[0]);
   const [paymentOption, setPaymentOption] = useState("room_bill");
   const [orderConfirmed, setOrderConfirmed] = useState(null);
@@ -441,9 +534,9 @@ export default function Marketplace() {
       <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-              Lunch Delivery Slots Open Now
+            <span className={`flex h-2.5 w-2.5 rounded-full ${activeBanner.badgeColor} animate-pulse`} />
+            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {activeBanner.title}
             </span>
             
           </div>
@@ -1180,7 +1273,7 @@ export default function Marketplace() {
                         onChange={(e) => setSelectedSlot(e.target.value)}
                         className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-medium text-slate-800 focus:border-blue-600 focus:outline-none"
                       >
-                        {timeSlots.map((slot) => (
+                        {availableSlots.map((slot) => (
                           <option key={slot} value={slot}>
                             {slot}
                           </option>
