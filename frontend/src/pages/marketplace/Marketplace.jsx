@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   Search,
@@ -61,8 +61,7 @@ const initialFoodItems = [
     vendorId: "VND-01",
     price: 850,
     category: "Main Dishes",
-    image:
-      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600",
+    image: "/food/kottu.jpg",
     available: true,
     rating: 4.8,
     isHalal: true,
@@ -95,8 +94,7 @@ const initialFoodItems = [
     vendorId: "VND-01",
     price: 650,
     category: "Main Dishes",
-    image:
-      "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=600",
+    image: "/food/fried_rice.jpg",
     available: true,
     rating: 4.5,
     isHalal: true,
@@ -107,6 +105,118 @@ const initialFoodItems = [
   },
   {
     id: "FD-104",
+    name: "Chicken Biriyani Special Pot",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-01",
+    price: 920,
+    category: "Main Dishes",
+    image: "/food/biriyani.jpg",
+    available: true,
+    rating: 4.9,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: false,
+    prepTime: "15 mins",
+    description: "Fragrant spiced basmati rice slow-cooked with tender chicken, boiled egg, mint sambol, and spicy gravy.",
+  },
+  {
+    id: "FD-105",
+    name: "Sri Lankan Rice & Curry Plate",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-01",
+    price: 550,
+    category: "Main Dishes",
+    image: "/food/rice_and_curry.jpg",
+    available: true,
+    rating: 4.7,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: false,
+    prepTime: "10 mins",
+    description: "Steamed village rice served with authentic dhal, tempered beans, fried papadam, and chicken or fish curry.",
+  },
+  {
+    id: "FD-106",
+    name: "Wok-Tossed Chicken Noodles",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-01",
+    price: 780,
+    category: "Main Dishes",
+    image: "/food/noodles.jpg",
+    available: true,
+    rating: 4.7,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: false,
+    prepTime: "12 mins",
+    description: "Stir-fried egg noodles with shredded chicken, crunchy carrots, cabbage, scallions, and chili garlic sauce.",
+  },
+  {
+    id: "FD-107",
+    name: "Traditional Parotta & Creamy Dhal",
+    vendor: "The Snack Shack",
+    vendorId: "VND-02",
+    price: 360,
+    category: "Snacks",
+    image: "/food/parotta.jpg",
+    available: true,
+    rating: 4.6,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: true,
+    prepTime: "8 mins",
+    description: "Two flaky layered golden parottas served with rich tempered coconut milk dhal and spicy lunu miris.",
+  },
+  {
+    id: "FD-108",
+    name: "Crispy Masala Thosai & Sambar",
+    vendor: "The Snack Shack",
+    vendorId: "VND-02",
+    price: 380,
+    category: "Snacks",
+    image: "/food/masal_thosse.jpg",
+    available: true,
+    rating: 4.8,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: true,
+    prepTime: "10 mins",
+    description: "Crisp golden crepe stuffed with spiced potato masala, served with warm vegetable sambar and coconut chutney.",
+  },
+  {
+    id: "FD-109",
+    name: "Steamed Idli Sambar Platter (3 Pcs)",
+    vendor: "The Snack Shack",
+    vendorId: "VND-02",
+    price: 300,
+    category: "Snacks",
+    image: "/food/itli.jpg",
+    available: true,
+    rating: 4.5,
+    isHalal: true,
+    isSpicy: false,
+    isVeg: true,
+    prepTime: "8 mins",
+    description: "Steamed fluffy rice and lentil cakes served with aromatic vegetable sambar and fresh tomato chutney.",
+  },
+  {
+    id: "FD-110",
+    name: "String Hoppers & Kiri Hodi (10 Pcs)",
+    vendor: "The Snack Shack",
+    vendorId: "VND-02",
+    price: 350,
+    category: "Snacks",
+    image: "/food/string_hoppers.jpg",
+    available: true,
+    rating: 4.8,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: true,
+    prepTime: "10 mins",
+    description: "Freshly steamed rice vermicelli nests served with thick coconut milk kiri hodi and spicy pol sambol.",
+  },
+  {
+    id: "FD-111",
     name: "Iced Caramel Macchiato (500ml)",
     vendor: "Bean & Brew Coffee Co.",
     vendorId: "VND-03",
@@ -121,40 +231,6 @@ const initialFoodItems = [
     isVeg: true,
     prepTime: "5 mins",
     description: "Double shot espresso poured over chilled creamy milk, vanilla infusion, and topped with rich salted caramel drizzle.",
-  },
-  {
-    id: "FD-105",
-    name: "Vegetable Roti & Creamy Dhal Curry",
-    vendor: "The Snack Shack",
-    vendorId: "VND-02",
-    price: 320,
-    category: "Snacks",
-    image:
-      "https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&q=80&w=600",
-    available: true,
-    rating: 4.4,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: true,
-    prepTime: "8 mins",
-    description: "Two freshly baked whole wheat vegetable rottis served with rich tempered coconut milk dhal and spicy lunu miris.",
-  },
-  {
-    id: "FD-106",
-    name: "Devilled Chicken Rice Bowl (Hot)",
-    vendor: "Campus Diner & Cafe",
-    vendorId: "VND-01",
-    price: 880,
-    category: "Main Dishes",
-    image:
-      "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&q=80&w=600",
-    available: true,
-    rating: 4.7,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: false,
-    prepTime: "15 mins",
-    description: "Fiery wok-glazed chicken chunks with sweet capsicums, tomatoes, and red onions served over steamed white rice.",
   },
 ];
 
@@ -193,6 +269,8 @@ export default function Marketplace() {
   const [selectedDropLocation, setSelectedDropLocation] = useState(dropLocations[0]);
   const [paymentOption, setPaymentOption] = useState("room_bill");
   const [orderConfirmed, setOrderConfirmed] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [cartConflictModal, setCartConflictModal] = useState(null);
   const [activeView, setActiveView] = useState("menu");
 
@@ -256,8 +334,10 @@ export default function Marketplace() {
   const totalCartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   const handleCheckout = (e) => {
-    e.preventDefault();
-    if (cart.length === 0) return;
+    e?.preventDefault?.();
+    if (cart.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
 
     const orderNo = createOrderId();
     const newOrder = {
@@ -265,8 +345,8 @@ export default function Marketplace() {
       studentId: studentRegId,
       studentName: studentDisplayName,
       regNo: studentRegId,
-      vendorId: cart[0].vendorId,
-      vendor: cart[0].vendor,
+      vendorId: cart[0]?.vendorId || "VND-01",
+      vendor: cart[0]?.vendor || "Campus Vendor",
       timeSlot: selectedSlot,
       deliveryLocation: selectedDropLocation,
       paymentMethod:
@@ -292,19 +372,29 @@ export default function Marketplace() {
       })),
     };
 
-    const updatedOrders = [newOrder, ...readFoodOrders()];
-    setMyOrders(
-      updatedOrders.filter((order) => order.studentId === studentRegId),
-    );
-    try {
-      saveFoodOrders(updatedOrders);
-    } catch (err) {
-      console.error("Unable to save order.", err);
-    }
+    setTimeout(() => {
+      const updatedOrders = [newOrder, ...readFoodOrders()];
+      setMyOrders(
+        updatedOrders.filter(
+          (order) =>
+            !order.studentId ||
+            order.studentId === studentRegId ||
+            order.regNo === studentRegId ||
+            order.studentName === studentDisplayName,
+        ),
+      );
+      try {
+        saveFoodOrders(updatedOrders);
+      } catch (err) {
+        console.error("Unable to save order.", err);
+      }
 
-    setOrderConfirmed(newOrder);
-    setCart([]);
-    setIsCartOpen(false);
+      setOrderConfirmed(newOrder);
+      setShowSuccessModal(true);
+      setCart([]);
+      setIsCartOpen(false);
+      setIsSubmitting(false);
+    }, 350);
   };
 
   const simulateStatusStep = (orderId) => {
@@ -893,6 +983,113 @@ export default function Marketplace() {
         </div>
       )}
 
+      
+      {/* ORDER PLACED SUCCESSFULLY MODAL */}
+      {showSuccessModal && orderConfirmed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md sm:max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-100 text-left animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            {/* Close X */}
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="absolute top-5 right-5 rounded-full p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Success Icon & Header */}
+            <div className="text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 mb-3.5 animate-in zoom-in-75 duration-300">
+                <CheckCircle2 size={36} className="text-emerald-600 stroke-[2.2]" />
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-2">
+                Order Confirmed
+              </span>
+              <h2 className="text-xl font-extrabold text-slate-900">
+                Order Placed Successfully!
+              </h2>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                Your order has been sent to <strong>{orderConfirmed.vendor}</strong> and is being prepared for kitchen dispatch.
+              </p>
+            </div>
+
+            {/* Receipt Summary Card */}
+            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 space-y-3 text-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/70">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-blue-600 text-sm">
+                    {orderConfirmed.id}
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-700 font-semibold truncate max-w-[180px]">
+                    {orderConfirmed.vendor}
+                  </span>
+                </div>
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-bold text-blue-800">
+                  {orderConfirmed.status}
+                </span>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-1.5 py-1">
+                {orderConfirmed.items?.map((item, idx) => (
+                  <div key={idx} className="flex justify-between text-slate-700">
+                    <span className="truncate pr-2">
+                      <strong className="text-slate-900">{item.qty}×</strong> {item.name}
+                    </span>
+                    <span className="font-mono font-semibold shrink-0">
+                      LKR {(item.price * item.qty).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Delivery Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/70 text-[11px] text-slate-600">
+                <div className="flex items-center gap-1.5">
+                  <Clock size={13} className="text-blue-600 shrink-0" />
+                  <span>Slot: <strong className="text-slate-800">{orderConfirmed.timeSlot?.split(" ")[0]} {orderConfirmed.timeSlot?.split(" ")[1]}</strong></span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={13} className="text-rose-600 shrink-0" />
+                  <span className="truncate">Drop: <strong className="text-slate-800">{orderConfirmed.deliveryLocation}</strong></span>
+                </div>
+              </div>
+
+              {/* Payment & Total */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 font-semibold text-slate-700">
+                <span>Payment: <span className="font-normal">{orderConfirmed.paymentMethod}</span></span>
+                <span className="text-sm font-extrabold text-blue-600">
+                  Total: LKR {orderConfirmed.totalAmount?.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  setActiveView("orders");
+                }}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500 transition cursor-pointer"
+              >
+                <ClipboardList size={15} />
+                <span>Track Order</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSuccessModal(false)}
+                className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Back to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SLIDE-OVER SHOPPING CART DRAWER */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -1068,10 +1265,22 @@ export default function Marketplace() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleCheckout}
-                  className="w-full rounded-2xl bg-blue-600 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500 transition cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3.5 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500 transition cursor-pointer disabled:opacity-75"
                 >
-                  Confirm & Reserve Delivery Slot
+                  {isSubmitting ? (
+                    <>
+                      <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      <span>Placing Your Order...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Confirm & Reserve Delivery Slot</span>
+                      <ArrowRight size={14} />
+                    </>
+                  )}
                 </button>
               </div>
             )}
