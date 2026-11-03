@@ -86,7 +86,18 @@ exports.recordMovement = async (req, res) => {
     // 1. Locate student digital pass (QR token, passNumber, or registration ID)
     let query = {};
     if (qrToken) {
-      const hashed = crypto.createHash("sha256").update(qrToken.trim()).digest("hex");
+      let resolvedToken = qrToken;
+      if (typeof qrToken === "string") {
+        try {
+          const parsed = JSON.parse(qrToken.trim());
+          if (parsed.qrToken || parsed.token) {
+            resolvedToken = parsed.qrToken || parsed.token;
+          }
+        } catch {
+          // Raw token string
+        }
+      }
+      const hashed = crypto.createHash("sha256").update(resolvedToken.trim()).digest("hex");
       query = { tokenHash: hashed };
     } else if (passNumber) {
       query = { passNumber: passNumber.trim().toUpperCase() };

@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const AuthPortal = lazy(() => import("./pages/auth/AuthPortal"));
 const DashboardLayout = lazy(() => import("./components/layout/DashboardLayout"));
+const GateVerification = lazy(() => import("./pages/gate/GateVerification"));
 
 const HostelDashboard = lazy(() => import("./pages/hostel/HostelDashboard"));
 const Buildings = lazy(() => import("./pages/hostel/Buildings"));
@@ -76,13 +77,16 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
-            {/* Primary Entry Point: Authentication Portal (Login & Sign Up) */}
-            <Route path="/" element={<AuthPortal initialTab="login" />} />
+            {/* Primary Entry Point: Root URL always navigates to Login page */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<AuthPortal initialTab="login" />} />
             <Route path="/register" element={<AuthPortal initialTab="register" />} />
             <Route path="/signup" element={<AuthPortal initialTab="register" />} />
             <Route path="/login/:roleKey" element={<AuthPortal initialTab="login" />} />
 
+            {/* Public Gatekeeper QR Scanner & Verification Terminal */}
+            <Route path="/gate/verify" element={<GateVerification />} />
+            <Route path="/gate-verify" element={<GateVerification />} />
 
             {/* Authenticated Dashboard Workspace */}
             <Route
@@ -173,7 +177,7 @@ function App() {
             </Route>
 
             {/* Catch-all route */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

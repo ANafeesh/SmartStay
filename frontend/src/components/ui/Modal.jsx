@@ -1,10 +1,11 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 /**
  * Standardized Accessible Modal Component for SmartStay
- * Features: backdrop blur, size variants, escape key handler, body scroll lock,
- * header, scrollable body, and footer slots.
+ * Features: portal to document.body, backdrop blur, size variants, escape key handler,
+ * body scroll lock, header, scrollable body, and footer slots.
  */
 function Modal({
   isOpen,
@@ -55,14 +56,16 @@ function Modal({
     full: "max-w-6xl",
   };
 
-  return (
+  const hasHeaderContent = Boolean(title || subtitle);
+
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "smartstay-modal-title" : undefined}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
     >
-      {/* Backdrop */}
+      {/* Full-screen Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200"
         onClick={() => closeOnOverlay && onClose?.()}
@@ -78,8 +81,8 @@ function Modal({
           ${className}
         `}
       >
-        {/* Header */}
-        {(title || showCloseButton) && (
+        {/* Header - only render header bar if title or subtitle is provided */}
+        {hasHeaderContent ? (
           <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
             <div className="min-w-0 flex-1 pr-4">
               {title && (
@@ -102,13 +105,23 @@ function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
               >
                 <X size={18} />
               </button>
             )}
           </div>
-        )}
+        ) : showCloseButton ? (
+          /* Floating close button when no header title exists */
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close dialog"
+            className="absolute top-4 right-4 z-10 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        ) : null}
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 text-sm text-smart-primary">
@@ -124,6 +137,10 @@ function Modal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }
 
 export default Modal;

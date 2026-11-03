@@ -11,8 +11,8 @@ const {
 
 const router = express.Router();
 
-// Record campus gate entry or exit (Security Officer or Admin)
-router.post("/", protect, authorizeRole("security", "admin"), recordMovement);
+// Record campus gate entry or exit (Security Officer, Warden, or Admin)
+router.post("/", protect, authorizeRole("security", "admin", "warden"), recordMovement);
 
 // Reconcile pending or failed post-log side effects (Security Officer or Admin)
 router.post("/reconcile", protect, authorizeRole("security", "admin"), reconcilePendingSideEffects);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useAuth, normalizeRole } from "../../context/AuthContext";
 import { getDemoAccount, DEMO_ACCOUNTS } from "../../data/demoAccounts";
 import Logo from "../../components/ui/Logo";
 import StatusBadge from "../../components/ui/StatusBadge";
@@ -49,15 +49,10 @@ export default function AuthPortal({ initialTab = "login" }) {
   const { user, isLoggedIn, login, register, switchRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // If already logged in, redirect to user's authorized portal
-  if (isLoggedIn && user) {
-    const destination = location.state?.from?.pathname || user.defaultPath || "/dashboard";
-    return <Navigate to={destination} replace />;
-  }
+  const { roleKey: paramRoleKey } = useParams();
 
   const [activeTab, setActiveTab] = useState(initialTab); // "login" | "register"
-  const [selectedRole, setSelectedRole] = useState("student");
+  const [selectedRole, setSelectedRole] = useState(paramRoleKey || "student");
 
   // Sign In Form State
   const [identifier, setIdentifier] = useState("izni@gmail.com");
@@ -78,6 +73,54 @@ export default function AuthPortal({ initialTab = "login" }) {
   const activeDemoProfile = getDemoAccount(selectedRole);
   const SelectedIcon = roleIcons[selectedRole] || GraduationCap;
 
+  // Check if a specific URL path is authorized for a given user role
+  const checkRoleCanAccessPath = (roleKey, path) => {
+    if (!path || typeof path !== "string") return false;
+    const role = normalizeRole(roleKey);
+    if (role === "admin") return true;
+    if (path.startsWith("/hostel")) return role === "warden" || role === "admin";
+    if (path.startsWith("/vendor")) return role === "vendor" || role === "admin";
+    if (path.startsWith("/maintenance")) {
+      return ["maintenance", "admin", "warden", "student"].includes(role);
+    }
+    if (
+      path.startsWith("/analytics") ||
+      path.startsWith("/reports") ||
+      path.startsWith("/utilities") ||
+      path.startsWith("/monitoring") ||
+      path.startsWith("/notifications-center")
+    ) {
+      return ["admin", "warden", "executive", "finance"].includes(role);
+    }
+    // Default student-accessible pages (/dashboard, /payments, /room, /complaints, /marketplace, /profile, /notifications)
+    return ["student", "admin"].includes(role);
+  };
+
+  // Determine the appropriate destination URL for a role/user
+  const getAppropriatePath = (targetUser, fallbackRole) => {
+    const roleKey = normalizeRole(
+      targetUser?.role || targetUser?.roleKey || fallbackRole
+    );
+    const fromPath = location.state?.from?.pathname;
+
+    // Only redirect to fromPath if it's not a login/home URL and is authorized for this role
+    if (
+      fromPath &&
+      fromPath !== "/" &&
+      fromPath !== "/login" &&
+      !fromPath.startsWith("/login/") &&
+      fromPath !== "/register" &&
+      fromPath !== "/signup"
+    ) {
+      if (checkRoleCanAccessPath(roleKey, fromPath)) {
+        return fromPath;
+      }
+    }
+
+    const demo = getDemoAccount(roleKey);
+    return targetUser?.defaultPath || demo?.defaultPath || "/dashboard";
+  };
+
   // Sync inputs when selecting a role
   const handleRoleSelect = (roleKey) => {
     setSelectedRole(roleKey);
@@ -93,6 +136,12 @@ export default function AuthPortal({ initialTab = "login" }) {
     setSuccessMessage("");
   };
 
+  useEffect(() => {
+    if (paramRoleKey) {
+      handleRoleSelect(paramRoleKey);
+    }
+  }, [paramRoleKey]);
+
   const handleAutoFill = () => {
     handleRoleSelect(selectedRole);
   };
@@ -105,7 +154,7 @@ export default function AuthPortal({ initialTab = "login" }) {
 
     setTimeout(() => {
       const loggedUser = switchRole(roleKey);
-      const destination = loggedUser?.defaultPath || "/dashboard";
+      const destination = getAppropriatePath(loggedUser, roleKey);
       navigate(destination, { replace: true });
     }, 400);
   };
@@ -123,34 +172,34 @@ export default function AuthPortal({ initialTab = "login" }) {
     setSuccessMessage("");
 
     try {
-      await login({
+      const loggedUser = await login({
         identifier: identifier.trim(),
         password,
       });
 
-      setSuccessMessage("Authentication successful! Loading portal...");
+      setSuccessMessage("Authentication successful! Redirecting to your portal...");
       setTimeout(() => {
-        const destination =
-          location.state?.from?.pathname || activeDemoProfile.defaultPath || "/dashboard";
+        const destination = getAppropriatePath(loggedUser, selectedRole);
         navigate(destination, { replace: true });
       }, 400);
     } catch (err) {
       console.warn("Sign in issue:", err.message);
       // Fallback for demo evaluations if backend is offline or credentials match demo
       if (
-        (identifier === activeDemoProfile.username ||
-          identifier === activeDemoProfile.email ||
-          identifier === "izni@gmail.com")
+        identifier === activeDemoProfile.username ||
+        identifier === activeDemoProfile.email ||
+        identifier === "izni@gmail.com"
       ) {
         setSuccessMessage("Signed in with verified demo session.");
         setTimeout(() => {
           const logged = switchRole(selectedRole);
-          const destination =
-            location.state?.from?.pathname || logged?.defaultPath || "/dashboard";
+          const destination = getAppropriatePath(logged, selectedRole);
           navigate(destination, { replace: true });
         }, 400);
       } else {
-        setErrorMessage(err.message || "Invalid credentials. Please verify your details.");
+        setErrorMessage(
+          err.message || "Invalid credentials. Please verify your details."
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -180,22 +229,28 @@ export default function AuthPortal({ initialTab = "login" }) {
     setSuccessMessage("");
 
     try {
-      await register({
+      const regUser = await register({
         name: regFullName.trim(),
         email: regEmail.trim(),
         password: regPassword,
         role: regRole === "warden" ? "admin" : regRole,
-        studentId: regStudentId.trim() || `STD-2026-${Math.floor(100 + Math.random() * 900)}`,
+        studentId:
+          regStudentId.trim() ||
+          `STD-2026-${Math.floor(100 + Math.random() * 900)}`,
       });
 
-      setSuccessMessage("Account created successfully! Redirecting to your dashboard...");
+      setSuccessMessage(
+        "Account created successfully! Redirecting to your dashboard..."
+      );
       setTimeout(() => {
-        const demo = getDemoAccount(regRole);
-        navigate(demo.defaultPath || "/dashboard", { replace: true });
+        const destination = getAppropriatePath(regUser, regRole);
+        navigate(destination, { replace: true });
       }, 500);
     } catch (err) {
       console.warn("Registration error:", err.message);
-      setErrorMessage(err.message || "Failed to create account. Please try again.");
+      setErrorMessage(
+        err.message || "Failed to create account. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -209,7 +264,7 @@ export default function AuthPortal({ initialTab = "login" }) {
           <Logo
             variant="horizontal"
             size="md"
-            subtitle="Hostel Management System"
+            subtitle="Hostel Living OS"
             asLink={false}
           />
 
@@ -227,10 +282,41 @@ export default function AuthPortal({ initialTab = "login" }) {
         <div className="w-full max-w-xl">
           {/* Main Card */}
           <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-10 shadow-xl shadow-slate-200/60 transition-all">
+            {/* Active Session Notice Banner if user is already logged in */}
+            {isLoggedIn && user && (
+              <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 p-4 text-xs text-blue-900 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-xs font-black text-white shadow-xs">
+                    {user.initials || "AN"}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-sm">{user.name}</p>
+                    <p className="text-blue-700 text-[11px] font-semibold">
+                      Currently Signed In ({user.roleBadge || user.role})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigate(getAppropriatePath(user, user.roleKey), {
+                      replace: true,
+                    })
+                  }
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition cursor-pointer shrink-0"
+                >
+                  <span>Go to Dashboard</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Header / Tabs */}
             <div className="text-center mb-6">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-                {activeTab === "login" ? "Sign In to Your Account" : "Create New Account"}
+                {activeTab === "login"
+                  ? "Sign In to Your Account"
+                  : "Create New Account"}
               </h1>
               <p className="mt-1 text-xs sm:text-sm text-slate-500">
                 {activeTab === "login"
@@ -282,7 +368,10 @@ export default function AuthPortal({ initialTab = "login" }) {
                 role="alert"
                 className="mb-5 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/90 p-3.5 text-xs text-rose-800 animate-in fade-in"
               >
-                <AlertCircle size={17} className="shrink-0 text-rose-600 mt-0.5" />
+                <AlertCircle
+                  size={17}
+                  className="shrink-0 text-rose-600 mt-0.5"
+                />
                 <span className="font-medium">{errorMessage}</span>
               </div>
             )}
@@ -292,7 +381,10 @@ export default function AuthPortal({ initialTab = "login" }) {
                 role="status"
                 className="mb-5 flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-3.5 text-xs text-emerald-800 animate-in fade-in"
               >
-                <CheckCircle2 size={17} className="shrink-0 text-emerald-600 mt-0.5" />
+                <CheckCircle2
+                  size={17}
+                  className="shrink-0 text-emerald-600 mt-0.5"
+                />
                 <span className="font-semibold">{successMessage}</span>
               </div>
             )}
@@ -323,9 +415,13 @@ export default function AuthPortal({ initialTab = "login" }) {
                         >
                           <Icon
                             size={16}
-                            className={isSelected ? "text-blue-600" : "text-slate-400"}
+                            className={
+                              isSelected ? "text-blue-600" : "text-slate-400"
+                            }
                           />
-                          <span className="truncate">{role.roleName.split(" / ")[0]}</span>
+                          <span className="truncate">
+                            {role.roleName.split(" / ")[0]}
+                          </span>
                         </button>
                       );
                     })}
@@ -394,7 +490,9 @@ export default function AuthPortal({ initialTab = "login" }) {
                     <button
                       type="button"
                       onClick={() =>
-                        setErrorMessage("Password recovery is managed by your Hostel Administration office.")
+                        setErrorMessage(
+                          "Password recovery is managed by your Hostel Administration office."
+                        )
                       }
                       className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
                     >
@@ -430,7 +528,9 @@ export default function AuthPortal({ initialTab = "login" }) {
                         className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition cursor-pointer text-center group"
                       >
                         <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700">
-                          {role.roleKey === "warden" ? "Warden" : role.roleName.split(" ")[0]}
+                          {role.roleKey === "warden"
+                            ? "Warden"
+                            : role.roleName.split(" ")[0]}
                         </span>
                         <span className="text-[10px] text-slate-400 group-hover:text-blue-500">
                           Instant
@@ -485,12 +585,18 @@ export default function AuthPortal({ initialTab = "login" }) {
                   </div>
 
                   <InputField
-                    label={regRole === "student" ? "Student ID" : "Staff / Vendor ID"}
+                    label={
+                      regRole === "student" ? "Student ID" : "Staff / Vendor ID"
+                    }
                     id="regStudentId"
                     type="text"
                     value={regStudentId}
                     onChange={(e) => setRegStudentId(e.target.value)}
-                    placeholder={regRole === "student" ? "e.g. STD-2026-090" : "e.g. EMP-2026-01"}
+                    placeholder={
+                      regRole === "student"
+                        ? "e.g. STD-2026-090"
+                        : "e.g. EMP-2026-01"
+                    }
                     icon={Building}
                   />
                 </div>
@@ -544,11 +650,11 @@ export default function AuthPortal({ initialTab = "login" }) {
 
           {/* Simple Clean Footer */}
           <div className="mt-6 text-center text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} SmartStay. Smart Hostel Management System.
+            &copy; {new Date().getFullYear()} SmartStay. Smart Hostel Management
+            System.
           </div>
         </div>
       </main>
     </div>
   );
 }
-

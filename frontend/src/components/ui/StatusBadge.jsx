@@ -88,27 +88,27 @@ function StatusBadge({
 
   const variantStyles = {
     success: {
-      badge: "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+      badge: "bg-emerald-50 text-emerald-800 font-semibold border-emerald-200/60",
       dot: "bg-emerald-500",
     },
     warning: {
-      badge: "bg-amber-50 text-amber-700 border-amber-200/60",
+      badge: "bg-amber-50 text-amber-900 font-semibold border-amber-200/60",
       dot: "bg-amber-500",
     },
     danger: {
-      badge: "bg-rose-50 text-rose-700 border-rose-200/60",
+      badge: "bg-rose-50 text-rose-800 font-semibold border-rose-200/60",
       dot: "bg-rose-500",
     },
     info: {
-      badge: "bg-blue-50 text-blue-700 border-blue-200/60",
+      badge: "bg-blue-50 text-blue-800 font-semibold border-blue-200/60",
       dot: "bg-blue-500",
     },
     teal: {
-      badge: "bg-cyan-50 text-cyan-700 border-cyan-200/60",
+      badge: "bg-cyan-50 text-cyan-900 font-semibold border-cyan-200/60",
       dot: "bg-cyan-500",
     },
     neutral: {
-      badge: "bg-slate-100 text-slate-700 border-slate-200",
+      badge: "bg-slate-100 text-slate-800 font-semibold border-slate-200",
       dot: "bg-slate-400",
     },
   };

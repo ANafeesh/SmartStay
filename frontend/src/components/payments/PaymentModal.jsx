@@ -26,7 +26,7 @@ export default function PaymentModal({
   const [isProcessing, setIsProcessing] = useState(false);
   const [simulationOutcome, setSimulationOutcome] = useState("success");
   const [failureReason, setFailureReason] = useState("Insufficient Funds");
-  const [cardNumber, setCardNumber] = useState("4532 â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ 8842");
+  const [cardNumber, setCardNumber] = useState("4532 •••• •••• 8842");
   const [cardExpiry, setCardExpiry] = useState("09/28");
   const [cardCvv, setCardCvv] = useState("489");
   const [slipFile, setSlipFile] = useState(null);
@@ -296,7 +296,7 @@ export default function PaymentModal({
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-mono text-slate-800 focus:border-blue-600 focus:outline-none"
-                  placeholder="4532 â€¢â€¢â€¢â€¢ â€¢â€¢â€¢â€¢ 8842"
+                  placeholder="4532 •••• •••• 8842"
                   required
                 />
               </div>

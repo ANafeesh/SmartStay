@@ -59,14 +59,16 @@ exports.getMyPass = async (req, res) => {
     let pass = await DigitalPass.findOne({
       student: studentId,
       status: { $in: ["Active", "OnLeave", "Suspended"] },
-    }).populate("student", "name email phone room building registrationNumber studentId accountStatus");
+    })
+      .select("+qrToken +tokenHash")
+      .populate("student", "name email phone room building registrationNumber studentId accountStatus");
 
-    let newlyProvisionedToken = null;
+    let studentQrToken = null;
 
     // Auto-provision initial digital pass if not generated yet
     if (!pass) {
       const { token, tokenHash } = generatePassTokens();
-      newlyProvisionedToken = token;
+      studentQrToken = token;
 
       const randomSuffix = Math.floor(100000 + Math.random() * 900000);
       const regId = req.user.registrationNumber || req.user.studentId || `SEU-${randomSuffix}`;
@@ -78,6 +80,7 @@ exports.getMyPass = async (req, res) => {
         studentName: req.user.name,
         passNumber: `SP-2026-${randomSuffix}`,
         tokenHash,
+        qrToken: token,
         validFrom: new Date(),
         validUntil,
         status: "Active",
@@ -90,6 +93,17 @@ exports.getMyPass = async (req, res) => {
         "student",
         "name email phone room building registrationNumber studentId accountStatus"
       );
+    } else {
+      if (pass.qrToken) {
+        studentQrToken = pass.qrToken;
+      } else {
+        // Backfill stable qrToken for passes created before qrToken persistence was added
+        const { token, tokenHash } = generatePassTokens();
+        studentQrToken = token;
+        pass.qrToken = token;
+        pass.tokenHash = tokenHash;
+        await pass.save();
+      }
     }
 
     const now = new Date();
@@ -113,7 +127,7 @@ exports.getMyPass = async (req, res) => {
       data: {
         pass,
         isExpired,
-        ...(newlyProvisionedToken ? { qrToken: newlyProvisionedToken } : {}),
+        qrToken: studentQrToken,
         hasActiveLeave: !!activeLeave,
         activeLeave: activeLeave || null,
         openViolationsCount,
@@ -138,13 +152,25 @@ exports.getMyPass = async (req, res) => {
  */
 exports.verifyPass = async (req, res) => {
   try {
-    const { qrToken, passNumber, studentRegistrationId } = req.body;
+    let { qrToken, passNumber, studentRegistrationId } = req.body;
 
     if (!qrToken && !passNumber && !studentRegistrationId) {
       return res.status(400).json({
         success: false,
         message: "Please provide a valid QR Token, Pass Number, or Registration ID.",
       });
+    }
+
+    // Support structured JSON payload or raw token
+    if (qrToken && typeof qrToken === "string") {
+      try {
+        const parsed = JSON.parse(qrToken.trim());
+        if (parsed.qrToken || parsed.token) {
+          qrToken = parsed.qrToken || parsed.token;
+        }
+      } catch {
+        // Raw token string
+      }
     }
 
     let query = {};
@@ -424,6 +450,7 @@ exports.reissuePass = async (req, res) => {
     // Generate fresh cryptographic tokens (invalidates the previous QR token)
     const { token, tokenHash } = generatePassTokens();
     pass.tokenHash = tokenHash;
+    pass.qrToken = token;
     pass.validFrom = new Date();
     pass.validUntil = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000);
 

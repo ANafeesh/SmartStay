@@ -33,6 +33,10 @@ const digitalPassSchema = new mongoose.Schema(
       unique: true,
       select: false,
     },
+    qrToken: {
+      type: String,
+      select: false,
+    },
     validFrom: {
       type: Date,
       default: Date.now,
