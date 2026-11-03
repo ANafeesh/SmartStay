@@ -103,7 +103,7 @@ export default function Logo({
               isDark ? "text-white" : "text-slate-900"
             }`}
           >
-            Smart<span className="text-blue-600">Stay</span>
+            Smart<span className={isDark ? "text-blue-400 font-bold" : "text-blue-600"}>Stay</span>
           </span>
           {badge && (
             <span
@@ -120,7 +120,7 @@ export default function Logo({
         {subtitle && (
           <p
             className={`font-medium truncate mt-0.5 leading-tight ${currentSize.sub} ${
-              isDark ? "text-slate-400" : "text-slate-500"
+              isDark ? "text-slate-300" : "text-slate-500"
             }`}
           >
             {subtitle}
@@ -144,3 +144,4 @@ export default function Logo({
 
   return content;
 }
+

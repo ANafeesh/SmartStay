@@ -73,9 +73,7 @@ function Profile() {
         <div>
           <h1 className="text-3xl font-bold text-smart-primary">My Profile</h1>
 
-          <p className="mt-2 text-smart-secondary">
-            Manage your personal and university information.
-          </p>
+          
         </div>
 
         {!editMode ? (
@@ -115,7 +113,7 @@ function Profile() {
             </div>
 
             <p className="mt-2 text-smart-secondary">
-              {profile.course} Â· {profile.faculty}
+              {profile.course} • {profile.faculty}
             </p>
 
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-smart-secondary">
@@ -126,7 +124,7 @@ function Profile() {
 
               <span className="flex items-center gap-1.5">
                 <Building2 size={16} />
-                {profile.hostel} Â· {profile.room}
+                {profile.hostel} • {profile.room}
               </span>
             </div>
           </div>

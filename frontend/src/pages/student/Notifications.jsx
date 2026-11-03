@@ -161,9 +161,7 @@ function Notifications() {
             )}
           </div>
 
-          <p className="mt-2 text-smart-secondary">
-            Stay updated with your hostel services and activities.
-          </p>
+          
         </div>
 
         {unreadCount > 0 && (

@@ -8,37 +8,39 @@ function Button({
   ...props
 }) {
   const variants = {
-    primary: "bg-smart-blue text-white hover:bg-smart-primary",
+    // SmartStay Original Royal Blue Primary
+    primary: "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] shadow-sm shadow-blue-500/20",
 
-    secondary: "bg-smart-primary text-white hover:bg-smart-blue",
+    // Slate 900 Secondary
+    secondary: "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.98] shadow-sm",
 
+    // Clean outline
     outline:
-      "border border-smart-primary bg-transparent text-smart-primary hover:bg-smart-primary hover:text-white",
+      "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-[0.98]",
 
-    teal: "bg-smart-teal text-white hover:bg-smart-blue",
+    teal: "bg-cyan-600 text-white hover:bg-cyan-700 active:scale-[0.98] shadow-sm shadow-cyan-500/20",
 
-    danger: "bg-smart-danger text-white hover:opacity-90",
+    danger: "bg-rose-600 text-white hover:bg-rose-700 active:scale-[0.98] shadow-sm shadow-rose-500/20",
 
-    ghost: "bg-transparent text-smart-primary hover:bg-smart-background",
+    ghost: "bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]",
   };
 
   const sizes = {
-    sm: "px-3 py-2 text-sm",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-6 py-3 text-base",
+    sm: "px-3 py-1.5 text-xs rounded-xl font-medium",
+    md: "px-4 py-2.5 text-sm rounded-xl font-semibold",
+    lg: "px-6 py-3 text-base rounded-2xl font-bold",
   };
 
   return (
     <button
       disabled={disabled || isLoading}
       className={`
-        inline-flex items-center justify-center
-        rounded-xl font-semibold
-        transition duration-200
-        focus:outline-none focus:ring-2 focus:ring-smart-blue/40
-        ${disabled || isLoading ? "cursor-not-allowed opacity-50" : "hover:-translate-y-0.5"}
-        ${variants[variant]}
-        ${sizes[size]}
+        inline-flex items-center justify-center gap-2
+        transition-all duration-150 cursor-pointer
+        focus:outline-none focus:ring-2 focus:ring-blue-500/30
+        ${disabled || isLoading ? "cursor-not-allowed opacity-50" : ""}
+        ${variants[variant] || variants.primary}
+        ${sizes[size] || sizes.md}
         ${className}
       `}
       {...props}

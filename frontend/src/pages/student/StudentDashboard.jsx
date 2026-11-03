@@ -249,9 +249,6 @@ function StudentDashboard() {
               <h2 className="text-base font-bold text-slate-900">
                 Recent Billing Invoices
               </h2>
-              <p className="text-xs text-slate-500">
-                Hostel fee settlements and utility surcharges
-              </p>
             </div>
             <Link
               to="/payments"

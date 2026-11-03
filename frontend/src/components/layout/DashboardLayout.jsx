@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
-import RoleSwitcherModal from "../auth/RoleSwitcherModal";
 import {
   Activity,
   AlertTriangle,
@@ -131,8 +130,7 @@ const navigationGroups = [
 function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false);
-  const sidebarCollapsed = false;
+    const sidebarCollapsed = false;
   const location = useLocation();
 
   const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
@@ -304,16 +302,15 @@ function DashboardLayout() {
           })}
         </nav>
 
-        {/* User / Member ID Footer & Persona Switcher */}
+        {/* User / Member ID Footer */}
         <div className="border-t border-slate-100 p-3 bg-slate-50/50">
-          <button
-            type="button"
-            onClick={() => setShowRoleSwitcher(true)}
-            title="Click to switch demo persona"
-            className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/40 transition cursor-pointer"
+          <Link
+            to="/profile"
+            title="View Profile"
+            className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/30 transition cursor-pointer"
           >
             <div className={`flex min-w-0 items-center ${sidebarCollapsed ? "w-full justify-center" : "gap-2.5"}`}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-xs font-black text-white shadow-xs">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-xs">
                 {user?.initials || "AN"}
               </div>
               {!sidebarCollapsed && (
@@ -327,15 +324,17 @@ function DashboardLayout() {
                     {user?.roleBadge || user?.role || "Student account"}
                   </p>
                   <p className="truncate font-mono text-[9px] text-slate-400">
-                    {user?.studentId || "Student Account"}
+                    {user?.studentId || user?.email || "STD-2026-090"}
                   </p>
                 </div>
               )}
             </div>
             {!sidebarCollapsed && (
-              <RefreshCw size={13} className="text-slate-400 shrink-0 ml-1.5 hover:rotate-180 transition-transform duration-300" />
+              <span className="text-[10px] font-bold text-slate-400 hover:text-blue-600 ml-1">
+                Profile
+              </span>
             )}
-          </button>
+          </Link>
         </div>
       </aside>
 
@@ -344,17 +343,7 @@ function DashboardLayout() {
         {/* Sticky Executive Top Bar (Desktop) */}
         <header className="hidden lg:flex sticky top-0 z-30 -mx-10 mb-8 min-h-[76px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-10 backdrop-blur-xl">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                SmartStay Living
-              </span>
-              <span className="text-[11px] font-medium text-slate-400">•</span>
-              <span className="text-[11px] font-semibold text-slate-500">
-                Hostel Management Portal
-              </span>
-            </div>
-            <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 mt-0.5">
+            <h1 className="truncate text-xl font-bold tracking-tight text-slate-900">
               {pageTitle}
             </h1>
           </div>
@@ -395,11 +384,7 @@ function DashboardLayout() {
         </div>
       </main>
 
-      {/* Role Switcher Modal */}
-      <RoleSwitcherModal
-        isOpen={showRoleSwitcher}
-        onClose={() => setShowRoleSwitcher(false)}
-      />
+      
     </div>
   );
 }

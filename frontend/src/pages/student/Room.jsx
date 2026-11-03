@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   BedDouble,
   Building2,
@@ -82,10 +83,7 @@ function Room() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-smart-primary">My Room</h1>
 
-        <p className="mt-2 text-smart-secondary">
-          View your room allocation, roommates, facilities, and maintenance
-          information.
-        </p>
+        
       </div>
 
       {/* Room Overview */}
@@ -263,9 +261,7 @@ function Room() {
                     {facility.name}
                   </h3>
 
-                  <p className="mt-1 text-xs text-smart-secondary">
-                    {facility.description}
-                  </p>
+                  
                 </div>
               );
             })}
@@ -293,15 +289,13 @@ function Room() {
             </div>
           </div>
 
-          <Button
-            variant="primary"
-            onClick={() =>
-              alert("Maintenance request will be available with the backend.")
-            }
+          <Link
+            to="/complaints"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition"
           >
-            Submit Request
-            <ArrowRight size={17} className="ml-2 inline" />
-          </Button>
+            <span>Submit Repair Request</span>
+            <ArrowRight size={15} />
+          </Link>
         </div>
       </Card>
     </div>

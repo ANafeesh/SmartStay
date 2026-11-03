@@ -423,25 +423,19 @@ export default function Payments() {
               <span className="font-semibold text-slate-800">
                 {user?.name || "Student User"}
               </span>
-              <span className="text-slate-300">â€¢</span>
+              <span className="text-slate-300">•</span>
               <span className="font-mono font-medium text-blue-600">
                 STD-2026-090
               </span>
-              <span className="text-slate-300">â€¢</span>
+              <span className="text-slate-300">•</span>
               <span>Hostel Block B, Room 204</span>
-              <span className="text-slate-300">â€¢</span>
+              <span className="text-slate-300">•</span>
               <span className="text-slate-400">Academic Year 2026/27</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <button
-              onClick={() => setIsGenerateBillOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-50 border border-blue-200 px-3.5 py-2.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-2xs cursor-pointer"
-            >
-              <Plus size={15} />
-              <span>Generate / Issue Bill</span>
-            </button>
+            
 
             
           </div>
@@ -735,17 +729,11 @@ export default function Payments() {
                   Current Invoices &amp; Payable Charges
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Click 'Pay Now' to launch the secure checkout simulator with instant digital bursary receipt generation.
+                  Click 'Pay Now' to launch the SmartStay PayGate with instant digital bursary receipt generation.
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">
-                <button
-                  onClick={() => setIsGenerateBillOpen(true)}
-                  className="rounded-xl bg-white border border-slate-200 px-3 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition shadow-2xs cursor-pointer flex items-center gap-1.5"
-                >
-                  <Plus size={14} />
-                  <span>Issue New Bill</span>
-                </button>
+                
                 <span className="rounded-xl bg-slate-100 border border-slate-200/90 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
                   {bills.length} Open Invoices
                 </span>
@@ -813,9 +801,9 @@ export default function Payments() {
                               {bill.id}
                             </span>
                           </span>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <span>Cycle: {bill.period}</span>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <span>
                             Due Date:{" "}
                             <strong className="text-slate-700">
@@ -941,7 +929,7 @@ export default function Payments() {
                             <span>Ref: {rec.refNo}</span>
                             {rec.receiptNo && (
                               <>
-                                <span>â€¢</span>
+                                <span>•</span>
                                 <span className="text-blue-600 font-semibold">
                                   {rec.receiptNo}
                                 </span>
@@ -1221,25 +1209,25 @@ export default function Payments() {
                       )}
                       {notif.paymentDate && (
                         <>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <span>Date: <strong className="text-slate-800">{notif.paymentDate}</strong></span>
                         </>
                       )}
                       {notif.paymentMethod && (
                         <>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <span>Method: <strong className="text-slate-800">{notif.paymentMethod}</strong></span>
                         </>
                       )}
                       {notif.refNo && (
                         <>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <span className="font-mono text-slate-500">Ref: {notif.refNo}</span>
                         </>
                       )}
                       {notif.receiptNo && (
                         <>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <span className="font-mono text-blue-600 font-bold">Receipt #{notif.receiptNo}</span>
                         </>
                       )}
@@ -1256,7 +1244,7 @@ export default function Payments() {
 
                       {notif.receiptNo && (
                         <>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <button
                             onClick={() => {
                               const found = history.find((h) => h.receiptNo === notif.receiptNo);
