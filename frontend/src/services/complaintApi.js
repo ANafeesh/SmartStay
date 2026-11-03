@@ -60,3 +60,19 @@ export async function getComplaintsFromDB(params = {}) {
   const data = await apiFetch(endpoint);
   return data.data;
 }
+
+/**
+ * Update complaint status, resolution notes, and assigned staff
+ * Used by Wardens, Maintenance Staff, and Admins to manage student complaints
+ * @param {string} id - Complaint MongoDB _id or complaintId
+ * @param {object} payload - { status, resolutionNotes, assignedTo }
+ * @returns {Promise<object>} Updated complaint record
+ */
+export async function updateComplaintStatusInDB(id, payload) {
+  const data = await apiFetch(`/complaints/${encodeURIComponent(id)}/status`, {
+    method: "PATCH",
+    body: payload,
+  });
+
+  return data.data;
+}

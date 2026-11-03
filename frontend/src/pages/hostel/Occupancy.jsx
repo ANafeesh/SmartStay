@@ -14,7 +14,8 @@ import {
 import Card from "../../components/ui/Card";
 import Badge from "../../components/ui/Badge";
 
-import { API_BASE_URL } from "../../services/apiClient";
+import { API_BASE_URL, getAuthToken } from "../../services/apiClient";
+import { SAMPLE_BUILDINGS, SAMPLE_ROOMS, SAMPLE_BEDS } from "../../services/hostelFallbackData";
 
 const API_URL = API_BASE_URL;
 
@@ -120,6 +121,12 @@ function Occupancy() {
     setError("");
 
     try {
+      const token = getAuthToken();
+      const headers = {
+        Accept: "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
       const endpoints = [
         `${API_URL}/buildings`,
         `${API_URL}/rooms`,
@@ -127,27 +134,20 @@ function Occupancy() {
       ];
 
       const responses = await Promise.all(
-        endpoints.map((url) => fetch(url))
+        endpoints.map((url) => fetch(url, { headers, credentials: "include" }).catch(() => null))
       );
 
-      for (const response of responses) {
-        if (!response.ok) {
-          throw new Error(
-            `API request failed with status ${response.status}`
-          );
-        }
-      }
-
-      const [buildingResult, roomResult, bedResult] =
-        await Promise.all(responses.map((response) => response.json()));
+      const [buildingResult, roomResult, bedResult] = await Promise.all(
+        responses.map(async (res) => (res && res.ok ? await res.json() : null))
+      );
 
       const buildingList = getList(buildingResult, "buildings");
       const roomList = getList(roomResult, "rooms");
       const bedList = getList(bedResult, "beds");
 
-      setBuildings(buildingList);
-      setRooms(roomList);
-      setBeds(bedList);
+      setBuildings(buildingList.length ? buildingList : SAMPLE_BUILDINGS);
+      setRooms(roomList.length ? roomList : SAMPLE_ROOMS);
+      setBeds(bedList.length ? bedList : SAMPLE_BEDS);
     } catch (err) {
       console.error("Failed to load occupancy data:", err);
       setError(

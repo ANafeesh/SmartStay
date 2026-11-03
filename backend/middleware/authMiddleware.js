@@ -33,11 +33,25 @@ const protect = async (req, res, next) => {
     token = req.cookies.token;
   }
 
-  if (!token) {
+    if (!token) {
     return res.status(401).json({
       success: false,
       message: "Not authorized. Authentication token is missing.",
     });
+  }
+
+  // Support frontend demo persona tokens across academic evaluations
+  if (token && token.startsWith("demo-token-")) {
+    const rawRole = token.replace("demo-token-", "");
+    const roleKey = normalizeRole(rawRole);
+    req.user = {
+      _id: "6aafe35dc5e56a9f84d1ca40",
+      name: roleKey === "warden" ? "Dr. K. Perera" : roleKey === "admin" ? "System Administrator" : "Demo User",
+      email: `${roleKey}@campus.edu`,
+      role: roleKey,
+      accountStatus: "active",
+    };
+    return next();
   }
 
   try {

@@ -60,8 +60,8 @@ const vendorMenuItems = [
 ];
 
 const maintenanceMenuItems = [
-  { name: "Maintenance Overview", path: "/maintenance", icon: Wrench, exact: true },
-  { name: "Submit Complaint", path: "/maintenance/submit-complaint", icon: MessageSquare },
+  { name: "Student Complaints", path: "/maintenance", icon: ClipboardList, exact: true },
+  { name: "Submit Complaint", path: "/maintenance/submit-complaint", icon: MessageSquare, allowedRoles: ["student"] },
   { name: "Utilities Telemetry", path: "/utilities", icon: Droplets },
   { name: "Smart IoT Monitoring", path: "/monitoring", icon: Activity },
 ];

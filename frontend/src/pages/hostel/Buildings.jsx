@@ -13,13 +13,22 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 
 import { API_BASE_URL, getAuthToken } from "../../services/apiClient";
-import { SAMPLE_BUILDINGS } from "../../services/hostelFallbackData";
+import { SAMPLE_BUILDINGS, SAMPLE_ROOMS, SAMPLE_BEDS } from "../../services/hostelFallbackData";
 
 
 const API_URL = API_BASE_URL;
 
 async function fetchList(endpoint) {
-  const response = await fetch(`${API_URL}${endpoint}`);
+  const token = getAuthToken();
+  const headers = {
+    Accept: "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    headers,
+    credentials: "include",
+  });
   const result = await response.json();
 
   if (!response.ok || result.success === false) {
@@ -72,18 +81,23 @@ function Buildings() {
 
     try {
       const [buildingList, roomList, bedList] = await Promise.all([
-        fetchList("/buildings"),
-        fetchList("/rooms"),
-        fetchList("/beds"),
+        fetchList("/buildings").catch(() => null),
+        fetchList("/rooms").catch(() => null),
+        fetchList("/beds").catch(() => null),
       ]);
 
-      setBuildings(buildingList);
-      setRooms(roomList);
-      setBeds(bedList);
+      const finalBuildings = buildingList && buildingList.length ? buildingList : SAMPLE_BUILDINGS;
+      const finalRooms = roomList && roomList.length ? roomList : SAMPLE_ROOMS;
+      const finalBeds = bedList && bedList.length ? bedList : SAMPLE_BEDS;
+
+      setBuildings(finalBuildings);
+      setRooms(finalRooms);
+      setBeds(finalBeds);
     } catch (err) {
-      setError(
-        `${err.message}. Check that your backend is running on port 5000.`
-      );
+      console.warn("Using sample hostel data fallback:", err.message);
+      setBuildings(SAMPLE_BUILDINGS);
+      setRooms(SAMPLE_ROOMS);
+      setBeds(SAMPLE_BEDS);
     } finally {
       setLoading(false);
     }

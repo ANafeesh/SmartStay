@@ -76,8 +76,13 @@ const navigationGroups = [
     role: "maintenance",
     allowedRoles: ["maintenance", "warden", "admin"],
     items: [
-      { name: "Maintenance Overview", href: "/maintenance", icon: Wrench },
-      { name: "Submit a Complaint", href: "/maintenance/submit-complaint", icon: ClipboardList },
+      { name: "Student Complaints", href: "/maintenance", icon: ClipboardList },
+      {
+        name: "Submit a Complaint",
+        href: "/maintenance/submit-complaint",
+        icon: Wrench,
+        allowedRoles: ["student"],
+      },
     ],
   },
   {
