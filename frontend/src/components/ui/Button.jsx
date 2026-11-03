@@ -4,6 +4,7 @@ function Button({
   size = "md",
   className = "",
   disabled = false,
+  isLoading = false,
   ...props
 }) {
   const variants = {
@@ -29,13 +30,13 @@ function Button({
 
   return (
     <button
-      disabled={disabled}
+      disabled={disabled || isLoading}
       className={`
         inline-flex items-center justify-center
         rounded-xl font-semibold
         transition duration-200
         focus:outline-none focus:ring-2 focus:ring-smart-blue/40
-        ${disabled ? "cursor-not-allowed opacity-50" : "hover:-translate-y-0.5"}
+        ${disabled || isLoading ? "cursor-not-allowed opacity-50" : "hover:-translate-y-0.5"}
         ${variants[variant]}
         ${sizes[size]}
         ${className}

@@ -12,6 +12,7 @@
   "dependencies": {
     "@lordicon/element": "^3.0.2",
     "@tailwindcss/vite": "^4.3.3",
+    "lottie-web": "^5.13.0",
     "lucide-react": "^1.48.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

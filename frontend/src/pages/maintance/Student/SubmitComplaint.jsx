@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Wrench,
@@ -753,7 +753,7 @@ export default function SubmitComplaint() {
               </div>
 
               <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white shadow-xs">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white shadow-xs">
                   {user?.initials || "AN"}
                 </div>
                 <div className="min-w-0">
