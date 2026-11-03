@@ -179,22 +179,17 @@ function Complaints() {
             Complaints &amp; Maintenance
           </h1>
 
-          <p className="mt-2 text-smart-secondary">
-            Report hostel issues, attach photo evidence, and track your maintenance requests in MongoDB.
-          </p>
+          <p className="mt-1 text-xs text-slate-500">Track and submit maintenance requests for your hostel room.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2">
           <Link
             to="/maintenance/submit-complaint"
             className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 transition active:scale-95 cursor-pointer"
           >
             <Plus size={16} />
-            <span>Submit Complaint with Photos</span>
+            <span>New Complaint</span>
           </Link>
-          <Button onClick={() => setShowForm(true)} variant="secondary">
-            Quick Complaint
-          </Button>
         </div>
       </div>
 

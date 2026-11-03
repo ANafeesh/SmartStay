@@ -184,9 +184,7 @@ function StudentDashboard() {
           <h1 className="text-xl sm:text-3xl font-black tracking-tight text-slate-900">
             Student Dashboard
           </h1>
-          <p className="mt-0.5 text-xs sm:text-sm text-slate-500">
-            Overview of hostel services, fees, room allocation, and digital gate pass.
-          </p>
+          
         </div>
 
         <button
@@ -249,9 +247,7 @@ function StudentDashboard() {
               <h2 className="text-base font-bold text-slate-900">
                 Recent Billing Invoices
               </h2>
-              <p className="text-xs text-slate-500">
-                Hostel fee settlements and utility surcharges
-              </p>
+              
             </div>
             <Link
               to="/payments"
@@ -500,65 +496,7 @@ function StudentDashboard() {
               </p>
             </div>
 
-            {/* GATEKEEPER SCAN SIMULATOR CONTROLS */}
-            <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                  <Scan size={15} className="text-blue-600" />
-                  <span>Gate Movement Record</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-semibold">
-                  Record Entry / Exit
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={isSimulating}
-                  onClick={() => handleSimulateScan("OUT")}
-                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition shadow-xs cursor-pointer ${
-                    scanResult?.direction === "OUT"
-                      ? "bg-blue-600 text-white ring-2 ring-blue-400"
-                      : "bg-white border border-slate-200 text-blue-700 hover:bg-blue-50"
-                  }`}
-                >
-                  <LogOut size={14} />
-                  <span>Mark Exit</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={isSimulating}
-                  onClick={() => handleSimulateScan("IN")}
-                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition shadow-xs cursor-pointer ${
-                    scanResult?.direction === "IN"
-                      ? "bg-emerald-600 text-white ring-2 ring-emerald-400"
-                      : "bg-white border border-slate-200 text-emerald-700 hover:bg-emerald-50"
-                  }`}
-                >
-                  <LogIn size={14} />
-                  <span>Mark Entry</span>
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <Link
-                  to="/gate/verify"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
-                >
-                  <span>Gate Scanner Terminal</span>
-                  <ExternalLink size={12} />
-                </Link>
-
-                <span className="text-[10px] font-mono text-slate-400">
-                  State: {isCurrentlyInside ? "IN" : "OUT"}
-                </span>
-              </div>
             </div>
-          </div>
         </Modal>
       )}
     </div>

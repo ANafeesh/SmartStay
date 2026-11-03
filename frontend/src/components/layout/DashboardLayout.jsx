@@ -343,17 +343,7 @@ function DashboardLayout() {
         {/* Sticky Executive Top Bar (Desktop) */}
         <header className="hidden lg:flex sticky top-0 z-30 -mx-10 mb-8 min-h-[76px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-10 backdrop-blur-xl">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                SmartStay Living
-              </span>
-              <span className="text-[11px] font-medium text-slate-400">•</span>
-              <span className="text-[11px] font-semibold text-slate-500">
-                Hostel Management Portal
-              </span>
-            </div>
-            <h1 className="truncate text-2xl font-black tracking-tight text-slate-900 mt-0.5">
+            <h1 className="truncate text-xl font-bold tracking-tight text-slate-900">
               {pageTitle}
             </h1>
           </div>

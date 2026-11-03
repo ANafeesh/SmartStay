@@ -73,9 +73,7 @@ function Profile() {
         <div>
           <h1 className="text-3xl font-bold text-smart-primary">My Profile</h1>
 
-          <p className="mt-2 text-smart-secondary">
-            Manage your personal and university information.
-          </p>
+          
         </div>
 
         {!editMode ? (

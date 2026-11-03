@@ -355,16 +355,14 @@ export default function Marketplace() {
             <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
               Lunch Delivery Slots Open Now
             </span>
-            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-              Module 3
-            </span>
+            
           </div>
           <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
             Campus Dining & Gate Delivery
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Student: <strong>{studentDisplayName}</strong> (ID:{" "}
-            <span className="font-mono text-blue-600 font-semibold">{studentRegId}</span>) Â· Drop-off at Hostel Block B
+            <span className="font-mono text-blue-600 font-semibold">{studentRegId}</span>) · Drop-off at Hostel Block B
           </p>
         </div>
 
@@ -424,7 +422,7 @@ export default function Marketplace() {
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-950">
                   <span>Total: LKR {orderConfirmed.totalAmount.toLocaleString()}</span>
-                  <span>â€¢</span>
+                  <span>•</span>
                   <span>Payment: {orderConfirmed.paymentMethod}</span>
                   <span>•</span>
                   <span>Student: {studentDisplayName} ({studentRegId})</span>
@@ -503,13 +501,13 @@ export default function Marketplace() {
                           <span className="font-mono text-xs font-bold text-blue-600">
                             {order.id}
                           </span>
-                          <span className="text-slate-300">â€¢</span>
+                          <span className="text-slate-300">•</span>
                           <h3 className="text-sm font-bold text-slate-900">
                             {order.vendor || "Campus Vendor"}
                           </h3>
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Placed: {order.createdAt} Â· Delivery Slot: <strong>{order.timeSlot}</strong>
+                          Placed: {order.createdAt} · Delivery Slot: <strong>{order.timeSlot}</strong>
                         </p>
                         <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
                           <MapPin size={12} className="text-rose-500" />
@@ -532,15 +530,7 @@ export default function Marketplace() {
                           {order.status}
                         </span>
 
-                        {order.status !== "Delivered" && (
-                          <button
-                            onClick={() => simulateStatusStep(order.id)}
-                            className="rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition cursor-pointer"
-                            title="Simulate kitchen advancing this order status"
-                          >
-                            Advance Step
-                          </button>
-                        )}
+                        
                       </div>
                     </div>
 
@@ -618,13 +608,13 @@ export default function Marketplace() {
                           <div>
                             <h4 className="text-sm font-bold text-slate-900">{v.name}</h4>
                             <p className="text-[11px] text-slate-500">
-                              â± {v.deliveryTime} Â· Grade {v.hygieneGrade}
+                              â± {v.deliveryTime} · Grade {v.hygieneGrade}
                             </p>
                           </div>
                         </div>
 
                         <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                          â˜… {v.rating}
+                          ★ {v.rating}
                         </span>
                       </div>
 
@@ -701,8 +691,8 @@ export default function Marketplace() {
                         : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
-                    {diet === "Veg" && "ðŸŒ± "}
-                    {diet === "Spicy" && "ðŸŒ¶ï¸ "}
+                    {diet === "Veg" && "🌱 "}
+                    {diet === "Spicy" && "🌶️  "}
                     {diet}
                   </button>
                 ))}
@@ -755,7 +745,7 @@ export default function Marketplace() {
 
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="rounded-lg bg-slate-900/85 backdrop-blur-md px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
-                        â˜… {item.rating}
+                        ★ {item.rating}
                       </span>
                       {item.isHalal && (
                         <span className="rounded-lg bg-emerald-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-emerald-200 shadow-xs">
@@ -769,7 +759,7 @@ export default function Marketplace() {
                       )}
                       {item.isSpicy && (
                         <span className="rounded-lg bg-rose-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-rose-200 shadow-xs">
-                          ðŸŒ¶ï¸ Spicy
+                          🌶️  Spicy
                         </span>
                       )}
                     </div>
@@ -847,7 +837,7 @@ export default function Marketplace() {
               <div className="flex items-center gap-2">
                 <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                 <span className="text-xs font-bold text-white">
-                  {totalCartCount} {totalCartCount === 1 ? "item" : "items"} Â· {cart[0]?.vendor}
+                  {totalCartCount} {totalCartCount === 1 ? "item" : "items"} · {cart[0]?.vendor}
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 mt-0.5">
