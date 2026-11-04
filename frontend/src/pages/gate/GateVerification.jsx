@@ -97,7 +97,7 @@ export default function GateVerification() {
     refreshLogs();
   }, []);
 
-  // If token or pass was passed via URL parameter on initial load, auto-verify it
+  // If token or pass was passed via URL parameter on initial load, auto-verify it against the backend
   useEffect(() => {
     if (paramForceInvalid) {
       setVerificationResult({
@@ -112,8 +112,8 @@ export default function GateVerification() {
     if (paramToken || paramPassNumber || paramStudentId) {
       handleVerifyToken(paramToken, paramPassNumber, paramStudentId);
     } else {
-      // Default initial verification demo for immediate preview
-      handleVerifyToken(null, "SP-2026-425034", "STD-2026-090");
+      // Standby mode: open tools for live scanning
+      setShowTools(true);
     }
   }, [paramToken, paramPassNumber, paramStudentId, paramForceInvalid]);
 
@@ -231,14 +231,18 @@ export default function GateVerification() {
       try {
         if (decodedText.startsWith("http://") || decodedText.startsWith("https://")) {
           const url = new URL(decodedText);
-          token = url.searchParams.get("token") || token;
+          const extractedToken = url.searchParams.get("token") || url.searchParams.get("qrToken");
+          token = extractedToken || null;
           passNum = url.searchParams.get("passNumber") || passNum;
-          regId = url.searchParams.get("studentId") || regId;
+          regId =
+            url.searchParams.get("studentRegistrationId") ||
+            url.searchParams.get("studentId") ||
+            regId;
         }
       } catch {}
     }
 
-    setActiveToken(token);
+    if (token) setActiveToken(token);
     await handleVerifyToken(token, passNum, regId);
   };
 
@@ -277,57 +281,30 @@ export default function GateVerification() {
       if (studentRegistrationId) payload.studentRegistrationId = studentRegistrationId;
 
       const res = await verifyDigitalPass(payload);
-      if (res && res.success !== false) {
+      if (res && res.authorized) {
         setVerificationResult(res);
-      } else {
-        throw new Error(res?.message || "Verification failed");
-      }
-    } catch (err) {
-      console.warn("Verification API returned fallback/error:", err);
-      // Client-side verification fallback
-      const effectivePassNum = passNumber || paramPassNumber || "SP-2026-425034";
-      const effectiveStudentId = studentRegistrationId || paramStudentId || "STD-2026-090";
-
-      const isValidFormat =
-        effectivePassNum.toUpperCase().startsWith("SP-") ||
-        effectiveStudentId.toUpperCase().startsWith("STD-") ||
-        effectiveStudentId.toUpperCase().startsWith("ICT");
-
-      if (isValidFormat && !paramForceInvalid) {
-        setVerificationResult({
-          success: true,
-          authorized: true,
-          data: {
-            passNumber: effectivePassNum,
-            studentRegistrationId: effectiveStudentId,
-            status: "Active",
-            validUntil: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
-            currentLocation: "Inside Campus",
-            lastMovementDirection: "IN",
-            canEnterCampus: false,
-            canExitCampus: true,
-            room: paramRoom || "Block B - Room 204",
-            building: "Olu Block",
-            student: {
-              name: paramName || "Ahamed Nafeesh",
-              registrationNumber: effectiveStudentId,
-              studentId: effectiveStudentId,
-              room: paramRoom || "Block B - Room 204",
-              building: "Olu Block",
-              accountStatus: "active",
-            },
-          },
-        });
       } else {
         setVerificationResult({
           success: false,
           authorized: false,
-          message: err.data?.message || err.message || "Failed to verify digital pass credentials.",
-          denialReason:
-            err.data?.denialReason ||
-            "Pass token or registration number is unverified, revoked, or unrecognized.",
+          message: res?.message || "Pass verification failed.",
+          denialReason: res?.denialReason || "Digital pass credentials could not be authenticated.",
+          data: res?.data || null,
         });
       }
+    } catch (err) {
+      console.warn("Verification API error:", err);
+      const denialReason =
+        err.data?.denialReason ||
+        err.data?.message ||
+        err.message ||
+        "Pass token or registration number is unrecognized, unverified, or revoked.";
+      setVerificationResult({
+        success: false,
+        authorized: false,
+        message: err.data?.message || "Digital pass authorization denied.",
+        denialReason,
+      });
     } finally {
       setIsVerifying(false);
     }
@@ -347,7 +324,12 @@ export default function GateVerification() {
 
   // Record Gate Entry or Exit Movement
   const handleRecordMovement = async (direction) => {
-    if (!verificationResult?.data?.passNumber && !activeToken) return;
+    const passNum = verificationResult?.data?.passNumber || paramPassNumber;
+    const regId =
+      verificationResult?.data?.studentRegistrationId ||
+      verificationResult?.data?.student?.registrationNumber ||
+      paramStudentId;
+    if (!passNum && !activeToken && !regId) return;
     setIsRecordingMovement(true);
 
     try {
@@ -357,89 +339,52 @@ export default function GateVerification() {
         remarks: `Recorded via Gatekeeper Terminal (${direction})`,
       };
       if (activeToken) payload.qrToken = activeToken;
-      else payload.passNumber = verificationResult.data.passNumber;
+      if (passNum) payload.passNumber = passNum;
+      if (regId) payload.studentRegistrationId = regId;
 
       const res = await recordGateMovementApi(payload);
-      setMovementResult({
-        success: true,
-        direction,
-        message: res.message || `Successfully registered student ${direction}.`,
-        data: res.data,
-      });
+      if (res && res.success !== false) {
+        setMovementResult({
+          success: true,
+          direction,
+          message: res.message || `Successfully registered student ${direction}.`,
+          data: res.data,
+        });
 
-      // Update local state to reflect new location immediately
-      if (verificationResult?.data) {
-        setVerificationResult((prev) => ({
-          ...prev,
-          data: {
-            ...prev.data,
-            lastMovementDirection: direction,
-            currentLocation: direction === "OUT" ? "Outside Campus" : "Inside Campus",
-            canEnterCampus: direction === "OUT",
-            canExitCampus: direction === "IN",
-          },
-        }));
+        // Re-verify from backend to synchronize fresh location and direction
+        await handleVerifyToken(activeToken, passNum, regId);
+        refreshLogs();
+      } else {
+        throw new Error(res?.message || `Failed to record movement ${direction}.`);
       }
-
-      refreshLogs();
     } catch (err) {
-      console.warn("Record movement fallback:", err);
-      // Fallback movement registration
+      console.warn("Record movement error:", err);
+      const errMsg = err.data?.message || err.message || `Failed to register movement ${direction}.`;
       setMovementResult({
-        success: true,
+        success: false,
         direction,
-        message: `Student successfully checked ${direction === "OUT" ? "OUT (Departed Campus)" : "IN (Entered Campus)"}.`,
+        message: errMsg,
       });
-
-      if (verificationResult?.data) {
-        setVerificationResult((prev) => ({
-          ...prev,
-          data: {
-            ...prev.data,
-            lastMovementDirection: direction,
-            currentLocation: direction === "OUT" ? "Outside Campus" : "Inside Campus",
-            canEnterCampus: direction === "OUT",
-            canExitCampus: direction === "IN",
-          },
-        }));
-      }
     } finally {
       setIsRecordingMovement(false);
     }
-  };
-
-  // Quick Demo Testing Toggles
-  const loadDemoValidPass = () => {
-    setSearchParams({
-      token: "QR-SS-STU-STD2026090-SP2026425034",
-      passNumber: "SP-2026-425034",
-      studentId: "STD-2026-090",
-      name: "Ahamed Nafeesh",
-      room: "Block B - Room 204",
-      status: "Active",
-    });
-  };
-
-  const loadDemoInvalidPass = () => {
-    setSearchParams({
-      token: "INVALID-EXPIRED-TOKEN-9999",
-      passNumber: "SP-EXPIRED-000",
-      invalid: "true",
-    });
   };
 
   const pass = verificationResult?.data;
   const isAuthorized = verificationResult?.authorized;
   const student = pass?.student;
 
-  const initials = student?.name
-    ? student.name
+  const studentDisplayName =
+    student?.name || pass?.studentName || (isAuthorized ? "Student Resident" : "Unknown");
+  const initials = studentDisplayName
+    ? studentDisplayName
         .split(" ")
+        .filter(Boolean)
         .map((p) => p[0])
         .join("")
         .slice(0, 2)
         .toUpperCase()
-    : "AN";
+    : "ST";
 
   return (
     <div className="min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
@@ -479,43 +424,7 @@ export default function GateVerification() {
 
       {/* Main Container */}
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:py-8 space-y-6">
-        {/* Quick Testing Interactive Banner */}
-        <div className="rounded-2xl border border-slate-800/90 bg-slate-900/60 p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2 text-slate-300">
-            <Sparkles size={16} className="text-blue-400 shrink-0" />
-            <span className="font-semibold text-slate-300">
-              Switch Verification State Demo:
-            </span>
-          </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={loadDemoValidPass}
-              className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 font-bold transition shadow-xs cursor-pointer ${
-                isAuthorized
-                  ? "bg-emerald-600 text-white ring-2 ring-emerald-400/50"
-                  : "bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-900/60"
-              }`}
-            >
-              <CheckCircle2 size={13} />
-              <span>✓ Test Valid Pass (Verified)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={loadDemoInvalidPass}
-              className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 font-bold transition shadow-xs cursor-pointer ${
-                verificationResult && !isAuthorized
-                  ? "bg-rose-600 text-white ring-2 ring-rose-400/50"
-                  : "bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-900/60"
-              }`}
-            >
-              <XCircle size={13} />
-              <span>✕ Test Invalid Pass (Denied)</span>
-            </button>
-          </div>
-        </div>
 
         {/* Live Gate Movement Notification Banner */}
         {movementResult && (
@@ -584,6 +493,60 @@ export default function GateVerification() {
               Checking cryptographic hash, student residence status, and campus security clearance.
             </p>
           </div>
+        ) : !verificationResult ? (
+          /* ======================================================== */
+          /* STATE 0: TERMINAL STANDBY (WAITING FOR SCAN OR LOOKUP)   */
+          /* ======================================================== */
+          <div className="rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 p-8 sm:p-12 text-center shadow-2xl relative overflow-hidden space-y-6">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-600/20 border border-blue-500/40 text-blue-400 shadow-xl shadow-blue-950/50">
+              <Scan size={40} className="animate-pulse" />
+            </div>
+
+            <div className="max-w-md mx-auto space-y-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 border border-blue-400/30 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-300">
+                <ShieldCheck size={14} />
+                <span>Checkpoint Standby</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Gatekeeper Scanner Ready
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                Point terminal camera at a student's digital QR pass, or enter their pass number manually below to verify authenticity and log gate movement.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+              {!isCameraActive ? (
+                <button
+                  type="button"
+                  disabled={isCameraLoading}
+                  onClick={startCamera}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 px-5 py-3 text-xs font-bold text-white shadow-lg shadow-blue-600/30 transition cursor-pointer"
+                >
+                  <Camera size={16} />
+                  <span>Activate Camera Scanner</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-5 py-3 text-xs font-bold text-slate-200 transition cursor-pointer"
+                >
+                  <CameraOff size={16} />
+                  <span>Pause Camera</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowTools(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-5 py-3 text-xs font-bold text-slate-300 transition cursor-pointer"
+              >
+                <span>Manual Pass Lookup</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
         ) : isAuthorized ? (
           /* ======================================================== */
           /* STATE 1: VERIFIED SUCCESSFULLY (GREEN INTERFACE) */
@@ -635,24 +598,26 @@ export default function GateVerification() {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                     <h3 className="text-xl sm:text-2xl font-black text-white">
-                      {student?.name || "Ahamed Nafeesh"}
+                      {studentDisplayName}
                     </h3>
                     <span className="inline-flex items-center rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
-                      Active Resident
+                      {student?.accountStatus === "active" || !student?.accountStatus ? "Active Resident" : student.accountStatus}
                     </span>
                   </div>
 
                   <p className="text-xs text-blue-400 font-semibold mt-1">
-                    BICT (Hons) • Faculty of Applied Sciences
+                    {student?.department || student?.faculty
+                      ? `${student.department || ""}${student.department && student.faculty ? " • " : ""}${student.faculty || ""}`
+                      : "Official Student Residence Resident"}
                   </p>
 
                   <div className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-slate-300">
                     <span className="font-mono bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-lg text-slate-200">
-                      ID: {student?.registrationNumber || pass?.studentRegistrationId || "STD-2026-090"}
+                      ID: {student?.registrationNumber || pass?.studentRegistrationId || paramStudentId || "—"}
                     </span>
                     <span className="flex items-center gap-1 text-slate-400">
                       <Building2 size={13} className="text-slate-500" />
-                      {student?.room || pass?.room || "Block B - Room 204"} ({student?.building || pass?.building || "Olu Block"})
+                      {pass?.room || student?.room || "Room Assigned"} ({pass?.building || student?.building || "Campus Residence"})
                     </span>
                   </div>
                 </div>
@@ -665,7 +630,7 @@ export default function GateVerification() {
                     Pass Number
                   </span>
                   <p className="font-mono text-sm font-bold text-white">
-                    {pass?.passNumber || "SP-2026-425034"}
+                    {pass?.passNumber || paramPassNumber || "—"}
                   </p>
                   <p className="text-[11px] text-slate-400">Digital Token Verified</p>
                 </div>
@@ -699,10 +664,18 @@ export default function GateVerification() {
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
                     Pass Validity
                   </span>
-                  <p className="text-sm font-bold text-emerald-400">
-                    Semester 1 (Valid)
+                  <p className={`text-sm font-bold ${pass?.isExpired ? "text-rose-400" : "text-emerald-400"}`}>
+                    {pass?.status || "Active"} {pass?.isExpired ? "(Expired)" : "(Valid)"}
                   </p>
-                  <p className="text-[11px] text-slate-400">Through July 2026</p>
+                  <p className="text-[11px] text-slate-400">
+                    {pass?.validUntil
+                      ? `Valid until ${new Date(pass.validUntil).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}`
+                      : "Active Semester Clearance"}
+                  </p>
                 </div>
               </div>
 
@@ -720,9 +693,18 @@ export default function GateVerification() {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    disabled={isRecordingMovement}
+                    disabled={isRecordingMovement || pass?.canExitCampus === false}
                     onClick={() => handleRecordMovement("OUT")}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-500 py-3 px-4 text-xs font-black text-white shadow-lg shadow-blue-600/30 transition cursor-pointer disabled:opacity-50"
+                    title={
+                      pass?.canExitCampus === false
+                        ? "Student is already recorded as OUT of campus"
+                        : "Record student departure through campus checkpoint"
+                    }
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-xs font-black transition ${
+                      pass?.canExitCampus === false
+                        ? "bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-800"
+                        : "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 cursor-pointer"
+                    }`}
                   >
                     <LogOut size={16} />
                     <span>Log Campus Exit (OUT)</span>
@@ -730,9 +712,18 @@ export default function GateVerification() {
 
                   <button
                     type="button"
-                    disabled={isRecordingMovement}
+                    disabled={isRecordingMovement || pass?.canEnterCampus === false}
                     onClick={() => handleRecordMovement("IN")}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 py-3 px-4 text-xs font-black text-white shadow-lg shadow-emerald-600/30 transition cursor-pointer disabled:opacity-50"
+                    title={
+                      pass?.canEnterCampus === false
+                        ? "Student is already recorded as INSIDE campus"
+                        : "Record student return through campus checkpoint"
+                    }
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl py-3 px-4 text-xs font-black transition ${
+                      pass?.canEnterCampus === false
+                        ? "bg-slate-800/60 text-slate-500 cursor-not-allowed border border-slate-800"
+                        : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 cursor-pointer"
+                    }`}
                   >
                     <LogIn size={16} />
                     <span>Log Campus Entry (IN)</span>
@@ -814,13 +805,6 @@ export default function GateVerification() {
               </div>
 
               <div className="pt-3 border-t border-slate-800/80 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={loadDemoValidPass}
-                  className="rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer"
-                >
-                  Verify Valid Pass Sample
-                </button>
                 <button
                   type="button"
                   onClick={() => setShowTools(true)}

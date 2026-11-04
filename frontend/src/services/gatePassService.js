@@ -182,8 +182,8 @@ export async function recordStudentMovement({
       direction,
       gateName,
       remarks: isExit
-        ? "Simulated Gate Exit Scan"
-        : "Simulated Gate Entry Scan",
+        ? "Student Gate Movement (OUT)"
+        : "Student Gate Movement (IN)",
     };
     if (qrToken) {
       payload.qrToken = qrToken;

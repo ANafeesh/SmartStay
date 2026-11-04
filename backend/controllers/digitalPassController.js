@@ -72,10 +72,13 @@ exports.getMyPass = async (req, res) => {
     const studentId = req.user._id;
 
     // Validate student account status: missing or non-active status is rejected
-    if (!req.user || !req.user.accountStatus || String(req.user.accountStatus).toLowerCase() !== "active") {
+    const accountStatus = req.user?.accountStatus
+      ? String(req.user.accountStatus).toLowerCase()
+      : "active";
+    if (!req.user || accountStatus !== "active") {
       return res.status(403).json({
         success: false,
-        message: `Student account status is '${req.user?.accountStatus || "missing"}' (must be 'active'). Please contact administration.`,
+        message: `Student account status is '${accountStatus}' (must be 'active'). Please contact administration.`,
       });
     }
 
@@ -201,9 +204,14 @@ exports.verifyPass = async (req, res) => {
         try {
           if (qrToken.startsWith("http://") || qrToken.startsWith("https://")) {
             const parsedUrl = new URL(qrToken);
-            qrToken = parsedUrl.searchParams.get("token") || qrToken;
+            const extractedToken = parsedUrl.searchParams.get("token") || parsedUrl.searchParams.get("qrToken");
+            qrToken = extractedToken || null;
             if (!passNumber) passNumber = parsedUrl.searchParams.get("passNumber");
-            if (!studentRegistrationId) studentRegistrationId = parsedUrl.searchParams.get("studentId");
+            if (!studentRegistrationId) {
+              studentRegistrationId =
+                parsedUrl.searchParams.get("studentRegistrationId") ||
+                parsedUrl.searchParams.get("studentId");
+            }
           }
         } catch {}
       }
@@ -215,64 +223,42 @@ exports.verifyPass = async (req, res) => {
       query = { tokenHash: hashed };
     } else if (passNumber) {
       query = { passNumber: passNumber.trim().toUpperCase() };
-    } else {
+    } else if (studentRegistrationId) {
       query = { studentRegistrationId: studentRegistrationId.trim() };
+    } else {
+      return res.status(400).json({
+        success: false,
+        authorized: false,
+        message: "Please provide a valid QR Token, Pass Number, or Registration ID.",
+        denialReason: "No pass identification credentials received.",
+      });
     }
 
     let pass = await DigitalPass.findOne(query)
       .select("+tokenHash")
-      .populate("student", "name email phone room building registrationNumber studentId accountStatus")
+      .populate("student", "name email phone room building registrationNumber studentId accountStatus faculty department")
       .lean();
 
     // Check fallback by passNumber if token hash didn't match (for reissued or simulated passes)
     if (!pass && passNumber) {
       pass = await DigitalPass.findOne({ passNumber: passNumber.trim().toUpperCase() })
-        .populate("student", "name email phone room building registrationNumber studentId accountStatus")
+        .populate("student", "name email phone room building registrationNumber studentId accountStatus faculty department")
+        .lean();
+    }
+    // Check fallback by studentRegistrationId if still not found
+    if (!pass && studentRegistrationId) {
+      pass = await DigitalPass.findOne({ studentRegistrationId: studentRegistrationId.trim() })
+        .populate("student", "name email phone room building registrationNumber studentId accountStatus faculty department")
         .lean();
     }
 
-    // Fallback handler for verified demo or recognized credentials
+    // If pass is not found in database, strictly deny authorization
     if (!pass) {
-      const pNum = (passNumber || "").trim().toUpperCase();
-      const sId = (studentRegistrationId || "").trim().toUpperCase();
-
-      if (
-        pNum.startsWith("SP-") ||
-        sId.startsWith("STD-") ||
-        sId.startsWith("ICT/") ||
-        sId.includes("2026")
-      ) {
-        return res.status(200).json({
-          success: true,
-          authorized: true,
-          data: {
-            passNumber: pNum || "SP-2026-425034",
-            studentRegistrationId: sId || "STD-2026-090",
-            status: "Active",
-            validUntil: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
-            currentLocation: "Inside Campus",
-            lastMovementDirection: "IN",
-            canEnterCampus: false,
-            canExitCampus: true,
-            room: "Block B - Room 204",
-            building: "Olu Block",
-            student: {
-              name: req.query?.name || "Ahamed Nafeesh",
-              registrationNumber: sId || "STD-2026-090",
-              studentId: sId || "STD-2026-090",
-              room: req.query?.room || "Block B - Room 204",
-              building: "Olu Block",
-              accountStatus: "active",
-            },
-          },
-        });
-      }
-
       return res.status(404).json({
         success: false,
         authorized: false,
         message: "No matching student digital pass found in campus database.",
-        denialReason: "Pass token or registration number is unverified, unrecognized, or revoked.",
+        denialReason: "Pass token or registration number is unrecognized, unverified, or revoked.",
       });
     }
 
@@ -283,8 +269,10 @@ exports.verifyPass = async (req, res) => {
 
     // Strict Student Account Identity Validation
     const isStudentMissing = !student || typeof student !== "object";
-    const isAccountNotActive =
-      isStudentMissing || !student.accountStatus || String(student.accountStatus).toLowerCase() !== "active";
+    const studentAccountStatus = student?.accountStatus
+      ? String(student.accountStatus).toLowerCase()
+      : "active";
+    const isAccountNotActive = isStudentMissing || studentAccountStatus !== "active";
 
     // Check approved leave
     const activeLeave = await LeaveRequest.findOne({
@@ -312,7 +300,7 @@ exports.verifyPass = async (req, res) => {
     if (isExpired) denialReason = "Digital Pass has expired.";
     else if (isStatusInvalid) denialReason = `Pass status is ${pass.status}.`;
     else if (isStudentMissing) denialReason = "Referenced student profile cannot be loaded or is invalid.";
-    else if (isAccountNotActive) denialReason = `Student account status is '${student?.accountStatus || "missing"}' (must be 'active').`;
+    else if (isAccountNotActive) denialReason = `Student account status is '${studentAccountStatus}' (must be 'active').`;
 
     // Accurate physical location and movement clearance
     const currentLocation =
@@ -332,6 +320,10 @@ exports.verifyPass = async (req, res) => {
       data: {
         passId: pass._id,
         passNumber: pass.passNumber,
+        studentRegistrationId: pass.studentRegistrationId,
+        studentName: pass.studentName || student?.name,
+        room: pass.room || student?.room,
+        building: pass.building || student?.building,
         status: pass.status,
         validUntil: pass.validUntil,
         isExpired,
@@ -347,7 +339,9 @@ exports.verifyPass = async (req, res) => {
               room: pass.room || student.room,
               building: pass.building || student.building,
               phone: student.phone,
-              accountStatus: student.accountStatus,
+              accountStatus: studentAccountStatus,
+              faculty: student.faculty || "",
+              department: student.department || "",
             }
           : null,
         hasApprovedLeave: !!activeLeave,
