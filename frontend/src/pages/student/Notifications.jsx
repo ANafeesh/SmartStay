@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Bell,
   CheckCheck,
@@ -100,8 +100,35 @@ const notificationConfig = {
   },
 };
 
+const NOTIFICATIONS_STORAGE_KEY = "smartstay_student_notifications";
+
+export function readStoredNotifications() {
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return initialNotifications;
+}
+
+export function persistNotifications(list) {
+  try {
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(list));
+    window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: list }));
+  } catch {}
+}
+
 function Notifications() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState(() => readStoredNotifications());
+
+  useEffect(() => {
+    const handleSync = () => setNotifications(readStoredNotifications());
+    window.addEventListener("smartstay-notifications-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("smartstay-notifications-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
 
   const [filter, setFilter] = useState("All");
 
@@ -122,26 +149,32 @@ function Notifications() {
   });
 
   function markAsRead(id) {
-    setNotifications((previous) =>
-      previous.map((notification) =>
+    setNotifications((previous) => {
+      const updated = previous.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
-      ),
-    );
+      );
+      persistNotifications(updated);
+      return updated;
+    });
   }
 
   function markAllAsRead() {
-    setNotifications((previous) =>
-      previous.map((notification) => ({
+    setNotifications((previous) => {
+      const updated = previous.map((notification) => ({
         ...notification,
         read: true,
-      })),
-    );
+      }));
+      persistNotifications(updated);
+      return updated;
+    });
   }
 
   function deleteNotification(id) {
-    setNotifications((previous) =>
-      previous.filter((notification) => notification.id !== id),
-    );
+    setNotifications((previous) => {
+      const updated = previous.filter((notification) => notification.id !== id);
+      persistNotifications(updated);
+      return updated;
+    });
   }
 
   return (

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Clock,
   Search,
@@ -70,6 +70,16 @@ const statusSteps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
 
 export default function VendorOrders() {
   const [orders, setOrders] = useState(() => readFoodOrders(initialOrders));
+
+  useEffect(() => {
+    const handleSync = () => setOrders(readFoodOrders(initialOrders));
+    window.addEventListener("smartstay-food-orders-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("smartstay-food-orders-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedSlotFilter, setSelectedSlotFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
@@ -220,7 +230,7 @@ export default function VendorOrders() {
                     <span className="font-mono text-sm font-bold text-blue-600">
                       {order.id}
                     </span>
-                    <span className="text-slate-300">â€¢</span>
+                    <span className="text-slate-300">•</span>
                     <h3 className="text-sm font-bold text-slate-900">
                       {order.studentName}
                     </h3>
@@ -232,7 +242,7 @@ export default function VendorOrders() {
                   <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                     <Clock size={13} className="text-blue-600" />
                     <span>Slot: <strong>{order.timeSlot}</strong></span>
-                    <span>â€¢</span>
+                    <span>•</span>
                     <span>Received: {order.createdAt}</span>
                   </p>
 

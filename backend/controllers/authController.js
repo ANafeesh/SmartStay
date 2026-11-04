@@ -264,3 +264,43 @@ exports.logout = async (req, res) => {
     message: "Session ended successfully.",
   });
 };
+
+/**
+ * Update Authenticated User Profile
+ * PUT /api/auth/profile
+ */
+exports.updateProfile = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated.",
+      });
+    }
+
+    const { name, phone, room, building, studentId, registrationNumber } = req.body;
+    const user = req.user;
+
+    if (name) user.name = name.trim();
+    if (phone !== undefined) user.phone = phone.trim();
+    if (room !== undefined) user.room = room.trim();
+    if (building !== undefined) user.building = building.trim();
+    if (studentId !== undefined) user.studentId = studentId.trim();
+    if (registrationNumber !== undefined) user.registrationNumber = registrationNumber.trim();
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully.",
+      user: formatUserResponse(user),
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update profile.",
+      error: error.message,
+    });
+  }
+};

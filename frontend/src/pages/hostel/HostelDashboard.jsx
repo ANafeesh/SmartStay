@@ -1,7 +1,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Building2,
+  AlertTriangle,
   DoorOpen,
   BedDouble,
   Users,
@@ -183,6 +185,41 @@ function HostelDashboard() {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [complaintsList, setComplaintsList] = useState(() => {
+    try {
+      const raw = localStorage.getItem("smartstay_all_complaints");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return [
+      { id: "CMP-2026-904", title: "Room 204 Ceiling Fan Regulator Damaged", room: "Block B - Room 204", category: "Electrical", description: "The fan knob is loose and cannot adjust speed.", date: "Today", status: "Pending" },
+      { id: "CMP-2026-001", title: "Water leakage in bathroom", room: "Block B - Room 214", category: "Plumbing", description: "Water pipe leaking under washbasin.", date: "Today", status: "In Progress" },
+    ];
+  });
+
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const raw = localStorage.getItem("smartstay_all_complaints");
+        if (raw) setComplaintsList(JSON.parse(raw));
+      } catch {}
+    };
+    window.addEventListener("smartstay-complaints-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("smartstay-complaints-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, []);
+
+  const handleUpdateComplaintStatus = (id, newStatus) => {
+    const updated = complaintsList.map((c) => (c.id === id ? { ...c, status: newStatus } : c));
+    setComplaintsList(updated);
+    try {
+      localStorage.setItem("smartstay_all_complaints", JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent("smartstay-complaints-updated", { detail: updated }));
+    } catch {}
+  };
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -382,6 +419,91 @@ function HostelDashboard() {
 
       {/* Main Content */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
+
+        {/* Student Maintenance Complaints & Requests (Warden Review) */}
+        <Card className="lg:col-span-2">
+          <div className="flex items-center justify-between pb-3 border-b border-black/5">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-smart-primary">
+                  Student Maintenance & Complaints
+                </h2>
+                <Badge variant={complaintsList.filter(c => c.status !== "Resolved").length > 0 ? "warning" : "success"}>
+                  {complaintsList.filter(c => c.status !== "Resolved").length} Open Issues
+                </Badge>
+              </div>
+              <p className="mt-0.5 text-xs text-smart-secondary">
+                Real-time hostel maintenance requests routed to Warden & Maintenance
+              </p>
+            </div>
+            <Link
+              to="/complaints"
+              className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+            >
+              <span>View All</span>
+              <ArrowUpRight size={14} />
+            </Link>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[650px] text-xs">
+              <thead>
+                <tr className="border-b border-black/5 text-left text-slate-400 font-bold uppercase tracking-wider">
+                  <th className="pb-2.5">Ref / Room</th>
+                  <th className="pb-2.5">Category</th>
+                  <th className="pb-2.5">Issue Description</th>
+                  <th className="pb-2.5">Date</th>
+                  <th className="pb-2.5">Status</th>
+                  <th className="pb-2.5 text-right">Warden Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {complaintsList.slice(0, 5).map((c) => (
+                  <tr key={c.id}>
+                    <td className="py-3 font-semibold text-slate-900">
+                      <div>{c.id}</div>
+                      <div className="text-[11px] text-slate-500 font-normal">{c.room || "Block B - Room 204"}</div>
+                    </td>
+                    <td className="py-3 text-slate-700 font-medium">{c.category}</td>
+                    <td className="py-3 text-slate-800 font-semibold max-w-xs truncate">{c.title || c.description}</td>
+                    <td className="py-3 text-slate-500">{c.date || "Today"}</td>
+                    <td className="py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        c.status === "Resolved"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : c.status === "In Progress"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-amber-100 text-amber-800"
+                      }`}>
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      {c.status === "Pending" ? (
+                        <button
+                          onClick={() => handleUpdateComplaintStatus(c.id, "In Progress")}
+                          className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-500 transition cursor-pointer"
+                        >
+                          Acknowledge
+                        </button>
+                      ) : c.status === "In Progress" ? (
+                        <button
+                          onClick={() => handleUpdateComplaintStatus(c.id, "Resolved")}
+                          className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-emerald-500 transition cursor-pointer"
+                        >
+                          Resolve
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-emerald-700 font-bold">✓ Closed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
         {/* Recent Transfers */}
         <Card className="lg:col-span-2">
           <div className="flex items-center justify-between">
