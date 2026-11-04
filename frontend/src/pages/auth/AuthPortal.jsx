@@ -1,25 +1,58 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation, useParams, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
 import Logo from "../../components/ui/Logo";
-import InputField from "../../components/ui/InputField";
-import Button from "../../components/ui/Button";
 import {
-  KeyRound,
-  User,
+  LogIn,
+  UserPlus,
   Mail,
   Lock,
+  Eye,
+  EyeOff,
   ArrowRight,
-  CheckCircle2,
   AlertCircle,
+  CheckCircle2,
   Building,
+  User,
   ShieldCheck,
-  Sparkles,
-  QrCode,
-  CreditCard,
-  Wrench,
-  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
+
+/**
+ * Bottom-left soft pastel blue fluid wave decoration matching the design mockup.
+ */
+function BottomLeftWaves() {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-0 left-0 w-64 sm:w-80 md:w-96 h-28 sm:h-36 z-0 overflow-hidden select-none"
+    >
+      <svg
+        viewBox="0 0 380 160"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full"
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M0 160V95C50 75 110 70 170 95C230 120 290 125 380 75V160H0Z"
+          fill="#EFF6FF"
+          opacity="0.85"
+        />
+        <path
+          d="M0 160V110C65 95 125 90 185 115C245 140 305 145 380 115V160H0Z"
+          fill="#DBEAFE"
+          opacity="0.6"
+        />
+        <path
+          d="M0 160V125C75 115 140 110 205 130C265 150 315 150 380 135V160H0Z"
+          fill="#BFDBFE"
+          opacity="0.45"
+        />
+      </svg>
+    </div>
+  );
+}
 
 export default function AuthPortal({ initialTab = "login" }) {
   const { user, isLoggedIn, login, register } = useAuth();
@@ -28,21 +61,33 @@ export default function AuthPortal({ initialTab = "login" }) {
 
   const [activeTab, setActiveTab] = useState(initialTab); // "login" | "register"
 
-  // Input fields
+  // Sign In inputs
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Sign Up Form State
+  // Sign Up inputs
   const [regFullName, setRegFullName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regRole, setRegRole] = useState("student");
   const [regStudentId, setRegStudentId] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regConfirmPassword, setRegConfirmPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
+  // Status State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [showDemoMenu, setShowDemoMenu] = useState(false);
+
+  // Keep active tab in sync with prop changes (e.g., navigating /login vs /register)
+  useEffect(() => {
+    setActiveTab(initialTab);
+    setErrorMessage("");
+    setSuccessMessage("");
+  }, [initialTab]);
 
   // Check if a specific URL path is authorized for a given user role
   const checkRoleCanAccessPath = (roleKey, path) => {
@@ -93,7 +138,7 @@ export default function AuthPortal({ initialTab = "login" }) {
     return "/dashboard";
   };
 
-  // Submit Handler for Sign In (Authenticates with real MongoDB backend)
+  // Submit Handler for Sign In
   const handleSignIn = async (e) => {
     e.preventDefault();
     if (!identifier.trim() || !password) {
@@ -149,7 +194,16 @@ export default function AuthPortal({ initialTab = "login" }) {
     setSuccessMessage("");
 
     try {
-      const prefix = regRole === "student" ? "STD" : regRole === "admin" ? "ADM" : regRole === "warden" ? "WRD" : regRole === "maintenance" ? "MNT" : "VND";
+      const prefix =
+        regRole === "student"
+          ? "STD"
+          : regRole === "admin"
+          ? "ADM"
+          : regRole === "warden"
+          ? "WRD"
+          : regRole === "maintenance"
+          ? "MNT"
+          : "VND";
       const autoId = `${prefix}-2026-${Math.floor(100 + Math.random() * 900)}`;
 
       const regUser = await register({
@@ -161,9 +215,7 @@ export default function AuthPortal({ initialTab = "login" }) {
         registrationNumber: regStudentId.trim() || autoId,
       });
 
-      setSuccessMessage(
-        "Account created successfully! Redirecting to your dashboard..."
-      );
+      setSuccessMessage("Account created successfully! Redirecting...");
       setTimeout(() => {
         const destination = getAppropriatePath(regUser, regRole);
         navigate(destination, { replace: true });
@@ -178,44 +230,46 @@ export default function AuthPortal({ initialTab = "login" }) {
     }
   };
 
-  // Quick Account Populator for Easy Testing
-  const selectQuickAccount = (email) => {
+  // Quick Demo Account Helper
+  const fillDemoAccount = (email) => {
     setIdentifier(email);
     setPassword("password123");
     setErrorMessage("");
+    setShowDemoMenu(false);
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-50 selection:bg-blue-600 selection:text-white">
-      {/* LEFT COLUMN: Clean, High-Contrast Authentication Form */}
-      <div className="w-full lg:w-[48%] xl:w-[42%] flex flex-col justify-between p-6 sm:p-10 lg:p-12 xl:p-16 bg-white border-r border-slate-200/80 shadow-2xl lg:shadow-none min-h-screen">
-        {/* Brand & Status Header */}
-        <div className="flex items-center justify-between pb-8">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white selection:bg-blue-600 selection:text-white font-sans antialiased">
+      {/* =========================================================================
+          LEFT PANEL: Exact layout from mockup with brand logo, form, and waves
+         ========================================================================= */}
+      <div className="relative w-full lg:w-[42%] xl:w-[40%] flex flex-col justify-between p-6 sm:p-10 md:p-12 lg:p-12 xl:p-14 bg-white min-h-screen z-10">
+        {/* Soft Background Wave at Bottom Left */}
+        <BottomLeftWaves />
+
+        {/* Top Header: Brand Logo */}
+        <div className="relative z-10 flex items-center justify-between pb-6 sm:pb-8">
           <Logo
             variant="horizontal"
             size="md"
-            subtitle="Campus Living OS"
+            subtitle="Campus Living"
             asLink={false}
           />
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            System Live
-          </span>
         </div>
 
-        {/* Center Auth Card */}
-        <div className="w-full max-w-md mx-auto my-auto py-4">
-          {/* Active Session Notice if logged in */}
+        {/* Center Container: Main Form Card */}
+        <div className="relative z-10 w-full max-w-sm sm:max-w-md mx-auto my-auto py-2">
+          {/* Active Session Notice (when already logged in) */}
           {isLoggedIn && user && (
-            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-blue-50/90 p-4 text-xs text-blue-900 animate-in fade-in">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-xs">
-                  {user.initials || "AN"}
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-3.5 text-xs text-blue-900 animate-in fade-in">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1A73E8] text-xs font-bold text-white shadow-xs">
+                  {user.initials || "ST"}
                 </div>
-                <div>
-                  <p className="font-bold text-slate-900 text-sm">{user.name}</p>
-                  <p className="text-blue-700 text-[11px] font-semibold">
-                    Signed In ({user.roleBadge || user.role})
+                <div className="truncate">
+                  <p className="font-semibold text-slate-900 truncate">{user.name}</p>
+                  <p className="text-blue-700 text-[11px] capitalize">
+                    {user.role} Account Active
                   </p>
                 </div>
               </div>
@@ -226,30 +280,28 @@ export default function AuthPortal({ initialTab = "login" }) {
                     replace: true,
                   })
                 }
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1 rounded-lg bg-[#1A73E8] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1557B0] transition cursor-pointer shrink-0"
               >
-                <span>Open Portal</span>
-                <ArrowRight size={14} />
+                <span>Continue</span>
+                <ArrowRight size={13} />
               </button>
             </div>
           )}
 
           {/* Heading */}
           <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              {activeTab === "login"
-                ? "Sign in to SmartStay"
-                : "Create Resident Account"}
+            <h1 className="text-3xl sm:text-[32px] font-bold tracking-tight text-slate-900">
+              {activeTab === "login" ? "Welcome back" : "Create account"}
             </h1>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-500 font-normal">
               {activeTab === "login"
-                ? "Enter your email and password to access your campus account."
-                : "Register for digital room access, gate passes, and services."}
+                ? "Sign in to manage your campus stay."
+                : "Register to manage rooms, dining, and campus services."}
             </p>
           </div>
 
-          {/* Tab Pill Switcher */}
-          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 mb-6 border border-slate-200/70">
+          {/* Tab Pill Switcher (Matches Mockup) */}
+          <div className="rounded-2xl bg-slate-100/90 p-1 flex items-center gap-1 mb-6 border border-slate-200/50">
             <button
               type="button"
               onClick={() => {
@@ -257,14 +309,14 @@ export default function AuthPortal({ initialTab = "login" }) {
                 setErrorMessage("");
                 setSuccessMessage("");
               }}
-              className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "login"
-                  ? "bg-white text-slate-900 shadow-xs ring-1 ring-slate-200"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-[#EBF3FE] text-[#1A73E8] shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <KeyRound size={15} />
-              <span>Sign In</span>
+              <LogIn size={16} />
+              <span>Sign in</span>
             </button>
 
             <button
@@ -274,202 +326,365 @@ export default function AuthPortal({ initialTab = "login" }) {
                 setErrorMessage("");
                 setSuccessMessage("");
               }}
-              className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "register"
-                  ? "bg-white text-slate-900 shadow-xs ring-1 ring-slate-200"
-                  : "text-slate-500 hover:text-slate-900"
+                  ? "bg-[#EBF3FE] text-[#1A73E8] shadow-xs"
+                  : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              <User size={15} />
-              <span>Create Account</span>
+              <UserPlus size={16} />
+              <span>Create account</span>
             </button>
           </div>
 
-          {/* Error & Success Messages */}
+          {/* Alerts: Error & Success */}
           {errorMessage && (
             <div
               role="alert"
-              className="mb-5 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50/95 p-3.5 text-xs text-rose-800 animate-in fade-in"
+              className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50/90 p-3 text-xs text-rose-800 animate-in fade-in"
             >
-              <AlertCircle size={17} className="shrink-0 text-rose-600 mt-0.5" />
-              <span className="font-medium">{errorMessage}</span>
+              <AlertCircle size={16} className="shrink-0 text-rose-600 mt-0.5" />
+              <span className="font-medium leading-relaxed">{errorMessage}</span>
             </div>
           )}
 
           {successMessage && (
             <div
               role="status"
-              className="mb-5 flex items-start gap-2.5 rounded-2xl border border-emerald-200 bg-emerald-50/95 p-3.5 text-xs text-emerald-800 animate-in fade-in"
+              className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/90 p-3 text-xs text-emerald-800 animate-in fade-in"
             >
-              <CheckCircle2 size={17} className="shrink-0 text-emerald-600 mt-0.5" />
-              <span className="font-semibold">{successMessage}</span>
+              <CheckCircle2 size={16} className="shrink-0 text-emerald-600 mt-0.5" />
+              <span className="font-semibold leading-relaxed">{successMessage}</span>
             </div>
           )}
 
-          {/* TAB 1: SIGN IN */}
+          {/* =============================================================
+              TAB 1: SIGN IN (Pixel-accurate to provided mockup image)
+             ============================================================= */}
           {activeTab === "login" && (
             <form onSubmit={handleSignIn} className="space-y-4">
-              <InputField
-                label="Email Address"
-                id="identifier"
-                type="email"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="name@smartstay.com"
-                icon={Mail}
-                required
-                autoComplete="username"
-              />
+              {/* Email Field */}
+              <div>
+                <label
+                  htmlFor="login-email"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                >
+                  Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <Mail
+                    size={17}
+                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="login-email"
+                    type="email"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="Enter your email address"
+                    required
+                    autoComplete="username"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
 
-              <InputField
-                label="Password"
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                icon={Lock}
-                required
-                autoComplete="current-password"
-              />
+              {/* Password Field */}
+              <div>
+                <label
+                  htmlFor="login-password"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                >
+                  Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <Lock
+                    size={17}
+                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    autoComplete="current-password"
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 py-3 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 transition focus:outline-none cursor-pointer"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 font-medium">
+              {/* Remember Me & Forgot Password Row */}
+              <div className="flex items-center justify-between pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-[#1A73E8] focus:ring-[#1A73E8] accent-[#1A73E8] cursor-pointer"
                   />
-                  <span>Remember me</span>
+                  <span className="text-xs sm:text-sm text-slate-700 font-medium">
+                    Remember me
+                  </span>
                 </label>
 
                 <button
                   type="button"
                   onClick={() =>
                     setErrorMessage(
-                      "Password resets are handled securely through the hostel administration desk."
+                      "To reset your password, contact your hostel warden desk or admin office."
                     )
                   }
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
+                  className="text-xs sm:text-sm font-semibold text-[#1A73E8] hover:text-blue-700 transition cursor-pointer"
                 >
                   Forgot password?
                 </button>
               </div>
 
-              <Button
+              {/* Primary Sign In Button */}
+              <button
                 type="submit"
-                variant="primary"
-                size="lg"
-                isLoading={isSubmitting}
-                className="w-full justify-center shadow-md shadow-blue-600/20 font-bold"
+                disabled={isSubmitting}
+                className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold py-3.5 px-6 rounded-xl transition duration-150 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed mt-2"
               >
-                <span>Sign In to SmartStay</span>
-                <ArrowRight size={16} />
-              </Button>
+                <span>{isSubmitting ? "Signing in..." : "Sign in to SmartStay"}</span>
+                {!isSubmitting && <ArrowRight size={18} />}
+              </button>
 
-              
+              {/* Discreet Demo Account Helper Toggle */}
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowDemoMenu(!showDemoMenu)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                >
+                  <span>Quick demo credentials</span>
+                  <ChevronDown
+                    size={12}
+                    className={`transition-transform ${showDemoMenu ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {showDemoMenu && (
+                  <div className="mt-2.5 p-2 rounded-xl border border-slate-200 bg-slate-50/80 text-left grid grid-cols-2 gap-1.5 animate-in fade-in text-xs">
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("student@smartstay.com")}
+                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                    >
+                      🎓 Student
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("admin@smartstay.com")}
+                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                    >
+                      🛡️ Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("warden@smartstay.com")}
+                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                    >
+                      🏢 Warden
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("vendor@smartstay.com")}
+                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                    >
+                      ☕ Vendor
+                    </button>
+                  </div>
+                )}
+              </div>
             </form>
           )}
 
-          {/* TAB 2: SIGN UP */}
+          {/* =============================================================
+              TAB 2: CREATE RESIDENT ACCOUNT
+             ============================================================= */}
           {activeTab === "register" && (
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <InputField
-                label="Full Name"
-                id="regFullName"
-                type="text"
-                value={regFullName}
-                onChange={(e) => setRegFullName(e.target.value)}
-                placeholder="e.g. Your Full Name"
-                icon={User}
-                required
-              />
+            <form onSubmit={handleSignUp} className="space-y-3.5">
+              {/* Full Name */}
+              <div>
+                <label
+                  htmlFor="reg-name"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                >
+                  Full Name <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <User
+                    size={17}
+                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="reg-name"
+                    type="text"
+                    value={regFullName}
+                    onChange={(e) => setRegFullName(e.target.value)}
+                    placeholder="e.g. Alex Morgan"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
 
-              <InputField
-                label="Email Address"
-                id="regEmail"
-                type="email"
-                value={regEmail}
-                onChange={(e) => setRegEmail(e.target.value)}
-                placeholder="e.g. user@smartstay.com"
-                icon={Mail}
-                required
-              />
+              {/* Email Address */}
+              <div>
+                <label
+                  htmlFor="reg-email"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                >
+                  Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <Mail
+                    size={17}
+                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="reg-email"
+                    type="email"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    placeholder="user@smartstay.com"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
 
+              {/* Role & ID Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Account Role
+                  <label
+                    htmlFor="reg-role"
+                    className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  >
+                    Account Role <span className="text-red-500 font-bold ml-0.5">*</span>
                   </label>
                   <select
+                    id="reg-role"
                     value={regRole}
                     onChange={(e) => setRegRole(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-800 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
                   >
-                    <option value="student">Student Account</option>
-                    <option value="admin">Hostel Administrator (Admin)</option>
+                    <option value="student">Student</option>
+                    <option value="admin">Hostel Admin</option>
                     <option value="warden">Hostel Warden</option>
                     <option value="maintenance">Maintenance Staff</option>
                     <option value="vendor">Canteen Vendor</option>
                   </select>
                 </div>
 
-                <InputField
-                  label={
-                    regRole === "student" ? "Student ID" : "Staff / Vendor ID"
-                  }
-                  id="regStudentId"
-                  type="text"
-                  value={regStudentId}
-                  onChange={(e) => setRegStudentId(e.target.value)}
-                  placeholder={
-                    regRole === "student"
-                      ? "e.g. STD-2026-090"
-                      : "e.g. EMP-2026-01"
-                  }
-                  icon={Building}
-                />
+                <div>
+                  <label
+                    htmlFor="reg-id"
+                    className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  >
+                    {regRole === "student" ? "Student ID" : "Staff / Vendor ID"}
+                  </label>
+                  <div className="relative flex items-center">
+                    <Building
+                      size={16}
+                      className="absolute left-3 text-slate-400 pointer-events-none"
+                    />
+                    <input
+                      id="reg-id"
+                      type="text"
+                      value={regStudentId}
+                      onChange={(e) => setRegStudentId(e.target.value)}
+                      placeholder={regRole === "student" ? "STD-2026-090" : "EMP-01"}
+                      className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <InputField
-                label="Password"
-                id="regPassword"
-                type="password"
-                value={regPassword}
-                onChange={(e) => setRegPassword(e.target.value)}
-                placeholder="Min 6 characters"
-                icon={Lock}
-                required
-              />
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="reg-pass"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                >
+                  Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <Lock
+                    size={17}
+                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="reg-pass"
+                    type={showRegPassword ? "text" : "password"}
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="Min 6 characters"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 transition focus:outline-none cursor-pointer"
+                  >
+                    {showRegPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
 
-              <InputField
-                label="Confirm Password"
-                id="regConfirmPassword"
-                type="password"
-                value={regConfirmPassword}
-                onChange={(e) => setRegConfirmPassword(e.target.value)}
-                placeholder="Re-enter password"
-                icon={Lock}
-                required
-              />
+              {/* Confirm Password */}
+              <div>
+                <label
+                  htmlFor="reg-confirm-pass"
+                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                >
+                  Confirm Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <div className="relative flex items-center">
+                  <Lock
+                    size={17}
+                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                  />
+                  <input
+                    id="reg-confirm-pass"
+                    type={showRegPassword ? "text" : "password"}
+                    value={regConfirmPassword}
+                    onChange={(e) => setRegConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
+              </div>
 
-              <Button
+              {/* Submit Button */}
+              <button
                 type="submit"
-                variant="primary"
-                size="lg"
-                isLoading={isSubmitting}
-                className="w-full justify-center shadow-md shadow-blue-600/20 font-bold mt-2"
+                disabled={isSubmitting}
+                className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold py-3.5 px-6 rounded-xl transition duration-150 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed mt-3"
               >
-                <span>Create Account</span>
-                <ArrowRight size={16} />
-              </Button>
+                <span>{isSubmitting ? "Creating account..." : "Create Account"}</span>
+                {!isSubmitting && <ArrowRight size={18} />}
+              </button>
 
-              <p className="text-center text-xs text-slate-500 pt-2">
+              <p className="text-center text-xs text-slate-500 pt-1">
                 Already have an account?{" "}
                 <button
                   type="button"
                   onClick={() => setActiveTab("login")}
-                  className="font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+                  className="font-semibold text-[#1A73E8] hover:text-blue-700 cursor-pointer"
                 >
                   Sign in here
                 </button>
@@ -478,75 +693,49 @@ export default function AuthPortal({ initialTab = "login" }) {
           )}
         </div>
 
-        {/* Clean Footer */}
-        <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
-          <span>&copy; {new Date().getFullYear()} SmartStay OS</span>
-          <div className="flex items-center gap-4">
-            <span className="hover:text-slate-600 transition">Privacy</span>
-            <span>&bull;</span>
-            <span className="hover:text-slate-600 transition">Terms</span>
-            <span>&bull;</span>
-            <span className="hover:text-slate-600 transition">Help Desk</span>
-          </div>
+        {/* Bottom Clean Footer Links (Matches Mockup: Privacy | Terms | Help) */}
+        <div className="relative z-10 pt-6 flex items-center justify-center gap-3 text-xs text-slate-400">
+          <button
+            type="button"
+            onClick={() =>
+              alert("SmartStay Privacy Policy: All student & resident data is securely encrypted.")
+            }
+            className="hover:text-slate-600 transition cursor-pointer"
+          >
+            Privacy
+          </button>
+          <span>|</span>
+          <button
+            type="button"
+            onClick={() =>
+              alert("SmartStay Terms of Service: Campus living terms and regulations apply.")
+            }
+            className="hover:text-slate-600 transition cursor-pointer"
+          >
+            Terms
+          </button>
+          <span>|</span>
+          <button
+            type="button"
+            onClick={() =>
+              alert("Campus Support Desk: Available 24/7 at support@smartstay.campus or Ext. 108.")
+            }
+            className="hover:text-slate-600 transition cursor-pointer"
+          >
+            Help
+          </button>
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Real University Hostel Visual with Glass Floating Card */}
+      {/* =========================================================================
+          RIGHT PANEL: University Campus Hostel Photograph matching provided photo
+         ========================================================================= */}
       <div
-        className="hidden lg:flex lg:w-[52%] xl:w-[58%] relative p-8 xl:p-12 flex-col justify-between overflow-hidden bg-slate-900 bg-cover bg-center"
+        className="hidden lg:flex lg:w-[58%] xl:w-[60%] relative bg-cover bg-center min-h-screen"
         style={{
-          backgroundImage: "url('/login-bg.jpg')",
+          backgroundImage: "url('/campus-hostel-bg.jpg')",
         }}
-      >
-        {/* Subtle Modern Gradient Vignette to keep image crisp and text readable */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-slate-950/40" />
-
-        {/* Top Floating Badge */}
-        <div className="relative z-10 flex justify-end">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/60 backdrop-blur-md px-4 py-2 text-xs font-semibold text-white shadow-lg">
-            <Building size={14} className="text-blue-400" />
-            <span>Campus Residence &bull; Block B</span>
-          </div>
-        </div>
-
-        {/* Bottom Floating Glass Card Showcase */}
-        <div className="relative z-10 max-w-xl">
-          <div className="rounded-3xl border border-white/15 bg-slate-900/65 backdrop-blur-xl p-6 xl:p-8 text-white shadow-2xl">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600/80 text-white">
-                <Sparkles size={16} />
-              </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-300">
-                Modern Hostel Living
-              </span>
-            </div>
-
-            <h2 className="text-xl xl:text-2xl font-black text-white leading-snug">
-              Every campus service, unified in one living operating system.
-            </h2>
-
-            <p className="mt-2 text-xs xl:text-sm text-slate-300 leading-relaxed">
-              Automated gate pass clearances, real-time mess bills, room
-              allocations, and facility maintenance directly from your device.
-            </p>
-
-            <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/10 pt-4">
-              <div className="flex items-center gap-2 text-xs text-slate-200">
-                <QrCode size={16} className="text-blue-400 shrink-0" />
-                <span>QR Passes</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-200">
-                <CreditCard size={16} className="text-blue-400 shrink-0" />
-                <span>Mess Pay</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-200">
-                <Wrench size={16} className="text-blue-400 shrink-0" />
-                <span>Maintenance</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      />
     </div>
   );
 }

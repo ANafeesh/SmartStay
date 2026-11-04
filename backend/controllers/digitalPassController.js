@@ -231,48 +231,13 @@ exports.verifyPass = async (req, res) => {
         .lean();
     }
 
-    // Fallback handler for verified demo or recognized credentials
+    // If pass is not found in database, strictly deny authorization
     if (!pass) {
-      const pNum = (passNumber || "").trim().toUpperCase();
-      const sId = (studentRegistrationId || "").trim().toUpperCase();
-
-      if (
-        pNum.startsWith("SP-") ||
-        sId.startsWith("STD-") ||
-        sId.startsWith("ICT/") ||
-        sId.includes("2026")
-      ) {
-        return res.status(200).json({
-          success: true,
-          authorized: true,
-          data: {
-            passNumber: pNum || "SP-2026-425034",
-            studentRegistrationId: sId || "STD-2026-090",
-            status: "Active",
-            validUntil: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString(),
-            currentLocation: "Inside Campus",
-            lastMovementDirection: "IN",
-            canEnterCampus: false,
-            canExitCampus: true,
-            room: "Block B - Room 204",
-            building: "Olu Block",
-            student: {
-              name: req.query?.name || "Ahamed Nafeesh",
-              registrationNumber: sId || "STD-2026-090",
-              studentId: sId || "STD-2026-090",
-              room: req.query?.room || "Block B - Room 204",
-              building: "Olu Block",
-              accountStatus: "active",
-            },
-          },
-        });
-      }
-
       return res.status(404).json({
         success: false,
         authorized: false,
         message: "No matching student digital pass found in campus database.",
-        denialReason: "Pass token or registration number is unverified, unrecognized, or revoked.",
+        denialReason: "Pass token or registration number is unrecognized, unverified, or revoked.",
       });
     }
 

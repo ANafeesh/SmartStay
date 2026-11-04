@@ -44,14 +44,49 @@ const protect = async (req, res, next) => {
   if (token && token.startsWith("demo-token-")) {
     const rawRole = token.replace("demo-token-", "");
     const roleKey = normalizeRole(rawRole);
-    req.user = {
-      _id: "6aafe35dc5e56a9f84d1ca40",
-      name: roleKey === "warden" ? "Dr. K. Perera" : roleKey === "admin" ? "System Administrator" : "Demo User",
-      email: `${roleKey}@campus.edu`,
-      role: roleKey,
-      accountStatus: "active",
-    };
-    return next();
+    const demoId = "6aafe35dc5e56a9f84d1ca40";
+    const studentProps =
+      roleKey === "student"
+        ? {
+            name: "Ahamed Nafeesh",
+            registrationNumber: "STD-2026-090",
+            studentId: "STD-2026-090",
+            room: "Block B - Room 204",
+            building: "Olu Block",
+          }
+        : {
+            name:
+              roleKey === "warden"
+                ? "Dr. K. Perera"
+                : roleKey === "admin"
+                ? "System Administrator"
+                : "Campus Staff",
+          };
+
+    try {
+      let dbUser = await User.findById(demoId);
+      if (!dbUser) {
+        dbUser = await User.create({
+          _id: demoId,
+          email: `${roleKey}@campus.edu`,
+          passwordHash: "$2a$10$demoHashForEvaluationOnly12345678901234567890",
+          role: roleKey,
+          accountStatus: "active",
+          ...studentProps,
+        });
+      }
+      req.user = dbUser;
+      return next();
+    } catch {
+      req.user = {
+        _id: demoId,
+        email: `${roleKey}@campus.edu`,
+        role: roleKey,
+        accountStatus: "active",
+        ...studentProps,
+      };
+      return next();
+    }
   }
 
   try {

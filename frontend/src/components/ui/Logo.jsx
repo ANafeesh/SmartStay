@@ -2,15 +2,63 @@ import { Link } from "react-router-dom";
 import logoMark from "../../assets/smartstay-mark.png";
 
 /**
+ * SmartStay Brand Vector Mark
+ * House roof gable, 4 window panes, and dynamic cyan foundation swoop wave.
+ */
+export function SmartStayMarkSvg({ className = "h-full w-full", isDark = false }) {
+  const mainColor = isDark ? "#ffffff" : "#0B2341";
+  return (
+    <svg
+      viewBox="0 0 70 70"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* Roof Gable */}
+      <path
+        d="M14 33L35 13.5L56 33"
+        stroke={mainColor}
+        strokeWidth="5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* House Walls */}
+      <path
+        d="M19 30.5V45"
+        stroke={mainColor}
+        strokeWidth="4.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M51 30.5V45"
+        stroke={mainColor}
+        strokeWidth="4.4"
+        strokeLinecap="round"
+      />
+      {/* 4 Window Panes (2x2 grid) */}
+      <rect x="26.4" y="24.5" width="6.2" height="6.2" rx="1.2" fill={mainColor} />
+      <rect x="35" y="24.5" width="6.2" height="6.2" rx="1.2" fill={mainColor} />
+      <rect x="26.4" y="33.1" width="6.2" height="6.2" rx="1.2" fill={mainColor} />
+      <rect x="35" y="33.1" width="6.2" height="6.2" rx="1.2" fill={mainColor} />
+      {/* Cyan Swoop Wave */}
+      <path
+        d="M12 54C24 48 37 45.5 58 50.5C46 53 26 55 12 54Z"
+        fill="#00BAE8"
+      />
+    </svg>
+  );
+}
+
+/**
  * SmartStay Branding Logo Component
- * Modern architectural roof-S monogram with vibrant electric blue and cyan gradient.
- * Zero circular artifacts, fully responsive, light & dark theme ready.
+ * Matches the official SmartStay Campus Living identity.
  *
  * @param {'horizontal' | 'mark' | 'full'} variant - Display layout of the logo
  * @param {'xs' | 'sm' | 'md' | 'lg' | 'xl'} size - Dimension scale
  * @param {'light' | 'dark'} theme - Color scheme for background context
  * @param {string} badge - Optional badge tag (e.g. "v2.0", "PRO")
- * @param {string} subtitle - Optional tagline beneath brand name
+ * @param {string} subtitle - Optional tagline beneath brand name (defaults to "Campus Living")
  * @param {boolean} asLink - Whether to wrap the logo in a react-router Link to '/'
  * @param {string} className - Additional custom class names
  */
@@ -19,7 +67,7 @@ export default function Logo({
   size = "md",
   theme = "light",
   badge = null,
-  subtitle = null,
+  subtitle = "Campus Living",
   asLink = false,
   className = "",
 }) {
@@ -40,14 +88,14 @@ export default function Logo({
     },
     md: {
       mark: "h-9 w-9 sm:h-10 sm:w-10",
-      text: "text-lg",
-      sub: "text-[10px]",
+      text: "text-xl",
+      sub: "text-[11px]",
       badge: "text-[9px] sm:text-[10px] px-2 py-0.5",
       gap: "gap-2.5",
     },
     lg: {
       mark: "h-11 w-11 sm:h-12 sm:w-12",
-      text: "text-xl",
+      text: "text-2xl",
       sub: "text-xs",
       badge: "text-xs px-2.5 py-0.5",
       gap: "gap-3",
@@ -64,17 +112,11 @@ export default function Logo({
   const currentSize = sizeConfig[size] || sizeConfig.md;
   const isDark = theme === "dark";
 
-  // Clean, borderless, high-resolution logo mark with smooth hover scale
   const markElement = (
     <div
       className={`relative flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${currentSize.mark}`}
     >
-      <img
-        src={logoMark}
-        alt="SmartStay Logo"
-        className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(37,99,235,0.22)]"
-        loading="eager"
-      />
+      <SmartStayMarkSvg isDark={isDark} />
     </div>
   );
 
@@ -100,10 +142,10 @@ export default function Logo({
         <div className="flex items-center gap-1.5">
           <span
             className={`font-black tracking-tight leading-none ${currentSize.text} ${
-              isDark ? "text-white" : "text-slate-900"
+              isDark ? "text-white" : "text-[#0B2341]"
             }`}
           >
-            Smart<span className={isDark ? "text-blue-400 font-bold" : "text-blue-600"}>Stay</span>
+            Smart<span className={isDark ? "text-sky-400 font-bold" : "text-[#1D68BD]"}>Stay</span>
           </span>
           {badge && (
             <span
@@ -144,4 +186,3 @@ export default function Logo({
 
   return content;
 }
-
