@@ -31,7 +31,7 @@ export default function PaymentModal({
   const [method, setMethod] = useState("card");
 
   // Card Form State
-  const [cardHolder, setCardHolder] = useState(user?.name || "Ahamed Nafeesh");
+  const [cardHolder, setCardHolder] = useState(user?.name || (user?.isDemo ? "Ahamed Nafeesh" : ""));
   const [cardNumber, setCardNumber] = useState("4532 8921 4402 8842");
   const [cardExpiry, setCardExpiry] = useState("09/28");
   const [cardCvv, setCardCvv] = useState("489");
@@ -142,9 +142,9 @@ export default function PaymentModal({
       refNo: txnRef,
       receiptNo: receiptNo,
       status: isSlip ? "Pending" : "Success",
-      studentName: user?.name || "Ahamed Nafeesh",
-      studentRegNo: user?.studentId || "STD-2026-090",
-      hostelRoom: "Block B - Room 204",
+      studentName: user?.name || (user?.isDemo ? "Ahamed Nafeesh" : "Student User"),
+      studentRegNo: user?.studentId || user?.registrationNumber || (user?.isDemo ? "STD-2026-090" : "Unassigned"),
+      hostelRoom: user?.room ? `Hostel ${user.building || "Block"}, Room ${user.room}` : (user?.isDemo ? "Block B - Room 204" : "Not Allocated"),
     };
 
     onCompletePayment(paymentRecord, !isSlip, isSlip, false);
@@ -441,7 +441,7 @@ export default function PaymentModal({
                       value={cardHolder}
                       onChange={(e) => setCardHolder(e.target.value)}
                       className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 shadow-2xs"
-                      placeholder="e.g. Ahamed Nafeesh"
+                      placeholder="e.g. Full Name on Card"
                       required
                     />
                   </div>

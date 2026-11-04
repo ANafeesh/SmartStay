@@ -149,14 +149,16 @@ export default function AuthPortal({ initialTab = "login" }) {
     setSuccessMessage("");
 
     try {
+      const prefix = regRole === "student" ? "STD" : regRole === "admin" ? "ADM" : regRole === "warden" ? "WRD" : regRole === "maintenance" ? "MNT" : "VND";
+      const autoId = `${prefix}-2026-${Math.floor(100 + Math.random() * 900)}`;
+
       const regUser = await register({
         name: regFullName.trim(),
         email: regEmail.trim(),
         password: regPassword,
-        role: regRole === "warden" ? "admin" : regRole,
-        studentId:
-          regStudentId.trim() ||
-          `STD-2026-${Math.floor(100 + Math.random() * 900)}`,
+        role: regRole,
+        studentId: regStudentId.trim() || autoId,
+        registrationNumber: regStudentId.trim() || autoId,
       });
 
       setSuccessMessage(
@@ -378,7 +380,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                 type="text"
                 value={regFullName}
                 onChange={(e) => setRegFullName(e.target.value)}
-                placeholder="e.g. Ahamed Nafeesh"
+                placeholder="e.g. Your Full Name"
                 icon={User}
                 required
               />
@@ -404,10 +406,11 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegRole(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-800 shadow-2xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    <option value="student">Student</option>
+                    <option value="student">Student Account</option>
+                    <option value="admin">Hostel Administrator (Admin)</option>
+                    <option value="warden">Hostel Warden</option>
                     <option value="maintenance">Maintenance Staff</option>
                     <option value="vendor">Canteen Vendor</option>
-                    <option value="warden">Hostel Warden / Admin</option>
                   </select>
                 </div>
 

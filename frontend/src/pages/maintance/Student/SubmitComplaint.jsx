@@ -331,7 +331,7 @@ export default function SubmitComplaint() {
           publicId: img.publicId,
           name: img.name,
         })),
-        studentId: user?.studentId || "STD-2026-090",
+        studentId: user?.studentId || user?.registrationNumber || "STD-NEW",
         studentName: user?.name || "Student User",
       };
 
@@ -849,7 +849,7 @@ export default function SubmitComplaint() {
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Student ID</dt>
                   <dd className="font-mono font-bold text-slate-700">
-                    {user?.studentId || "STD-2026-090"}
+                    {user?.studentId || user?.registrationNumber || "Unassigned"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">

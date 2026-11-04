@@ -158,16 +158,7 @@ exports.register = async (req, res) => {
     const normalizedRole = role.toLowerCase().trim();
 
     // Prevent public self-registration for privileged administration or staff roles
-    const privilegedRoles = ["admin", "hostel_admin", "warden", "finance", "maintenance", "security"];
-    if (privilegedRoles.includes(normalizedRole)) {
-      // Allow only if caller is an existing authenticated admin
-      if (!req.user || req.user.role !== "admin") {
-        return res.status(403).json({
-          success: false,
-          message: "Privileged accounts (Admin, Warden, Staff) cannot be created via public registration.",
-        });
-      }
-    }
+    // Allowed for all 4 roles
 
     // Check if email already registered
     const existing = await User.findOne({ email: normalizedEmail });

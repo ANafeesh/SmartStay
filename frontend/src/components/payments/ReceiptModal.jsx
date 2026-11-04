@@ -77,11 +77,11 @@ export default function ReceiptModal({ receipt, onClose }) {
       </div>
       <div>
         <dt>Student Registration No</dt>
-        <dd>${receipt.studentRegNo || "STD-2026-090"}</dd>
+        <dd>${receipt.studentRegNo || "Unassigned"}</dd>
       </div>
       <div>
         <dt>Hostel Accommodation</dt>
-        <dd>${receipt.hostelRoom || "Male Hostel Block B - Room 204"}</dd>
+        <dd>${receipt.hostelRoom || "Not Allocated"}</dd>
       </div>
       <div>
         <dt>Payment Date & Time</dt>
@@ -239,7 +239,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Student ID / Reg
               </span>
               <span className="font-mono font-semibold text-slate-800">
-                {receipt.studentRegNo || "STD-2026-090"}
+                {receipt.studentRegNo || "Unassigned"}
               </span>
             </div>
 

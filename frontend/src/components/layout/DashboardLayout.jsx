@@ -343,7 +343,7 @@ function DashboardLayout() {
           >
             <div className={`flex min-w-0 items-center ${sidebarCollapsed ? "w-full justify-center" : "gap-2.5"}`}>
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white shadow-xs">
-                {user?.initials || "AN"}
+                {user?.initials || "U"}
               </div>
               {!sidebarCollapsed && (
                 <div className="min-w-0 truncate">
@@ -356,7 +356,7 @@ function DashboardLayout() {
                     {user?.roleBadge || user?.role || "Student account"}
                   </p>
                   <p className="truncate font-mono text-[9px] text-slate-400">
-                    {user?.studentId || user?.email || "STD-2026-090"}
+                    {user?.studentId || user?.registrationNumber || user?.email || ""}
                   </p>
                 </div>
               )}

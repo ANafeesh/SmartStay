@@ -87,6 +87,8 @@ function App() {
             {/* Public Gatekeeper QR Scanner & Verification Terminal */}
             <Route path="/gate/verify" element={<GateVerification />} />
             <Route path="/gate-verify" element={<GateVerification />} />
+            <Route path="/verify-pass" element={<GateVerification />} />
+            <Route path="/verify" element={<GateVerification />} />
 
             {/* Authenticated Dashboard Workspace */}
             <Route

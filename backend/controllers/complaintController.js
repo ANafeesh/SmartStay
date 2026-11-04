@@ -75,8 +75,8 @@ exports.createComplaint = async (req, res) => {
 
     const complaint = new Complaint({
       complaintId,
-      studentId: studentId || "SEU/IS/22/ICT/090",
-      studentName: studentName || "Ahamed Nafeesh",
+      studentId: studentId || (req.user?.studentId || req.user?.registrationNumber || ""),
+      studentName: studentName || (req.user?.name || "Student User"),
       title: title.trim(),
       category: category ? String(category).trim() : "Plumbing",
       priority: normPriority,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   Search,
   ShoppingCart,
@@ -331,11 +331,12 @@ const dropLocations = [
 
 export default function Marketplace() {
   const { user } = useAuth();
-  const studentRegId = user?.studentId || "STD-2026-090";
-  const studentDisplayName = user?.name || "Student";
+  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const studentRegId = user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "");
+  const studentDisplayName = user?.name || (isDemo ? "Ahamed Nafeesh" : "Student");
   const [items] = useState(initialFoodItems);
   const [myOrders, setMyOrders] = useState(() =>
-    readFoodOrders().filter((order) => order.studentId === studentRegId),
+    studentRegId ? readFoodOrders().filter((order) => order.studentId === studentRegId) : []
   );
   const [cart, setCart] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");

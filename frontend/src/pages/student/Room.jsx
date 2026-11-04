@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   BedDouble,
   Building2,
@@ -77,13 +78,42 @@ const roommates = [
 ];
 
 function Room() {
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const hasRoom = isDemo || !!user?.room;
+
+  const displayRoom = user?.room || (isDemo ? "B-204" : "Not Allocated");
+  const displayBlock = user?.building || (isDemo ? "Block B" : "Campus Residence");
+  const activeRoommates = isDemo ? roommates : [];
+
+  const dynamicRoomDetails = [
+    {
+      label: "Room Number",
+      value: displayRoom,
+      icon: BedDouble,
+    },
+    {
+      label: "Block",
+      value: displayBlock,
+      icon: Building2,
+    },
+    {
+      label: "Floor",
+      value: isDemo ? "Second Floor" : "TBD",
+      icon: Building2,
+    },
+    {
+      label: "Room Capacity",
+      value: isDemo ? "4 Students" : "4 Students",
+      icon: Users,
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-7xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-smart-primary">My Room</h1>
-
-        
       </div>
 
       {/* Room Overview */}
@@ -99,20 +129,22 @@ function Room() {
                 <p className="text-sm text-smart-secondary">Current Room</p>
 
                 <h2 className="mt-1 text-2xl font-bold text-smart-primary">
-                  Room B-204
+                  {hasRoom ? `Room ${displayRoom}` : "Allocation Pending"}
                 </h2>
 
                 <p className="mt-1 text-sm text-smart-secondary">
-                  Block B · Second Floor
+                  {hasRoom ? `${displayBlock} · Active Allocation` : "Pending allocation by the warden office"}
                 </p>
               </div>
             </div>
 
-            <Badge variant="success">Active Allocation</Badge>
+            <Badge variant={hasRoom ? "success" : "neutral"}>
+              {hasRoom ? "Active Allocation" : "Pending Allocation"}
+            </Badge>
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {roomDetails.map((item) => {
+            {dynamicRoomDetails.map((item) => {
               const Icon = item.icon;
 
               return (
@@ -198,7 +230,11 @@ function Room() {
           </div>
 
           <div className="mt-6 space-y-3">
-            {roommates.map((roommate) => (
+            {activeRoommates.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4 text-center">
+                No roommates assigned yet. Room allocation is currently in progress.
+              </p>
+            ) : activeRoommates.map((roommate) => (
               <div
                 key={roommate.id}
                 className="flex items-center justify-between rounded-xl border border-black/5 p-4"

@@ -33,7 +33,7 @@ export const getRoleBadge = (role) => {
   const map = {
     student: "Student Account",
     admin: "Hostel Administrator",
-    warden: "Administrative Authority",
+    warden: "Hostel Warden",
     maintenance: "Technical Staff",
     vendor: "Approved Vendor",
     finance: "Finance Officer",
@@ -45,33 +45,74 @@ export const getRoleBadge = (role) => {
 };
 
 /**
- * Enrich backend user record with frontend presentation helpers
+ * Determine if an account is a built-in demo persona
  */
-const enrichUser = (backendUser) => {
+export const isDemoUser = (user) => {
+  if (!user) return false;
+  if (user.isDemo) return true;
+  const token = getAuthToken();
+  if (token && token.startsWith("demo-token-")) return true;
+  const email = (user.email || "").toLowerCase().trim();
+  const username = (user.username || "").toLowerCase().trim();
+  return (
+    email === "nafeesh@campus.edu" ||
+    email === "warden@campus.edu" ||
+    email === "maintenance@campus.edu" ||
+    email === "vendor@campusbites.edu" ||
+    email === "executive@campus.edu" ||
+    username === "nafeesh" ||
+    username === "warden_perera" ||
+    username === "tech_wickrama" ||
+    username === "campus_bites" ||
+    username === "dean_razak"
+  );
+};
+
+/**
+ * Enrich backend user record with frontend presentation helpers.
+ * Built-in demo accounts get demo persona defaults; newly registered/fresh
+ * accounts remain clean and isolate their own data.
+ */
+export const enrichUser = (backendUser, isExplicitDemo = false) => {
   if (!backendUser) return null;
   const roleKey = normalizeRole(backendUser.role || backendUser.roleKey);
+  const isDemo = isExplicitDemo || backendUser.isDemo || isDemoUser(backendUser);
 
-  const demoFallback = getDemoAccount(roleKey);
+  const demoFallback = isDemo ? getDemoAccount(roleKey) : null;
+  const name = backendUser.name || (isDemo ? demoFallback?.name : "User") || "User";
+
+  const initials =
+    name
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase() || (isDemo ? "AN" : "U");
 
   return {
-    ...demoFallback,
+    ...(demoFallback || {}),
     ...backendUser,
+    isDemo: !!isDemo,
+    name,
     roleKey,
     role: backendUser.role || roleKey,
     roleBadge: getRoleBadge(backendUser.role || roleKey),
-
-    initials:
-      backendUser.name
-        ?.split(" ")
-        .map((n) => n[0])
-        .join("")
-        .substring(0, 2)
-        .toUpperCase() || "SU",
+    initials,
     studentId:
       backendUser.studentId ||
       backendUser.registrationNumber ||
-      demoFallback?.studentId ||
+      (isDemo ? demoFallback?.studentId : "") ||
       "",
+    registrationNumber:
+      backendUser.registrationNumber ||
+      backendUser.studentId ||
+      "",
+    phone: backendUser.phone || (isDemo ? demoFallback?.phone : "") || "",
+    room: backendUser.room || (isDemo ? demoFallback?.room : "") || "",
+    building: backendUser.building || (isDemo ? demoFallback?.building : "") || "",
+    faculty: backendUser.faculty || (isDemo ? demoFallback?.faculty : "") || "",
+    department: backendUser.department || (isDemo ? demoFallback?.department : "") || "",
   };
 };
 
@@ -111,7 +152,7 @@ export function AuthProvider({ children }) {
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
-          const enriched = enrichUser(parsed);
+          const enriched = enrichUser(parsed, true);
           setUser(enriched);
           setIsLoggedIn(true);
         } catch {
@@ -121,7 +162,6 @@ export function AuthProvider({ children }) {
       setIsLoading(false);
       return;
     }
-
 
     try {
       const response = await getCurrentUser();
@@ -155,7 +195,6 @@ export function AuthProvider({ children }) {
         setUser(null);
         setIsLoggedIn(false);
       }
-
     } finally {
       setIsLoading(false);
     }
@@ -172,31 +211,28 @@ export function AuthProvider({ children }) {
     // If credentials is a string roleKey (for testing/demo quick-fill), map it to demo account
     if (typeof credentials === "string") {
       const account = getDemoAccount(credentials);
-      // Try logging in with demo account credentials against backend
       try {
         const response = await loginUser({
           identifier: account.email,
           password: account.demoPassword,
         });
-        const enriched = enrichUser(response.user);
+        const enriched = enrichUser({ ...response.user, isDemo: true }, true);
         setUser(enriched);
         setIsLoggedIn(true);
-        localStorage.setItem("smartstay_user", JSON.stringify(response.user));
+        localStorage.setItem("smartstay_user", JSON.stringify(enriched));
         return enriched;
       } catch (err) {
-        // Fallback for dev testing if user not in DB yet
         console.warn("Backend login fallback for quick-fill persona:", err.message);
-        const enriched = enrichUser(account);
+        const enriched = enrichUser({ ...account, isDemo: true }, true);
         setUser(enriched);
         setIsLoggedIn(true);
         setAuthToken("demo-token-" + (account?.roleKey || credentials));
-        localStorage.setItem("smartstay_user", JSON.stringify(account));
-
+        localStorage.setItem("smartstay_user", JSON.stringify(enriched));
         return enriched;
       }
     }
 
-    // Real object credentials { identifier, password }
+    // Real credentials { identifier, password }
     const response = await loginUser(credentials);
     if (!response?.success) {
       throw new Error(response?.message || "Login failed");
@@ -230,18 +266,14 @@ export function AuthProvider({ children }) {
    */
   const switchRole = (roleKey) => {
     const account = getDemoAccount(roleKey);
-    const enriched = enrichUser(account);
+    const enriched = enrichUser({ ...account, isDemo: true }, true);
     setUser(enriched);
     setIsLoggedIn(true);
     setAuthToken("demo-token-" + (account?.roleKey || roleKey));
-    localStorage.setItem("smartstay_user", JSON.stringify(account));
-
+    localStorage.setItem("smartstay_user", JSON.stringify(enriched));
     return enriched;
   };
 
-  /**
-   * Real backend logout
-   */
   /**
    * Real backend & state user profile update
    */
@@ -262,7 +294,12 @@ export function AuthProvider({ children }) {
     const enriched = enrichUser(updatedUser);
     setUser(enriched);
     localStorage.setItem("smartstay_user", JSON.stringify(enriched));
-    localStorage.setItem("smartstay_student_profile", JSON.stringify(profileData));
+
+    const userKey = enriched._id || enriched.id || enriched.email;
+    if (userKey) {
+      localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(profileData));
+    }
+
     window.dispatchEvent(new CustomEvent("smartstay-profile-updated", { detail: enriched }));
     return enriched;
   };
@@ -275,6 +312,8 @@ export function AuthProvider({ children }) {
     } finally {
       setAuthToken(null);
       localStorage.removeItem("smartstay_user");
+      // Clean legacy un-scoped cache if present
+      localStorage.removeItem("smartstay_student_profile");
       setUser(null);
       setIsLoggedIn(false);
     }
@@ -303,18 +342,7 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    return {
-      user: null,
-      isLoggedIn: false,
-      isLoading: false,
-      login: async () => {},
-      register: async () => {},
-      logout: async () => {},
-      updateUser: async () => {},
-      switchRole: () => null,
-      availableRoles: DEMO_ACCOUNTS,
-      verifySession: async () => {},
-    };
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

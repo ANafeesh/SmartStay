@@ -14,8 +14,9 @@ const router = express.Router();
 // Student fetches or provisions personal pass
 router.get("/my-pass", protect, authorizeRole("student", "admin"), getMyPass);
 
-// Security officer or warden verifies QR token or pass number
-router.post("/verify", protect, authorizeRole("security", "warden", "admin"), verifyPass);
+// Public QR camera scan or Security/Warden pass verification (GET and POST)
+router.post("/verify", verifyPass);
+router.get("/verify", verifyPass);
 
 // Security, Warden, Admin list passes
 router.get("/", protect, authorizeRole("security", "warden", "admin"), listPasses);

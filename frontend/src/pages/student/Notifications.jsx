@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   Bell,
   CheckCheck,
@@ -110,7 +111,7 @@ export function readStoredNotifications() {
   return initialNotifications;
 }
 
-export function persistNotifications(list) {
+export function saveNotifications(list) {
   try {
     localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(list));
     window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: list }));
@@ -118,17 +119,49 @@ export function persistNotifications(list) {
 }
 
 function Notifications() {
-  const [notifications, setNotifications] = useState(() => readStoredNotifications());
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const userKey = user?._id || user?.id || user?.email || "guest";
+  const storageKey = isDemo ? NOTIFICATIONS_STORAGE_KEY : `smartstay_student_notifications_${userKey}`;
+
+  const getInitialNotifs = () => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    if (isDemo) return initialNotifications;
+    return [
+      {
+        id: 1,
+        title: "Welcome to SmartStay",
+        message: `Welcome ${user?.name || "Student"}! Your SmartStay hostel account is now active.`,
+        date: "Today",
+        time: "Just now",
+        type: "room",
+        read: false,
+      },
+    ];
+  };
+
+  const [notifications, setNotifications] = useState(getInitialNotifs);
 
   useEffect(() => {
-    const handleSync = () => setNotifications(readStoredNotifications());
+    const handleSync = () => setNotifications(getInitialNotifs());
     window.addEventListener("smartstay-notifications-updated", handleSync);
     window.addEventListener("storage", handleSync);
     return () => {
       window.removeEventListener("smartstay-notifications-updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, []);
+  }, [storageKey]);
+
+  const saveNotifications = (newList) => {
+    setNotifications(newList);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(newList));
+      window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: newList }));
+    } catch {}
+  };
 
   const [filter, setFilter] = useState("All");
 
@@ -153,7 +186,7 @@ function Notifications() {
       const updated = previous.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification,
       );
-      persistNotifications(updated);
+      saveNotifications(updated);
       return updated;
     });
   }
@@ -164,7 +197,7 @@ function Notifications() {
         ...notification,
         read: true,
       }));
-      persistNotifications(updated);
+      saveNotifications(updated);
       return updated;
     });
   }
@@ -172,7 +205,7 @@ function Notifications() {
   function deleteNotification(id) {
     setNotifications((previous) => {
       const updated = previous.filter((notification) => notification.id !== id);
-      persistNotifications(updated);
+      saveNotifications(updated);
       return updated;
     });
   }

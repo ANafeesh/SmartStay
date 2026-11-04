@@ -19,7 +19,7 @@ import {
   Scan,
   RefreshCw,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import QRCodeLib from "qrcode";
 import Modal from "../../components/ui/Modal";
 import {
@@ -72,9 +72,49 @@ function StudentDashboard() {
   const { user } = useAuth();
   const [showPassModal, setShowPassModal] = useState(false);
 
-  const studentName = user?.name || "Ahamed Nafeesh";
-  const studentRegId = user?.studentId || "STD-2026-090";
-  const roomNumber = user?.room || "B-204";
+  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const studentName = user?.name || (isDemo ? "Ahamed Nafeesh" : "Student User");
+  const studentRegId = user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "Unassigned");
+  const roomNumber = user?.room || (isDemo ? "B-204" : "Not Allocated");
+
+  const dynamicStats = [
+    {
+      title: "Outstanding Balance",
+      value: isDemo ? "Rs. 12,500" : "Rs. 0",
+      badge: isDemo ? "Due Soon" : "Good Standing",
+      badgeColor: isDemo ? "bg-amber-50 text-amber-700 border-amber-200/60" : "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+      icon: Wallet,
+      color: isDemo ? "text-blue-600" : "text-emerald-600",
+      bg: isDemo ? "bg-blue-50" : "bg-emerald-50",
+    },
+    {
+      title: "Room Assigned",
+      value: roomNumber,
+      badge: user?.room || isDemo ? "Active" : "Pending",
+      badgeColor: user?.room || isDemo ? "bg-emerald-50 text-emerald-700 border-emerald-200/60" : "bg-slate-100 text-slate-600 border-slate-200",
+      icon: BedDouble,
+      color: "text-cyan-600",
+      bg: "bg-cyan-50",
+    },
+    {
+      title: "Food Orders",
+      value: isDemo ? "08" : "00",
+      badge: isDemo ? "This Month" : "No Orders",
+      badgeColor: "bg-slate-100 text-slate-600 border-slate-200",
+      icon: ShoppingBag,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+    },
+    {
+      title: "Open Complaints",
+      value: isDemo ? "02" : "00",
+      badge: isDemo ? "In Progress" : "No Complaints",
+      badgeColor: isDemo ? "bg-rose-50 text-rose-700 border-rose-200/60" : "bg-emerald-50 text-emerald-700 border-emerald-200/60",
+      icon: AlertCircle,
+      color: isDemo ? "text-rose-600" : "text-emerald-600",
+      bg: isDemo ? "bg-rose-50" : "bg-emerald-50",
+    },
+  ];
 
   const passDetails = getStudentPassDetails(user);
   const [gateState, setGateState] = useState(() =>
@@ -86,6 +126,7 @@ function StudentDashboard() {
   // Real backend digital pass state
   const [realPassData, setRealPassData] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const [verificationDirectUrl, setVerificationDirectUrl] = useState("");
   const [isLoadingPass, setIsLoadingPass] = useState(false);
   const [passError, setPassError] = useState(null);
 
@@ -95,16 +136,32 @@ function StudentDashboard() {
     try {
       const data = await fetchMyDigitalPass();
       setRealPassData(data);
-      const pass = data.pass;
-      const qrPayload = JSON.stringify({
-        protocol: "SMARTSTAY_PASS_V1",
-        qrToken: data.qrToken,
-        passNumber: pass?.passNumber,
-        studentRegistrationId: pass?.studentRegistrationId || studentRegId,
-      });
+      const pass = data?.pass;
 
-      const url = await QRCodeLib.toDataURL(qrPayload, {
-        width: 240,
+      const hostIp = data?.lanIp || "172.16.34.50";
+      const origin =
+        window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+          ? window.location.origin
+          : `http://${hostIp}:${window.location.port || "5173"}`;
+
+      const tokenVal = data?.qrToken || passDetails.passToken;
+      const passNum = pass?.passNumber || passDetails.passNumber;
+      const sId = pass?.studentRegistrationId || studentRegId;
+      const sName = studentName;
+      const sRoom = roomNumber;
+
+      const verificationUrl = `${origin}/gate/verify?token=${encodeURIComponent(
+        tokenVal
+      )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(
+        sId
+      )}&name=${encodeURIComponent(sName)}&room=${encodeURIComponent(
+        sRoom
+      )}&status=Active`;
+
+      setVerificationDirectUrl(verificationUrl);
+
+      const url = await QRCodeLib.toDataURL(verificationUrl, {
+        width: 250,
         margin: 2,
         errorCorrectionLevel: "M",
         color: {
@@ -116,17 +173,35 @@ function StudentDashboard() {
     } catch (err) {
       console.warn("Could not load backend pass, fallback to display helper:", err);
       setPassError(err.message || "Failed to retrieve live pass from backend.");
-      // Fallback QR code with passToken
+
+      const origin =
+        window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+          ? window.location.origin
+          : `http://172.16.34.50:${window.location.port || "5173"}`;
+
+      const fallbackVerificationUrl = `${origin}/gate/verify?token=${encodeURIComponent(
+        passDetails.passToken
+      )}&passNumber=${encodeURIComponent(
+        passDetails.passNumber
+      )}&studentId=${encodeURIComponent(
+        studentRegId
+      )}&name=${encodeURIComponent(studentName)}&room=${encodeURIComponent(
+        roomNumber
+      )}&status=Active`;
+
+      setVerificationDirectUrl(fallbackVerificationUrl);
+
+      // Fallback QR code with pass verification URL
       try {
-        const fallbackUrl = await QRCodeLib.toDataURL(
-          JSON.stringify({
-            protocol: "SMARTSTAY_PASS_V1",
-            qrToken: passDetails.passToken,
-            passNumber: passDetails.passNumber,
-            studentRegistrationId: studentRegId,
-          }),
-          { width: 240, margin: 2, errorCorrectionLevel: "M" }
-        );
+        const fallbackUrl = await QRCodeLib.toDataURL(fallbackVerificationUrl, {
+          width: 250,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: {
+            dark: "#0f172a",
+            light: "#ffffff",
+          },
+        });
         setQrDataUrl(fallbackUrl);
       } catch {}
     } finally {
@@ -206,7 +281,7 @@ function StudentDashboard() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        {stats.map((stat) => {
+        {dynamicStats.map((stat) => {
           const Icon = stat.icon;
 
           return (
@@ -492,9 +567,22 @@ function StudentDashboard() {
                 </div>
               )}
 
-              <p className="text-[10px] text-slate-400 mt-2 font-mono">
-                Present this high-contrast QR code to campus gate security
-              </p>
+              <div className="mt-2 text-center">
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Scan with any smartphone camera to open instant official pass verification
+                </p>
+                <div className="mt-2">
+                  <a
+                    href={verificationDirectUrl || "/gate/verify"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-xs"
+                  >
+                    <span>Open Phone Verification Interface</span>
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+              </div>
             </div>
 
             {/* GATEKEEPER SCAN SIMULATOR CONTROLS */}
@@ -546,7 +634,7 @@ function StudentDashboard() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
                 >
-                  <span>Open Real Camera Gatekeeper Terminal</span>
+                  <span>Open Full Gatekeeper Terminal</span>
                   <ExternalLink size={12} />
                 </Link>
 
