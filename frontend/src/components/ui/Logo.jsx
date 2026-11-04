@@ -4,13 +4,13 @@ import logoMarkPng from "../../assets/smartstay-mark.png";
 import fullLogoPng from "../../assets/smartstay-logo.png";
 
 /**
- * SmartStay Vector Icon Mark
- * High-definition SVG of the SmartStay symbol:
- * - Peaked House Gable in Navy (#021F43)
- * - Smart Circuit Nodes & IoT Traces in Luminous Cyan (#00A3E0)
- * - 4 Window Panes in Vibrant Electric Blue (#0064F2)
- * - Flowing Stylized "S" Ribbon in Electric Blue (#0064F2)
- * - House Base with Arched Entryway
+ * SmartStay Simple Vector Icon Mark
+ * Minimalist, high-definition SVG of the SmartStay symbol:
+ * - Peaked House Gable in Corporate Deep Navy (#021F43)
+ * - 3 Smart Circuit Lines with open terminal loops in Cyan (#00B4D8)
+ * - 4 Window Panes in Vibrant Electric Blue (#0062FF)
+ * - Simple Smooth Flowing "S" Path with rounded ends (#0062FF)
+ * - Navy Arched Doorway and Foundation Block (#021F43)
  */
 export function SmartStayMark({
   className = "h-full w-auto",
@@ -18,114 +18,69 @@ export function SmartStayMark({
   idPrefix = "ss-mark",
 }) {
   const navy = isDark ? "#FFFFFF" : "#021F43";
-  const blue = "#0064F2";
-  const cyan = "#00A3E0";
+  const blue = "#0062FF";
+  const cyan = "#00B4D8";
 
   return (
     <svg
-      viewBox="0 0 92 100"
+      viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient
-          id={`${idPrefix}-blue`}
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <stop offset="0%" stopColor="#0066FF" />
-          <stop offset="100%" stopColor="#0052EA" />
-        </linearGradient>
-        <linearGradient
-          id={`${idPrefix}-cyan`}
-          x1="0%"
-          y1="100%"
-          x2="100%"
-          y2="0%"
-        >
-          <stop offset="0%" stopColor="#0284C7" />
-          <stop offset="100%" stopColor="#00C2E8" />
-        </linearGradient>
-      </defs>
-
-      {/* Smart Circuit Traces */}
+      {/* Circuit Traces & Terminal Rings */}
       <g
-        stroke={`url(#${idPrefix}-cyan)`}
-        strokeWidth="2.6"
+        stroke={cyan}
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M 54 34 L 54 24 Q 54 18 50 17 L 48 16" />
-        <path d="M 61 39 L 61 24 Q 61 15 65 11 L 66 10" />
-        <path d="M 68 45 L 72 35 Q 75 27 79 22 L 80 21" />
+        <path d="M 58 39 L 55 24" />
+        <circle cx="55" cy="21" r="2.8" stroke={cyan} strokeWidth="2.0" fill="none" />
+
+        <path d="M 64 44 L 66 16" />
+        <circle cx="66" cy="13" r="3.0" stroke={cyan} strokeWidth="2.2" fill="none" />
+
+        <path d="M 70 50 L 78 28" />
+        <circle cx="78" cy="25" r="2.8" stroke={cyan} strokeWidth="2.0" fill="none" />
       </g>
 
-      {/* Circuit Terminal Nodes */}
-      <circle cx="48" cy="16" r="3.2" fill={cyan} />
-      <circle cx="48" cy="16" r="1.3" fill="#FFFFFF" />
-
-      <circle cx="66" cy="10" r="3.6" fill={cyan} />
-      <circle cx="66" cy="10" r="1.5" fill="#FFFFFF" />
-
-      <circle cx="80" cy="21" r="3.2" fill={cyan} />
-      <circle cx="80" cy="21" r="1.3" fill="#FFFFFF" />
-
-      {/* Peaked Roof Gable */}
+      {/* Roof Gable (Deep Navy) */}
       <path
-        d="M 6 50 L 38 18 L 70 50 L 63.5 55.5 L 38 30 L 12.5 55.5 Z"
+        d="M 16 54 L 46 25 L 76 54 L 69.5 59.5 L 46 36.5 L 22.5 59.5 Z"
         fill={navy}
       />
 
       {/* 4 Window Panes (2x2 Grid) */}
-      <g fill={`url(#${idPrefix}-blue)`}>
-        <rect x="32" y="35" width="5.2" height="4.6" rx="0.9" />
-        <rect x="38.8" y="35" width="5.2" height="4.6" rx="0.9" />
-        <rect x="32" y="41.2" width="5.2" height="4.6" rx="0.9" />
-        <rect x="38.8" y="41.2" width="5.2" height="4.6" rx="0.9" />
+      <g fill={blue}>
+        <rect x="40.5" y="38" width="5.0" height="4.5" rx="0.8" />
+        <rect x="47.5" y="38" width="5.0" height="4.5" rx="0.8" />
+        <rect x="40.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
+        <rect x="47.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
       </g>
 
-      {/* Flowing Stylized "S" Ribbon */}
-      <path
-        d="M 14.5 52 
-           C 10.5 58 11 66 19.5 68.5 
-           C 27 70.5 38 66.5 54 66.5 
-           C 67 66.5 74.5 70.5 74.5 76.5 
-           C 74.5 82.5 68 86.5 58 86.5 
-           C 43 86.5 31 84 21 81 
-           C 17.5 80 15 82.5 15 85 
-           C 15 87.5 17.5 89.5 22 91 
-           C 33 94.5 47 95.5 60 94.5 
-           C 73 93.5 82.5 87 82.5 75.5 
-           C 82.5 64 71 59 56 59 
-           C 40 59 28 62 22 60 
-           C 18 59 17 56 19 52.5 Z"
-        fill={`url(#${idPrefix}-blue)`}
-      />
+      {/* Navy Arched Doorway & Left Foundation */}
+      <g fill={navy}>
+        <path d="M 38 84 L 38 73 A 7 7 0 0 1 52 73 L 52 84 Z" />
+        <rect x="20" y="78" width="14" height="6" rx="1" />
+      </g>
 
-      {/* House Base with Arched Entryway */}
+      {/* Simple Flowing "S" Path */}
       <path
-        d="M 15 88.5 
-           L 15 98.5 
-           L 30.5 98.5 
-           L 30.5 85.5 
-           C 30.5 77.5 46.5 77.5 46.5 85.5 
-           L 46.5 98.5 
-           L 66.5 98.5 
-           L 66.5 93.5 
-           C 62.5 95.5 55 96.5 49 96.5 
-           C 37 96.5 25 93.5 15 88.5 Z"
-        fill={navy}
+        d="M 21 59 L 66 59 C 75.5 59 75.5 73.5 66 73.5 L 24 73.5"
+        stroke={blue}
+        strokeWidth="6.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
       />
     </svg>
   );
 }
 
 /**
- * SmartStay Vector Full Horizontal Logo
+ * SmartStay Simple Full Horizontal Logo
  * High-definition SVG with Icon Mark + "SmartStay" + "— Campus Living —"
  */
 export function SmartStayFullLogo({
@@ -135,127 +90,82 @@ export function SmartStayFullLogo({
   idPrefix = "ss-full",
 }) {
   const navy = isDark ? "#FFFFFF" : "#021F43";
-  const blue = "#0064F2";
-  const cyan = "#00A3E0";
+  const blue = "#0062FF";
+  const cyan = "#00B4D8";
   const taglineColor = isDark ? "#E2E8F0" : "#021F43";
 
   return (
     <svg
-      viewBox="0 0 350 94"
+      viewBox="0 0 350 96"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-label="SmartStay - Campus Living"
       role="img"
     >
-      <defs>
-        <linearGradient
-          id={`${idPrefix}-blue`}
-          x1="0%"
-          y1="0%"
-          x2="100%"
-          y2="100%"
-        >
-          <stop offset="0%" stopColor="#0066FF" />
-          <stop offset="100%" stopColor="#0052EA" />
-        </linearGradient>
-        <linearGradient
-          id={`${idPrefix}-cyan`}
-          x1="0%"
-          y1="100%"
-          x2="100%"
-          y2="0%"
-        >
-          <stop offset="0%" stopColor="#0284C7" />
-          <stop offset="100%" stopColor="#00C2E8" />
-        </linearGradient>
-      </defs>
-
-      {/* ==================== ICON MARK ==================== */}
-      <g className="brand-mark" transform="translate(2, -4)">
-        {/* Smart Circuit Traces */}
+      {/* ==================== LEFT: ICON MARK ==================== */}
+      <g className="brand-mark" transform="translate(0, -2)">
+        {/* Circuit Traces & Terminal Rings */}
         <g
-          stroke={`url(#${idPrefix}-cyan)`}
-          strokeWidth="2.6"
+          stroke={cyan}
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M 54 34 L 54 24 Q 54 18 50 17 L 48 16" />
-          <path d="M 61 39 L 61 24 Q 61 15 65 11 L 66 10" />
-          <path d="M 68 45 L 72 35 Q 75 27 79 22 L 80 21" />
+          <path d="M 58 39 L 55 24" />
+          <circle cx="55" cy="21" r="2.8" stroke={cyan} strokeWidth="2.0" fill="none" />
+
+          <path d="M 64 44 L 66 16" />
+          <circle cx="66" cy="13" r="3.0" stroke={cyan} strokeWidth="2.2" fill="none" />
+
+          <path d="M 70 50 L 78 28" />
+          <circle cx="78" cy="25" r="2.8" stroke={cyan} strokeWidth="2.0" fill="none" />
         </g>
 
-        {/* Circuit Terminal Nodes */}
-        <circle cx="48" cy="16" r="3.2" fill={cyan} />
-        <circle cx="48" cy="16" r="1.3" fill="#FFFFFF" />
-
-        <circle cx="66" cy="10" r="3.6" fill={cyan} />
-        <circle cx="66" cy="10" r="1.5" fill="#FFFFFF" />
-
-        <circle cx="80" cy="21" r="3.2" fill={cyan} />
-        <circle cx="80" cy="21" r="1.3" fill="#FFFFFF" />
-
-        {/* Peaked Roof Gable */}
+        {/* Roof Gable */}
         <path
-          d="M 6 50 L 38 18 L 70 50 L 63.5 55.5 L 38 30 L 12.5 55.5 Z"
+          d="M 16 54 L 46 25 L 76 54 L 69.5 59.5 L 46 36.5 L 22.5 59.5 Z"
           fill={navy}
         />
 
         {/* 4 Windows */}
-        <g fill={`url(#${idPrefix}-blue)`}>
-          <rect x="32" y="35" width="5.2" height="4.6" rx="0.9" />
-          <rect x="38.8" y="35" width="5.2" height="4.6" rx="0.9" />
-          <rect x="32" y="41.2" width="5.2" height="4.6" rx="0.9" />
-          <rect x="38.8" y="41.2" width="5.2" height="4.6" rx="0.9" />
+        <g fill={blue}>
+          <rect x="40.5" y="38" width="5.0" height="4.5" rx="0.8" />
+          <rect x="47.5" y="38" width="5.0" height="4.5" rx="0.8" />
+          <rect x="40.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
+          <rect x="47.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
         </g>
 
-        {/* Flowing Stylized "S" Ribbon */}
-        <path
-          d="M 14.5 52 
-             C 10.5 58 11 66 19.5 68.5 
-             C 27 70.5 38 66.5 54 66.5 
-             C 67 66.5 74.5 70.5 74.5 76.5 
-             C 74.5 82.5 68 86.5 58 86.5 
-             C 43 86.5 31 84 21 81 
-             C 17.5 80 15 82.5 15 85 
-             C 15 87.5 17.5 89.5 22 91 
-             C 33 94.5 47 95.5 60 94.5 
-             C 73 93.5 82.5 87 82.5 75.5 
-             C 82.5 64 71 59 56 59 
-             C 40 59 28 62 22 60 
-             C 18 59 17 56 19 52.5 Z"
-          fill={`url(#${idPrefix}-blue)`}
-        />
+        {/* Navy Arched Doorway & Left Foundation */}
+        <g fill={navy}>
+          <path d="M 38 84 L 38 73 A 7 7 0 0 1 52 73 L 52 84 Z" />
+          <rect x="20" y="78" width="14" height="6" rx="1" />
+        </g>
 
-        {/* House Base with Arched Entryway */}
+        {/* Simple Flowing "S" Path */}
         <path
-          d="M 15 88.5 
-             L 15 98.5 
-             L 30.5 98.5 
-             L 30.5 85.5 
-             C 30.5 77.5 46.5 77.5 46.5 85.5 
-             L 46.5 98.5 
-             L 66.5 98.5 
-             L 66.5 93.5 
-             C 62.5 95.5 55 96.5 49 96.5 
-             C 37 96.5 25 93.5 15 88.5 Z"
-          fill={navy}
+          d="M 21 59 L 66 59 C 75.5 59 75.5 73.5 66 73.5 L 24 73.5"
+          stroke={blue}
+          strokeWidth="6.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
         />
       </g>
 
-      {/* ==================== BRAND TYPOGRAPHY ==================== */}
+      {/* ==================== RIGHT: BRAND TYPOGRAPHY ==================== */}
       <g className="brand-text" transform="translate(94, 0)">
         {/* Main Logotype: SmartStay */}
         <text
           x="0"
-          y="55"
+          y="54"
           fontFamily="'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif"
           fontWeight="800"
           fontSize="46"
           letterSpacing="-0.035em"
         >
           <tspan fill={navy}>Smart</tspan>
-          <tspan fill={`url(#${idPrefix}-blue)`}>Stay</tspan>
+          <tspan fill={blue}>Stay</tspan>
         </text>
 
         {/* Tagline: "— Campus Living —" */}
@@ -267,7 +177,7 @@ export function SmartStayFullLogo({
             x2="28"
             y2="-5.5"
             stroke={taglineColor}
-            strokeWidth="2.2"
+            strokeWidth="2.4"
             strokeLinecap="round"
           />
 
@@ -291,7 +201,7 @@ export function SmartStayFullLogo({
             x2="194"
             y2="-5.5"
             stroke={taglineColor}
-            strokeWidth="2.2"
+            strokeWidth="2.4"
             strokeLinecap="round"
           />
         </g>
@@ -365,7 +275,7 @@ export default function Logo({
         <SmartStayMark
           isDark={isDark}
           idPrefix={idPrefix}
-          className="h-full w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,100,242,0.18)]"
+          className="h-full w-auto object-contain drop-shadow-[0_2px_8px_rgba(0,98,255,0.18)]"
         />
       </div>
     );
@@ -397,7 +307,7 @@ export default function Logo({
           className={`h-full w-auto object-contain ${
             isDark
               ? "drop-shadow-[0_2px_10px_rgba(255,255,255,0.12)]"
-              : "drop-shadow-[0_2px_8px_rgba(0,100,242,0.10)]"
+              : "drop-shadow-[0_2px_8px_rgba(0,98,255,0.10)]"
           }`}
         />
       </div>
