@@ -150,7 +150,8 @@ function StudentDashboard() {
       const sName = studentName;
       const sRoom = roomNumber;
 
-      const verificationUrl = `${origin}/gate/verify?token=${encodeURIComponent(
+      const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+      const verificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         tokenVal
       )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(
         sId
@@ -179,7 +180,8 @@ function StudentDashboard() {
           ? window.location.origin
           : `http://172.16.34.50:${window.location.port || "5173"}`;
 
-      const fallbackVerificationUrl = `${origin}/gate/verify?token=${encodeURIComponent(
+      const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
+      const fallbackVerificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         passDetails.passToken
       )}&passNumber=${encodeURIComponent(
         passDetails.passNumber
@@ -573,7 +575,7 @@ function StudentDashboard() {
                 </p>
                 <div className="mt-2">
                   <a
-                    href={verificationDirectUrl || "/gate/verify"}
+                    href={verificationDirectUrl || `${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/gate/verify`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shadow-xs"

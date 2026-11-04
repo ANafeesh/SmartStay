@@ -74,7 +74,7 @@ function RouteLoading() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             {/* Primary Entry Point: Root URL navigates to Login page */}
