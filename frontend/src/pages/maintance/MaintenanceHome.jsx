@@ -41,7 +41,7 @@ const defaultComplaintsSeed = [
     _id: "seed-1",
     complaintId: "CMP-2026-4821",
     studentId: "SEU/IS/22/ICT/090",
-    studentName: "Ahamed Nafeesh",
+    studentName: "Student Resident",
     title: "Bathroom water leaking continuously",
     category: "Plumbing",
     priority: "High",

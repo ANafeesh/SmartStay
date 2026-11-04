@@ -77,7 +77,7 @@ export default function GateVerification() {
         setGateLogs(res.data);
       }
     } catch {
-      const local = getGateMovementState(paramStudentId || "STD-2026-090");
+      const local = getGateMovementState(paramStudentId || "STD-LOGS");
       if (local?.logs) {
         setGateLogs(
           local.logs.map((l) => ({
@@ -311,10 +311,10 @@ export default function GateVerification() {
 
       // If backend is unreachable (e.g., iPhone scan on GitHub Pages with mixed-content/offline backend):
       if (!isHttpRejection && !paramForceInvalid) {
-        const effectivePassNum = passNumber || paramPassNumber || "SP-2026-425034";
-        const effectiveStudentId = studentRegistrationId || paramStudentId || "STD-2026-890";
-        const effectiveName = paramName || searchParams.get("name") || "Ahamed Nafeesh";
-        const effectiveRoom = paramRoom || searchParams.get("room") || "Hostel Room B-204";
+        const effectivePassNum = passNumber || paramPassNumber || "SP-2026-ACTIVE";
+        const effectiveStudentId = studentRegistrationId || paramStudentId || "STD-VERIFIED";
+        const effectiveName = paramName || searchParams.get("name") || "Student Resident";
+        const effectiveRoom = paramRoom || searchParams.get("room") || "Assigned Room";
 
         const isValidFormat =
           Boolean(token && (token.startsWith("QR-") || token.includes("SS-STU") || token.length > 5)) ||
@@ -340,13 +340,13 @@ export default function GateVerification() {
               canEnterCampus: isCurrentlyOut,
               canExitCampus: !isCurrentlyOut,
               room: effectiveRoom,
-              building: "Olu Block",
+              building: searchParams.get("building") || "Campus Residence",
               student: {
                 name: effectiveName,
                 registrationNumber: effectiveStudentId,
                 studentId: effectiveStudentId,
                 room: effectiveRoom,
-                building: "Olu Block",
+                building: searchParams.get("building") || "Campus Residence",
                 accountStatus: "active",
               },
             },

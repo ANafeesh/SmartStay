@@ -78,8 +78,8 @@ const initialPaymentHistory = [
     receiptNo: "RCT-90421",
     status: "Success",
     studentName: "Student User",
-    studentRegNo: "STD-2026-090",
-    hostelRoom: "Block B - Room 204",
+    studentRegNo: "STD-2026-101",
+    hostelRoom: "Room 101",
   },
   {
     id: "PAY-88210",
@@ -95,8 +95,8 @@ const initialPaymentHistory = [
     receiptNo: "RCT-88210",
     status: "Success",
     studentName: "Student User",
-    studentRegNo: "STD-2026-090",
-    hostelRoom: "Block B - Room 204",
+    studentRegNo: "STD-2026-101",
+    hostelRoom: "Room 101",
   },
   {
     id: "PAY-87502",
@@ -112,8 +112,8 @@ const initialPaymentHistory = [
     receiptNo: "RCT-87502",
     status: "Success",
     studentName: "Student User",
-    studentRegNo: "STD-2026-090",
-    hostelRoom: "Block B - Room 204",
+    studentRegNo: "STD-2026-101",
+    hostelRoom: "Room 101",
   },
 ];
 
@@ -516,7 +516,7 @@ export default function Payments() {
               </span>
               <span className="text-slate-300">•</span>
               <span className="font-mono font-medium text-blue-600">
-                {user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "Unassigned")}
+                {user?.studentId || user?.registrationNumber || "Unassigned"}
               </span>
               <span className="text-slate-300">•</span>
               <span>{user?.room ? `Hostel ${user.building || "Block"}, Room ${user.room}` : (isDemo ? "Hostel Block B, Room 204" : "Room Allocation Pending")}</span>
@@ -1152,7 +1152,7 @@ export default function Payments() {
                     <div className="flex justify-between text-slate-500 text-[11px]">
                       <span>Student Reg:</span>
                       <span className="font-mono text-slate-700">
-                        {rec.studentRegNo || user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "Unassigned")}
+                        {rec.studentRegNo || user?.studentId || user?.registrationNumber || "Unassigned"}
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-500 text-[11px]">

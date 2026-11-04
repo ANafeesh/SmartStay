@@ -15,7 +15,7 @@ const vendorPassDetails = {
   vendorId: "VND-2026-09",
   shopName: "Campus Diner & Cafe",
   ownerName: "Campus Canteen Staff",
-  regNo: "STD-2026-090",
+  regNo: "STD-2026-101",
   deliveryPerson: "Kamal Perera",
   riderNic: "199420912401",
   vehicleNo: "WP BCD-4821",

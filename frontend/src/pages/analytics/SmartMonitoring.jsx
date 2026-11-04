@@ -78,7 +78,7 @@ function SmartMonitoring() {
 
       setSummaryData(sumRes.data || []);
       setBlocksData(blkRes.data || []);
-      // Reconcile alert status with localStorage persistence
+
       let ackList = [];
       let resList = [];
       try {
@@ -97,7 +97,6 @@ function SmartMonitoring() {
       });
       setAlerts(loadedAlerts);
 
-      // Build unified timeline for chart (group by timestamp/time)
       const rawTimeline = trendRes?.data?.timeline || [];
       const groupedMap = {};
       rawTimeline.forEach((item) => {
@@ -125,12 +124,12 @@ function SmartMonitoring() {
   useEffect(() => {
     fetchData();
   }, []);
+
   const handleRefresh = () => {
     setRefreshing(true);
     fetchData();
   };
 
-  // Filter blocks
   const filteredBlocks = useMemo(() => {
     return blocksData.filter((item) => {
       const bName = item.blockName || item.block;
@@ -138,7 +137,6 @@ function SmartMonitoring() {
     });
   }, [blocksData, blockFilter]);
 
-  // Filter alerts
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) => {
       const matchesBlock =
@@ -172,9 +170,7 @@ function SmartMonitoring() {
           JSON.stringify([...ackList, id])
         );
       }
-    } catch {
-      // fallback
-    }
+    } catch {}
 
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "Acknowledged" } : a))
@@ -192,9 +188,7 @@ function SmartMonitoring() {
           JSON.stringify([...resList, id])
         );
       }
-    } catch {
-      // fallback
-    }
+    } catch {}
 
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "Resolved" } : a))
@@ -260,7 +254,6 @@ function SmartMonitoring() {
     return severity === "Critical" ? "danger" : "warning";
   };
 
-  // Water & Electricity summary extraction
   const waterSummary = summaryData.find((s) => s.utilityType === "Water") || {
     total: 0,
     dailyLimit: 3000,
@@ -275,7 +268,6 @@ function SmartMonitoring() {
     percentage: 0,
   };
 
-  // Available block names for filter dropdown
   const availableBlocks = useMemo(() => {
     const names = new Set(["Block A", "Block B", "Block C"]);
     blocksData.forEach((b) => {
@@ -286,9 +278,9 @@ function SmartMonitoring() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
-        <RefreshCw className="h-9 w-9 animate-spin text-smart-primary" />
-        <p className="text-sm font-medium text-slate-500">
+      <div className="flex min-h-[400px] flex-col items-center justify-center space-y-3">
+        <RefreshCw className="h-7 w-7 animate-spin text-slate-700" />
+        <p className="text-xs font-medium text-slate-500">
           Loading live telemetry and sensor monitoring data...
         </p>
       </div>
@@ -296,59 +288,59 @@ function SmartMonitoring() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
             Smart Monitoring
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Monitor hostel utilities and manage real-time telemetry alerts.
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            Hostel utility telemetry, meter logs, and threshold exceptions
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <button
             type="button"
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 rounded-xl bg-smart-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-smart-blue"
+            className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            <PlusCircle size={17} />
-            Record Meter Reading
+            <PlusCircle size={15} />
+            <span>Record Meter Reading</span>
           </button>
 
           <button
             type="button"
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-60 cursor-pointer"
             title="Refresh Monitoring Data"
           >
             <RefreshCw
-              size={16}
-              className={`${refreshing ? "animate-spin text-smart-primary" : "text-slate-500"}`}
+              size={13}
+              className={`${refreshing ? "animate-spin text-slate-700" : "text-slate-500"}`}
             />
             <span>Refresh</span>
           </button>
 
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            Live Telemetry Active
+          <div className="flex items-center gap-2 rounded-lg bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 font-mono">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+            <span>LIVE TELEMETRY</span>
           </div>
         </div>
       </div>
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
-            <p className="text-sm font-medium">{error}</p>
+        <div className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 p-3.5 text-rose-800 text-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            <p className="font-medium">{error}</p>
           </div>
           <button
             onClick={fetchData}
-            className="rounded-lg bg-red-100 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-200"
+            className="rounded-md border border-rose-200 bg-white px-2.5 py-1 text-xs font-medium text-rose-800 hover:bg-rose-50"
           >
             Retry
           </button>
@@ -361,26 +353,27 @@ function SmartMonitoring() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Water Usage Today</p>
-              <h2 className="mt-2 text-xl font-bold text-slate-800">
-                {waterSummary.total.toLocaleString()} L
+              <p className="text-xs text-slate-500">Water Consumption Today</p>
+              <h2 className="mt-1 text-2xl font-semibold font-mono tabular-nums text-slate-900">
+                {waterSummary.total.toLocaleString()} <span className="text-xs font-normal text-slate-500 font-sans">L</span>
               </h2>
-              <p className="mt-2 text-xs text-slate-500">
-                Daily limit: {waterSummary.dailyLimit.toLocaleString()} L
+              <p className="mt-1.5 text-xs text-slate-500 font-mono">
+                Threshold: {waterSummary.dailyLimit.toLocaleString()} L
               </p>
             </div>
-            <div className="rounded-xl bg-cyan-50 p-3 text-cyan-600">
-              <Droplets size={22} />
+            <div className="rounded-lg bg-cyan-50 border border-cyan-200/50 p-2.5 text-cyan-700">
+              <Droplets size={18} />
             </div>
           </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${waterSummary.percentage >= 90
-                ? "bg-red-500"
-                : waterSummary.percentage >= 80
+              className={`h-full rounded-full transition-colors ${
+                waterSummary.percentage >= 90
+                  ? "bg-rose-600"
+                  : waterSummary.percentage >= 80
                   ? "bg-amber-500"
-                  : "bg-cyan-500"
-                }`}
+                  : "bg-cyan-600"
+              }`}
               style={{ width: `${Math.min(waterSummary.percentage, 100)}%` }}
             />
           </div>
@@ -390,26 +383,27 @@ function SmartMonitoring() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Electricity Today</p>
-              <h2 className="mt-2 text-xl font-bold text-slate-800">
-                {electricitySummary.total.toLocaleString()} kWh
+              <p className="text-xs text-slate-500">Electricity Today</p>
+              <h2 className="mt-1 text-2xl font-semibold font-mono tabular-nums text-slate-900">
+                {electricitySummary.total.toLocaleString()} <span className="text-xs font-normal text-slate-500 font-sans">kWh</span>
               </h2>
-              <p className="mt-2 text-xs text-slate-500">
-                Daily limit: {electricitySummary.dailyLimit.toLocaleString()} kWh
+              <p className="mt-1.5 text-xs text-slate-500 font-mono">
+                Threshold: {electricitySummary.dailyLimit.toLocaleString()} kWh
               </p>
             </div>
-            <div className="rounded-xl bg-amber-50 p-3 text-amber-600">
-              <Zap size={22} />
+            <div className="rounded-lg bg-amber-50 border border-amber-200/50 p-2.5 text-amber-700">
+              <Zap size={18} />
             </div>
           </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${electricitySummary.percentage >= 90
-                ? "bg-red-500"
-                : electricitySummary.percentage >= 80
+              className={`h-full rounded-full transition-colors ${
+                electricitySummary.percentage >= 90
+                  ? "bg-rose-600"
+                  : electricitySummary.percentage >= 80
                   ? "bg-amber-500"
-                  : "bg-smart-blue"
-                }`}
+                  : "bg-amber-600"
+              }`}
               style={{
                 width: `${Math.min(electricitySummary.percentage, 100)}%`,
               }}
@@ -421,21 +415,22 @@ function SmartMonitoring() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Active Alerts</p>
-              <h2 className="mt-2 text-xl font-bold text-slate-800">
+              <p className="text-xs text-slate-500">Active Sensor Alerts</p>
+              <h2 className="mt-1 text-2xl font-semibold font-mono tabular-nums text-slate-900">
                 {activeCount}
               </h2>
-              <p className="mt-2 text-xs text-slate-500">
-                {criticalCount} critical, {activeCount - criticalCount} warnings
+              <p className="mt-1.5 text-xs text-slate-500 font-mono">
+                {criticalCount} critical · {activeCount - criticalCount} warnings
               </p>
             </div>
             <div
-              className={`rounded-xl p-3 ${activeCount > 0
-                ? "bg-red-50 text-red-600"
-                : "bg-emerald-50 text-emerald-600"
-                }`}
+              className={`rounded-lg p-2.5 border ${
+                activeCount > 0
+                  ? "bg-rose-50 border-rose-200/60 text-rose-700"
+                  : "bg-emerald-50 border-emerald-200/60 text-emerald-700"
+              }`}
             >
-              <AlertTriangle size={22} />
+              <AlertTriangle size={18} />
             </div>
           </div>
         </Card>
@@ -444,20 +439,20 @@ function SmartMonitoring() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">System Status</p>
-              <h2 className="mt-2 text-xl font-bold text-slate-800">
+              <p className="text-xs text-slate-500">Telemetry Engine Status</p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-900">
                 {criticalCount > 0
-                  ? "Limit Exceeded"
+                  ? "Threshold Alert"
                   : activeCount > 0
-                    ? "Threshold Warning"
-                    : "Operational"}
+                  ? "Threshold Warning"
+                  : "Normal"}
               </h2>
-              <p className="mt-2 text-xs text-slate-500">
-                Monitoring engine active
+              <p className="mt-1.5 text-xs text-slate-500 font-mono">
+                Monitoring active
               </p>
             </div>
-            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600">
-              <CheckCircle size={22} />
+            <div className="rounded-lg bg-slate-100 border border-slate-200 p-2.5 text-slate-700">
+              <CheckCircle size={18} />
             </div>
           </div>
         </Card>
@@ -465,17 +460,17 @@ function SmartMonitoring() {
 
       {/* Filters */}
       <Card>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
-            <Filter size={18} className="text-slate-500" />
-            <h2 className="font-semibold text-slate-700">Monitoring Filters</h2>
+            <Filter size={15} className="text-slate-500" />
+            <h2 className="text-xs font-semibold text-slate-900">Monitoring filters</h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
             <select
               value={blockFilter}
               onChange={(e) => setBlockFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-smart-blue"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 outline-none focus:border-slate-900"
             >
               <option value="All">All Blocks</option>
               {availableBlocks.map((block) => (
@@ -488,7 +483,7 @@ function SmartMonitoring() {
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-smart-blue"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 outline-none focus:border-slate-900"
             >
               <option value="All">All Severities</option>
               <option value="Critical">Critical</option>
@@ -498,7 +493,7 @@ function SmartMonitoring() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-smart-blue"
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 outline-none focus:border-slate-900"
             >
               <option value="All">All Statuses</option>
               <option value="Active">Active</option>
@@ -511,45 +506,47 @@ function SmartMonitoring() {
 
       {/* Usage Chart */}
       <Card>
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-slate-800">
-            Today's Consumption Trend
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Today's consumption trend
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Water and electricity readings recorded throughout the day.
+          <p className="text-xs text-slate-500">
+            Recorded 24-hour water and electricity telemetry readings
           </p>
         </div>
 
         {timelineData.length > 0 ? (
-          <div className="h-80 w-full">
+          <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="time" />
-                <YAxis />
+              <LineChart data={timelineData} margin={{ top: 10, right: 8, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="#f1f5f9" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="time" tick={{ fill: "#64748b", fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fill: "#64748b", fontSize: 11 }} tickLine={false} axisLine={false} />
                 <Tooltip />
                 <Legend />
                 <Line
                   type="monotone"
                   dataKey="water"
                   name="Water (L)"
-                  stroke="#06b6d4"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
+                  stroke="#0284c7"
+                  strokeWidth={2.5}
+                  dot={{ r: 3.5, fill: "#0284c7" }}
+                  activeDot={{ r: 5 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="electricity"
                   name="Electricity (kWh)"
-                  stroke="#f59e0b"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
+                  stroke="#d97706"
+                  strokeWidth={2.5}
+                  dot={{ r: 3.5, fill: "#d97706" }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="py-12">
+          <div className="py-10">
             <EmptyState
               title="No Telemetry Readings Today"
               description="No meter readings have been logged for today yet. Use 'Record Meter Reading' above to record initial readings."
@@ -561,12 +558,12 @@ function SmartMonitoring() {
 
       {/* Block Monitoring */}
       <div>
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-slate-800">
-            Block-wise Monitoring
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Block-wise monitoring
           </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Utility usage compared with daily limits for each hostel block.
+          <p className="text-xs text-slate-500">
+            Utility consumption compared with daily thresholds per hostel location
           </p>
         </div>
 
@@ -585,13 +582,13 @@ function SmartMonitoring() {
               return (
                 <Card key={bName}>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-xl bg-blue-50 p-3 text-smart-primary">
-                        <Building2 size={22} />
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                        <Building2 size={16} />
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-800">{bName}</h3>
-                        <p className="text-xs text-slate-500">Utility Overview</p>
+                        <h3 className="text-xs font-semibold text-slate-900">{bName}</h3>
+                        <p className="text-[11px] text-slate-500">Hostel Building</p>
                       </div>
                     </div>
 
@@ -605,57 +602,60 @@ function SmartMonitoring() {
                   </div>
 
                   {/* Water */}
-                  <div className="mt-6">
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="flex items-center gap-2 text-slate-600">
-                        <Droplets size={16} />
+                  <div className="mt-4">
+                    <div className="mb-1 flex justify-between text-xs">
+                      <span className="flex items-center gap-1.5 text-slate-600">
+                        <Droplets size={13} className="text-cyan-600" />
                         Water
                       </span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="font-mono tabular-nums text-slate-900 font-medium">
                         {waterVal.toLocaleString()} L
                       </span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${waterPercent >= 90
-                          ? "bg-red-500"
-                          : "bg-cyan-500"
-                          }`}
+                        className={`h-full rounded-full transition-colors ${
+                          waterPercent >= 90
+                            ? "bg-rose-600"
+                            : "bg-cyan-600"
+                        }`}
                         style={{
                           width: `${Math.min(waterPercent, 100)}%`,
                         }}
                       />
                     </div>
 
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-[11px] text-slate-400 font-mono">
                       Limit: {waterLim.toLocaleString()} L
                     </p>
                   </div>
+
                   {/* Electricity */}
-                  <div className="mt-5">
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="flex items-center gap-2 text-slate-600">
-                        <Zap size={16} />
+                  <div className="mt-3.5">
+                    <div className="mb-1 flex justify-between text-xs">
+                      <span className="flex items-center gap-1.5 text-slate-600">
+                        <Zap size={13} className="text-amber-600" />
                         Electricity
                       </span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="font-mono tabular-nums text-slate-900 font-medium">
                         {elecVal.toLocaleString()} kWh
                       </span>
                     </div>
 
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${elecPercent >= 90
-                          ? "bg-red-500"
-                          : "bg-amber-500"
-                          }`}
+                        className={`h-full rounded-full transition-colors ${
+                          elecPercent >= 90
+                            ? "bg-rose-600"
+                            : "bg-amber-600"
+                        }`}
                         style={{
                           width: `${Math.min(elecPercent, 100)}%`,
                         }}
                       />
                     </div>
 
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-[11px] text-slate-400 font-mono">
                       Limit: {elecLim.toLocaleString()} kWh
                     </p>
                   </div>
@@ -666,9 +666,9 @@ function SmartMonitoring() {
         ) : (
           <Card>
             <div className="py-8 text-center text-slate-500">
-              <Building2 size={32} className="mx-auto text-slate-400 mb-2" />
-              <p className="font-semibold">No block monitoring records</p>
-              <p className="text-sm text-slate-400">
+              <Building2 size={24} className="mx-auto text-slate-400 mb-1" />
+              <p className="text-xs font-semibold text-slate-700">No block monitoring records</p>
+              <p className="text-[11px] text-slate-400">
                 No telemetry recorded for the selected block filter today.
               </p>
             </div>
@@ -678,13 +678,13 @@ function SmartMonitoring() {
 
       {/* Alerts */}
       <Card>
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
-              Monitoring Alerts
+            <h2 className="text-sm font-semibold text-slate-900">
+              Monitoring alerts
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Dynamic alerts generated from real utility consumption thresholds.
+            <p className="text-xs text-slate-500">
+              Alerts generated from utility threshold criteria
             </p>
           </div>
 
@@ -693,32 +693,33 @@ function SmartMonitoring() {
           </Badge>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredAlerts.map((alert) => (
             <div
               key={alert.id}
-              className="rounded-xl border border-slate-200 p-4 transition"
+              className="rounded-lg border border-slate-200/80 p-3.5 transition-colors"
             >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex gap-3">
                   <div
-                    className={`mt-1 rounded-xl p-3 ${alert.severity === "Critical"
-                      ? "bg-red-50 text-red-600"
-                      : "bg-amber-50 text-amber-600"
-                      }`}
+                    className={`mt-0.5 rounded-lg p-2 border ${
+                      alert.severity === "Critical"
+                        ? "bg-rose-50 border-rose-200/60 text-rose-700"
+                        : "bg-amber-50 border-amber-200/60 text-amber-700"
+                    }`}
                   >
-                    <AlertTriangle size={20} />
+                    <AlertTriangle size={16} />
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-slate-800">
+                    <h3 className="text-xs font-semibold text-slate-900">
                       {alert.title}
                     </h3>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-0.5 text-xs text-slate-500">
                       {alert.description}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                       <Badge variant={getSeverityVariant(alert.severity)}>
                         {alert.severity}
                       </Badge>
@@ -730,8 +731,8 @@ function SmartMonitoring() {
                       </Badge>
                     </div>
 
-                    <p className="mt-3 flex items-center gap-1 text-xs text-slate-400">
-                      <Clock size={14} />
+                    <p className="mt-2 flex items-center gap-1 text-[11px] font-mono text-slate-400">
+                      <Clock size={12} />
                       {alert.time} · {alert.id}
                     </p>
                   </div>
@@ -741,7 +742,7 @@ function SmartMonitoring() {
                   {alert.status === "Active" && (
                     <button
                       onClick={() => acknowledgeAlert(alert.id)}
-                      className="rounded-lg border border-amber-200 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-50"
+                      className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                     >
                       Acknowledge
                     </button>
@@ -750,7 +751,7 @@ function SmartMonitoring() {
                   {alert.status !== "Resolved" && (
                     <button
                       onClick={() => resolveAlert(alert.id)}
-                      className="rounded-lg bg-smart-primary px-3 py-2 text-sm font-medium text-white hover:bg-smart-blue"
+                      className="rounded-md bg-slate-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       Resolve
                     </button>
@@ -761,57 +762,57 @@ function SmartMonitoring() {
           ))}
 
           {filteredAlerts.length === 0 && (
-            <div className="py-10 text-center">
-              <CheckCircle size={32} className="mx-auto text-emerald-500" />
-              <p className="mt-3 font-semibold text-slate-700">
+            <div className="py-8 text-center">
+              <CheckCircle size={24} className="mx-auto text-emerald-600 mb-1" />
+              <p className="text-xs font-semibold text-slate-700">
                 No active threshold alerts
               </p>
-              <p className="mt-1 text-sm text-slate-500">
-                All water and electricity meters are operating within normal daily limits.
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                All water and electricity sensors are operating within standard daily limits.
               </p>
             </div>
           )}
         </div>
       </Card>
 
-      <p className="flex items-center gap-2 text-xs text-slate-400">
-        <Activity size={15} />
-        Live readings are collected and aggregated via SmartStay IoT & Meter Reading API.
+      <p className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
+        <Activity size={13} />
+        Live telemetry collected via SmartStay IoT & Meter Reading API
       </p>
 
       {/* Record Meter Reading Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl border border-slate-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-lg font-bold text-slate-800">
+              <h3 className="text-sm font-semibold text-slate-900">
                 Record Meter Reading
               </h3>
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleFormSubmit} className="mt-4 space-y-4">
+            <form onSubmit={handleFormSubmit} className="mt-4 space-y-3.5">
               {formError && (
-                <div className="rounded-lg bg-red-50 p-3 text-xs text-red-700">
+                <div className="rounded-lg bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700">
                   {formError}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
+                <label className="block text-xs font-medium text-slate-700">
                   Utility Type
                 </label>
                 <select
                   name="utilityType"
                   value={formData.utilityType}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-smart-blue"
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-900"
                 >
                   <option value="Water">Water (L)</option>
                   <option value="Electricity">Electricity (kWh)</option>
@@ -819,7 +820,7 @@ function SmartMonitoring() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
+                <label className="block text-xs font-medium text-slate-700">
                   Reading Value ({formData.unit})
                 </label>
                 <input
@@ -829,23 +830,23 @@ function SmartMonitoring() {
                   min="0.1"
                   required
                   placeholder={
-                    formData.utilityType === "Water" ? "e.g. 450" : "e.g. 180"
+                    formData.utilityType === "Water" ? "450" : "180"
                   }
                   value={formData.value}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-smart-blue"
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-900 font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
+                <label className="block text-xs font-medium text-slate-700">
                   Hostel Block
                 </label>
                 <select
                   name="blockName"
                   value={formData.blockName}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-smart-blue"
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-900"
                 >
                   <option value="Block A">Block A</option>
                   <option value="Block B">Block B</option>
@@ -855,36 +856,36 @@ function SmartMonitoring() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase text-slate-600">
+                <label className="block text-xs font-medium text-slate-700">
                   Sensor / Location Label (Optional)
                 </label>
                 <input
                   type="text"
                   name="location"
-                  placeholder="e.g. Main Inflow Meter"
+                  placeholder="Main Inflow Meter"
                   value={formData.location}
                   onChange={handleFormChange}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-smart-blue"
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-800 outline-none focus:border-slate-900"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-3">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingReading}
-                  className="flex items-center gap-2 rounded-xl bg-smart-primary px-5 py-2 text-sm font-semibold text-white hover:bg-smart-blue disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
                 >
                   {submittingReading ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                   ) : null}
-                  Save Reading
+                  <span>Save Reading</span>
                 </button>
               </div>
             </form>

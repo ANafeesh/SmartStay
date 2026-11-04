@@ -5,7 +5,6 @@ import {
   ArrowUpRight,
   BedDouble,
   Building2,
-  CalendarDays,
   CheckCircle2,
   CircleDollarSign,
   Download,
@@ -13,7 +12,6 @@ import {
   MessageSquareWarning,
   RotateCcw,
   TrendingUp,
-  Users,
   Wallet,
   Droplets,
   Zap,
@@ -49,11 +47,11 @@ import {
 
 const COLORS = [
   "#2563eb",
-  "#14b8a6",
-  "#f59e0b",
-  "#f43f5e",
-  "#8b5cf6",
-  "#06b6d4",
+  "#0d9488",
+  "#d97706",
+  "#e11d48",
+  "#7c3aed",
+  "#0284c7",
 ];
 
 const BLOCKS = ["All", "Block A", "Block B", "Block C"];
@@ -65,20 +63,20 @@ const PERIODS = [
 ];
 
 const formatCurrency = (value) =>
-  `Rs. ${Number(value || 0).toLocaleString("en-LK")}`;
+  `LKR ${Number(value || 0).toLocaleString("en-LK")}`;
 
 const formatShortCurrency = (value) => {
   const amount = Number(value || 0);
 
   if (amount >= 1000000) {
-    return `Rs. ${(amount / 1000000).toFixed(2)}M`;
+    return `LKR ${(amount / 1000000).toFixed(2)}M`;
   }
 
   if (amount >= 1000) {
-    return `Rs. ${(amount / 1000).toFixed(1)}K`;
+    return `LKR ${(amount / 1000).toFixed(1)}K`;
   }
 
-  return `Rs. ${amount.toLocaleString("en-LK")}`;
+  return `LKR ${amount.toLocaleString("en-LK")}`;
 };
 
 const getPercentage = (value, total) =>
@@ -88,16 +86,16 @@ function CurrencyTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-      <p className="mb-2 text-sm font-bold text-slate-800">{label}</p>
+    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-md">
+      <p className="mb-2 text-xs font-semibold text-slate-800">{label}</p>
 
       {payload.map((entry) => (
         <div
           key={entry.dataKey}
-          className="flex items-center justify-between gap-5 py-1 text-sm"
+          className="flex items-center justify-between gap-4 py-0.5 text-xs font-mono"
         >
-          <span className="text-slate-500">{entry.name}</span>
-          <span className="font-semibold text-slate-800">
+          <span className="font-sans text-slate-500">{entry.name}:</span>
+          <span className="font-medium text-slate-900">
             {formatCurrency(entry.value)}
           </span>
         </div>
@@ -119,36 +117,37 @@ function MetricCard({
     <Card>
       <div className="flex h-full items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-smart-secondary">{title}</p>
+          <p className="text-xs font-medium text-slate-500">{title}</p>
 
-          <h2 className="mt-3 text-2xl font-bold tracking-tight text-smart-primary sm:text-3xl">
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight font-mono tabular-nums text-slate-900 sm:text-3xl">
             {value}
           </h2>
 
-          <p className="mt-2 text-xs text-smart-secondary">{subtitle}</p>
+          <p className="mt-1.5 text-xs text-slate-500">{subtitle}</p>
 
           {trend !== undefined && (
             <div
-              className={`mt-3 inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ${
+              className={`mt-2.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border ${
                 trend >= 0
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-rose-50 text-rose-700"
+                  ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
+                  : "bg-rose-50 text-rose-800 border-rose-200/80"
               }`}
             >
               {trend >= 0 ? (
-                <ArrowUpRight size={14} />
+                <ArrowUpRight size={13} />
               ) : (
-                <ArrowDownRight size={14} />
+                <ArrowDownRight size={13} />
               )}
-              {trend.toFixed(1)}% {trendLabel || "collection rate"}
+              <span className="font-mono tabular-nums">{trend.toFixed(1)}%</span>
+              <span className="font-sans">{trendLabel || "collection rate"}</span>
             </div>
           )}
         </div>
 
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconStyle}`}
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconStyle}`}
         >
-          <Icon size={23} />
+          <Icon size={18} />
         </div>
       </div>
     </Card>
@@ -160,15 +159,15 @@ function EmptyState({
 }) {
   return (
     <div className="flex h-full min-h-48 flex-col items-center justify-center text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-        <Activity size={23} />
+      <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+        <Activity size={18} />
       </div>
 
-      <p className="text-sm font-semibold text-slate-700">
-        Nothing to display
+      <p className="text-xs font-semibold text-slate-700">
+        No records available
       </p>
 
-      <p className="mt-1 text-xs text-slate-500">{message}</p>
+      <p className="mt-0.5 text-xs text-slate-500">{message}</p>
     </div>
   );
 }
@@ -181,14 +180,14 @@ function FinancialRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 ${
-        highlight ? "border-t border-slate-100 pt-4" : ""
+      className={`flex items-center justify-between gap-4 py-1 ${
+        highlight ? "border-t border-slate-100 pt-3" : ""
       }`}
     >
       <span
-        className={`text-sm ${
+        className={`text-xs ${
           highlight
-            ? "font-semibold text-slate-800"
+            ? "font-medium text-slate-900"
             : "text-slate-500"
         }`}
       >
@@ -196,12 +195,12 @@ function FinancialRow({
       </span>
 
       <span
-        className={`text-right text-sm font-bold ${
+        className={`text-right text-xs font-medium font-mono tabular-nums ${
           highlight
             ? positive
-              ? "text-emerald-700"
-              : "text-rose-700"
-            : "text-slate-800"
+              ? "text-emerald-700 font-semibold"
+              : "text-rose-700 font-semibold"
+            : "text-slate-900"
         }`}
       >
         {value}
@@ -214,7 +213,6 @@ function AnalyticsDashboard() {
   const [selectedBlock, setSelectedBlock] = useState("All");
   const [reportingPeriod, setReportingPeriod] = useState("all");
 
-  // Live Backend States
   const [monitoringSummary, setMonitoringSummary] = useState([]);
   const [blockSummary, setBlockSummary] = useState([]);
   const [occupancyData, setOccupancyData] = useState(null);
@@ -249,10 +247,8 @@ function AnalyticsDashboard() {
       setFinancialData(financialRes?.data || null);
       setComplaintData(complaintsRes?.data || null);
     } catch (err) {
-      setError(
-        err.message ||
-          "Unable to connect to SmartStay backend analytics. Ensure the API server is active."
-      );
+      console.error("Dashboard data load error:", err);
+      setError(err?.message || "Failed to load live analytics records.");
     } finally {
       setLoading(false);
     }
@@ -262,175 +258,123 @@ function AnalyticsDashboard() {
     loadDashboardData();
   }, []);
 
-  // Filter block occupancy data
-  const filteredBlocks = useMemo(() => {
-    if (!occupancyData?.blocks) return [];
-    if (selectedBlock === "All") return occupancyData.blocks;
-    return occupancyData.blocks.filter(
-      (b) =>
-        b.blockName?.toLowerCase() === selectedBlock.toLowerCase() ||
-        b.buildingCode?.toLowerCase() === selectedBlock.toLowerCase()
-    );
+  const occupancyChartData = useMemo(() => {
+    if (!occupancyData?.blocksSummary?.length) return [];
+    return occupancyData.blocksSummary
+      .filter((b) => selectedBlock === "All" || b.blockName === selectedBlock)
+      .map((b) => ({
+        name: b.blockName,
+        occupied: b.occupiedBeds || 0,
+        available: b.availableBeds || 0,
+        total: b.totalBeds || 0,
+      }));
   }, [occupancyData, selectedBlock]);
 
-  // Occupancy chart data
-  const occupancyChartData = useMemo(() => {
-    if (!filteredBlocks.length) {
-      if (occupancyData?.totalBeds > 0) {
-        return [
-          {
-            name: "Overall",
-            occupied: occupancyData.occupiedBeds || 0,
-            available: occupancyData.availableBeds || 0,
-            rate: occupancyData.occupancyPercentage || 0,
-          },
-        ];
-      }
-      return [];
-    }
-    return filteredBlocks.map((b) => ({
-      name: b.blockName || b.buildingCode || "Block",
-      occupied: b.occupiedBeds || 0,
-      available: b.availableBeds || 0,
-      rate: b.occupancyRate || 0,
-    }));
-  }, [filteredBlocks, occupancyData]);
-
-  // Revenue chart data (from actual monthly collection summary)
   const revenueChartData = useMemo(() => {
-    if (!financialData?.monthlySummary?.length) return [];
-    let list = financialData.monthlySummary;
-    if (reportingPeriod === "current") {
-      list = list.slice(-1);
-    } else if (reportingPeriod === "30days") {
-      list = list.slice(-2);
-    }
-    return list.map((m) => ({
-      month: m.month || m.yearMonth,
-      revenue: m.collectedAmount || 0,
-      billed: m.billedAmount || 0,
-      transactions: m.transactionCount || 0,
+    if (!financialData?.monthlyTrends?.length) return [];
+    return financialData.monthlyTrends.map((t) => ({
+      month: t.month,
+      revenue: t.collectedRevenue || 0,
+      billed: t.billedAmount || 0,
     }));
-  }, [financialData, reportingPeriod]);
+  }, [financialData]);
 
-  // Complaint category chart data
   const complaintChartData = useMemo(() => {
-    if (!complaintData?.categoryDistribution) return [];
-    return Object.entries(complaintData.categoryDistribution).map(
-      ([category, count]) => ({
-        category,
-        count,
-      })
-    );
+    if (!complaintData?.categoryBreakdown?.length) return [];
+    return complaintData.categoryBreakdown.map((c) => ({
+      category: c.category,
+      count: c.count,
+    }));
   }, [complaintData]);
 
   const complaintCategoryTotal = useMemo(() => {
-    return complaintChartData.reduce((sum, item) => sum + item.count, 0);
+    return complaintChartData.reduce((acc, curr) => acc + curr.count, 0);
   }, [complaintChartData]);
 
-  function resetFilters() {
+  const resetFilters = () => {
     setSelectedBlock("All");
     setReportingPeriod("all");
     loadDashboardData();
-  }
+  };
 
-  function exportCSV() {
+  const exportCSV = () => {
     const rows = [
       ["Metric", "Value"],
-      ["Total Rooms", occupancyData?.totalRooms ?? 0],
-      ["Total Beds", occupancyData?.totalBeds ?? 0],
-      ["Occupied Beds", occupancyData?.occupiedBeds ?? 0],
-      ["Available Beds", occupancyData?.availableBeds ?? 0],
-      ["Occupancy Rate (%)", occupancyData?.occupancyPercentage ?? 0],
-      ["Total Billed (LKR)", financialData?.totalBilledAmount ?? 0],
-      ["Total Collected (LKR)", financialData?.totalCollectedPayments ?? 0],
-      ["Outstanding Balance (LKR)", financialData?.outstandingBalance ?? 0],
-      ["Collection Rate (%)", financialData?.collectionRate ?? 0],
-      ["Total Complaints", complaintData?.totalComplaints ?? 0],
-      ["Open Complaints", complaintData?.openComplaints ?? 0],
-      ["Resolved Complaints", complaintData?.resolvedComplaints ?? 0],
+      ["Total Rooms", occupancyData?.totalRooms || 0],
+      ["Occupancy Rate", `${occupancyData?.occupancyPercentage || 0}%`],
+      ["Total Collected", financialData?.totalCollectedPayments || 0],
+      ["Outstanding Balance", financialData?.outstandingBalance || 0],
+      ["Open Complaints", complaintData?.openComplaints || 0],
     ];
 
-    const csv = rows
-      .map((row) =>
-        row.map((val) => `"${String(val).replaceAll('"', '""')}"`).join(",")
-      )
-      .join("\r\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      rows.map((e) => e.join(",")).join("\n");
 
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.href = url;
-    link.download = `smartstay-live-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `campus_analytics_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
+    document.body.removeChild(link);
+  };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 pb-10">
-      {/* Dashboard heading banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-950 bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 p-6 text-white shadow-lg sm:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-blue-400/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 right-1/3 h-48 w-48 rounded-full bg-cyan-300/10 blur-3xl" />
-
-        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+    <div className="mx-auto max-w-7xl space-y-6 pb-12">
+      {/* Executive Command Banner */}
+      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-white sm:p-7">
+        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-200 border border-blue-400/30 mb-3">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Executive Intelligence
+            <div className="inline-flex items-center gap-2 rounded-md bg-slate-800 border border-slate-700/80 px-2.5 py-1 text-xs font-medium text-slate-300 mb-2.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span>Campus Operational Telemetry</span>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
               Smart Analytics
             </h1>
 
-            <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100 sm:text-base">
-              Real-time campus operational intelligence: live room occupancy, fee
-              collections, utility telemetry, and maintenance resolutions.
+            <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
+              Consolidated intelligence: room occupancy capacity, fee collections, utility consumption, and maintenance resolutions.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2.5">
             <button
               onClick={resetFilters}
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
             >
-              <RotateCcw size={16} />
-              Reset filters
+              <RotateCcw size={14} />
+              <span>Reset</span>
             </button>
 
             <button
               onClick={exportCSV}
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-blue-950 shadow-sm transition hover:bg-blue-50 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-slate-900 transition-colors hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
             >
-              <Download size={17} />
-              Export Live CSV
+              <Download size={14} />
+              <span>Export CSV</span>
             </button>
           </div>
         </div>
 
-        <div className="relative mt-7 flex flex-wrap gap-3 border-t border-white/15 pt-5 text-xs text-blue-100">
-          <span className="inline-flex items-center gap-2">
-            <Building2 size={14} />
+        <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-800 pt-4 text-xs text-slate-400 font-mono">
+          <span className="inline-flex items-center gap-1.5">
+            <Building2 size={13} className="text-slate-500" />
             {selectedBlock === "All" ? "All campus blocks" : selectedBlock}
           </span>
-
-          <span className="text-blue-200/60">•</span>
-
-          <span className="inline-flex items-center gap-2">
-            <CheckCircle2 size={14} />
-            Campus Live Telemetry
+          <span className="text-slate-700">·</span>
+          <span className="inline-flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-slate-500" />
+            Live database records
           </span>
-
-          <span className="text-blue-200/60">•</span>
-
-          <span className="inline-flex items-center gap-2">
-            <Activity size={14} />
-            Dynamic status monitoring
+          <span className="text-slate-700">·</span>
+          <span className="inline-flex items-center gap-1.5">
+            <Activity size={13} className="text-slate-500" />
+            Telemetry verified
           </span>
         </div>
       </section>
@@ -438,16 +382,16 @@ function AnalyticsDashboard() {
       {/* Global Error Alert */}
       {error && (
         <Card>
-          <div className="flex items-start gap-3 text-rose-700">
-            <AlertCircle size={22} className="shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 text-rose-800">
+            <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-600" />
             <div>
-              <h3 className="font-bold text-rose-800">API Connection Notice</h3>
-              <p className="text-sm mt-0.5 text-rose-600">{error}</p>
+              <h3 className="text-xs font-semibold text-rose-900">Connection notice</h3>
+              <p className="text-xs text-rose-700 mt-0.5">{error}</p>
               <button
                 onClick={loadDashboardData}
-                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-800 hover:bg-rose-200"
+                className="mt-2 inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-800 hover:bg-rose-100 transition-colors"
               >
-                <RefreshCw size={14} /> Retry Connection
+                <RefreshCw size={12} /> Retry Connection
               </button>
             </div>
           </div>
@@ -458,14 +402,13 @@ function AnalyticsDashboard() {
       <Card>
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-              <Filter size={17} />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+              <Filter size={15} />
             </div>
-
             <div>
-              <h2 className="font-bold text-smart-primary">Dashboard filters</h2>
-              <p className="text-xs text-smart-secondary">
-                Filter live analytics views by block or period
+              <h2 className="text-sm font-semibold text-slate-900">Dashboard filters</h2>
+              <p className="text-xs text-slate-500">
+                Filter analytics by period or hostel building
               </p>
             </div>
           </div>
@@ -473,22 +416,22 @@ function AnalyticsDashboard() {
           <button
             onClick={loadDashboardData}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
             <span>Refresh</span>
           </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-smart-primary">
+            <span className="mb-1.5 block text-xs font-medium text-slate-700">
               Reporting scope
             </span>
             <select
               value={reportingPeriod}
               onChange={(e) => setReportingPeriod(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
             >
               {PERIODS.map((period) => (
                 <option key={period.value} value={period.value}>
@@ -499,13 +442,13 @@ function AnalyticsDashboard() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-smart-primary">
+            <span className="mb-1.5 block text-xs font-medium text-slate-700">
               Hostel block
             </span>
             <select
               value={selectedBlock}
               onChange={(e) => setSelectedBlock(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
             >
               {BLOCKS.map((block) => (
                 <option key={block} value={block}>
@@ -519,12 +462,12 @@ function AnalyticsDashboard() {
 
       {/* Performance Overview Cards */}
       <section>
-        <div className="mb-4">
-          <h2 className="text-lg font-bold text-smart-primary">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-slate-900">
             Performance overview
           </h2>
-          <p className="mt-1 text-sm text-smart-secondary">
-            Aggregated indicators from live database records
+          <p className="text-xs text-slate-500">
+            Aggregated indicators from live campus database records
           </p>
         </div>
 
@@ -539,10 +482,10 @@ function AnalyticsDashboard() {
             subtitle={
               occupancyData?.totalBeds
                 ? `${occupancyData.totalBeds} total bed capacity`
-                : "No rooms registered yet"
+                : "No rooms registered"
             }
             icon={Building2}
-            iconStyle="bg-blue-50 text-blue-700"
+            iconStyle="bg-slate-100 text-slate-700"
           />
 
           <MetricCard
@@ -554,11 +497,11 @@ function AnalyticsDashboard() {
             }
             subtitle={
               occupancyData?.totalBeds
-                ? `${occupancyData.occupiedBeds} occupied / ${occupancyData.availableBeds} available`
+                ? `${occupancyData.occupiedBeds} occupied · ${occupancyData.availableBeds} vacant`
                 : "Awaiting bed allocation records"
             }
             icon={BedDouble}
-            iconStyle="bg-teal-50 text-teal-700"
+            iconStyle="bg-blue-50 text-blue-700 border border-blue-200/50"
           />
 
           <MetricCard
@@ -574,13 +517,13 @@ function AnalyticsDashboard() {
                 : "Zero outstanding balance"
             }
             icon={Wallet}
-            iconStyle="bg-emerald-50 text-emerald-700"
+            iconStyle="bg-emerald-50 text-emerald-700 border border-emerald-200/50"
             trend={financialData?.collectionRate}
             trendLabel="collection rate"
           />
 
           <MetricCard
-            title="Open Complaints"
+            title="Open Maintenance Complaints"
             value={
               loading
                 ? "..."
@@ -589,32 +532,30 @@ function AnalyticsDashboard() {
             subtitle={
               complaintData?.resolvedComplaints !== undefined
                 ? `${complaintData.resolvedComplaints} tickets resolved`
-                : "Maintenance tickets"
+                : "Maintenance issues"
             }
             icon={MessageSquareWarning}
-            iconStyle="bg-amber-50 text-amber-700"
+            iconStyle="bg-amber-50 text-amber-700 border border-amber-200/50"
           />
         </div>
       </section>
 
-      {/* Backend Utility Telemetry */}
+      {/* Utility Telemetry */}
       <section>
-        <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <h2 className="text-lg font-bold text-smart-primary">
-              Live Utility Monitoring
-            </h2>
-            <p className="mt-1 text-sm text-smart-secondary">
-              Today's recorded consumption vs campus daily limits
-            </p>
-          </div>
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Live utility telemetry
+          </h2>
+          <p className="text-xs text-slate-500">
+            Today's recorded consumption against daily campus limits
+          </p>
         </div>
 
         {loading ? (
           <Card>
-            <div className="flex items-center gap-3 py-4 text-sm text-slate-500">
-              <RefreshCw size={18} className="animate-spin text-blue-600" />
-              Loading live utility readings...
+            <div className="flex items-center gap-2 py-3 text-xs text-slate-500">
+              <RefreshCw size={14} className="animate-spin text-slate-600" />
+              Loading live utility telemetry...
             </div>
           </Card>
         ) : (
@@ -629,71 +570,73 @@ function AnalyticsDashboard() {
               const percentage = Number(item?.percentage ?? 0);
               const status = item?.status ?? "Normal";
 
-              const statusClass =
+              const statusBadgeStyle =
                 status === "Exceeded"
-                  ? "bg-rose-100 text-rose-700"
+                  ? "bg-rose-50 text-rose-800 border-rose-200"
                   : status === "Warning"
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-emerald-100 text-emerald-700";
+                  ? "bg-amber-50 text-amber-800 border-amber-200"
+                  : "bg-emerald-50 text-emerald-800 border-emerald-200";
 
-              const progressClass =
+              const progressFill =
                 status === "Exceeded"
-                  ? "bg-rose-500"
+                  ? "bg-rose-600"
                   : status === "Warning"
                   ? "bg-amber-500"
-                  : "bg-emerald-500";
+                  : type === "Water"
+                  ? "bg-cyan-600"
+                  : "bg-amber-600";
 
               return (
                 <Card key={type}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                           type === "Water"
-                            ? "bg-cyan-50 text-cyan-700"
-                            : "bg-amber-50 text-amber-700"
+                            ? "bg-cyan-50 text-cyan-700 border border-cyan-200/50"
+                            : "bg-amber-50 text-amber-700 border border-amber-200/50"
                         }`}
                       >
                         {type === "Water" ? (
-                          <Droplets size={22} />
+                          <Droplets size={18} />
                         ) : (
-                          <Zap size={22} />
+                          <Zap size={18} />
                         )}
                       </div>
 
                       <div>
-                        <p className="text-sm font-medium text-smart-secondary">
-                          {type} usage today
+                        <p className="text-xs text-slate-500">
+                          {type} consumption today
                         </p>
-                        <p className="mt-1 text-2xl font-bold text-smart-primary">
+                        <p className="mt-0.5 text-2xl font-semibold font-mono tabular-nums text-slate-900">
                           {value.toLocaleString()}{" "}
-                          <span className="text-sm font-medium">{unit}</span>
+                          <span className="text-xs font-normal text-slate-500 font-sans">{unit}</span>
                         </p>
                       </div>
                     </div>
 
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}
+                      className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${statusBadgeStyle}`}
                     >
                       {status}
                     </span>
                   </div>
 
-                  <p className="mt-4 text-xs text-smart-secondary">
+                  <p className="mt-3 text-xs text-slate-500 font-mono">
                     {item?.dailyLimit != null
-                      ? `Daily limit: ${Number(item.dailyLimit).toLocaleString()} ${unit}`
-                      : "Daily limit configured"}
+                      ? `Daily threshold: ${Number(item.dailyLimit).toLocaleString()} ${unit}`
+                      : "Standard threshold active"}
                   </p>
 
-                  <div className="mt-4">
-                    <div className="mb-2 flex justify-between text-xs text-slate-500">
-                      <span>Daily threshold progress</span>
+                  <div className="mt-3">
+                    <div className="mb-1.5 flex justify-between text-xs text-slate-500 font-mono">
+                      <span className="font-sans">Limit progress</span>
                       <span>{percentage.toFixed(1)}%</span>
                     </div>
 
-                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={`h-full rounded-full transition-all ${progressClass}`}
+                        className={`h-full rounded-full transition-colors ${progressFill}`}
                         style={{
                           width: `${Math.min(Math.max(percentage, 0), 100)}%`,
                         }}
@@ -701,7 +644,7 @@ function AnalyticsDashboard() {
                     </div>
                   </div>
 
-                  <p className="mt-3 text-xs text-slate-500">
+                  <p className="mt-2.5 text-[11px] text-slate-400 font-mono">
                     {item?.readingCount ?? 0} meter readings recorded today
                   </p>
                 </Card>
@@ -714,67 +657,71 @@ function AnalyticsDashboard() {
       {/* Utility Summary by Block */}
       <section>
         <Card>
-          <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-              <Building2 size={20} />
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <Building2 size={16} />
+              </div>
+
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Utility summary by block
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Recorded water and electricity metrics by campus location
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h2 className="text-lg font-bold text-smart-primary">
-                Utility Summary by Block
-              </h2>
-              <p className="text-sm text-smart-secondary">
-                Today's recorded water and electricity usage by hostel location
-              </p>
-            </div>
+            <span className="text-[11px] font-mono text-slate-400">BLK-LOG · 24H</span>
           </div>
 
           {blockSummary.length === 0 ? (
-            <div className="rounded-xl bg-slate-50 px-4 py-8 text-center">
-              <Building2 size={28} className="mx-auto text-slate-400" />
-              <p className="mt-3 text-sm font-semibold text-slate-700">
+            <div className="rounded-lg bg-slate-50 px-4 py-8 text-center border border-slate-100">
+              <Building2 size={24} className="mx-auto text-slate-400 mb-1" />
+              <p className="text-xs font-semibold text-slate-700">
                 No block readings recorded today
               </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Readings logged in the Smart Monitoring portal will appear here in real time.
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Readings logged in Smart Monitoring appear here in real time.
               </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[540px] text-left text-sm">
+              <table className="w-full min-w-[500px] text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th className="px-3 py-3 font-medium">Block</th>
-                    <th className="px-3 py-3 font-medium">Water (L)</th>
-                    <th className="px-3 py-3 font-medium">Electricity (kWh)</th>
-                    <th className="px-3 py-3 font-medium">Status</th>
+                  <tr className="border-b border-slate-200 text-slate-500 font-medium">
+                    <th className="px-3 py-2.5">Hostel Block</th>
+                    <th className="px-3 py-2.5">Water (L)</th>
+                    <th className="px-3 py-2.5">Electricity (kWh)</th>
+                    <th className="px-3 py-2.5">Status</th>
                   </tr>
                 </thead>
 
-                <tbody>
+                <tbody className="divide-y divide-slate-100">
                   {blockSummary.map((block, index) => (
                     <tr
                       key={block.blockName || index}
-                      className="border-b border-slate-100 last:border-0"
+                      className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-3 py-3 font-semibold text-slate-800">
+                      <td className="px-3 py-2.5 font-medium text-slate-800">
                         {block.blockName || "Unassigned"}
                       </td>
 
-                      <td className="px-3 py-3 text-slate-700">
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
                         {Number(block.water || 0).toLocaleString()}
                       </td>
 
-                      <td className="px-3 py-3 text-slate-700">
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
                         {Number(block.electricity || 0).toLocaleString()}
                       </td>
 
-                      <td className="px-3 py-3">
+                      <td className="px-3 py-2.5">
                         <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
                             block.status === "Warning"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-emerald-100 text-emerald-700"
+                              ? "bg-amber-50 text-amber-800 border-amber-200"
+                              : "bg-emerald-50 text-emerald-800 border-emerald-200"
                           }`}
                         >
                           {block.status || "Normal"}
@@ -793,50 +740,50 @@ function AnalyticsDashboard() {
       <section className="grid gap-5 xl:grid-cols-2">
         {/* Occupancy Chart */}
         <Card>
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-                  <BedDouble size={18} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700 border border-blue-200/50">
+                  <BedDouble size={16} />
                 </div>
-                <h2 className="text-lg font-bold text-smart-primary">
-                  Occupancy Breakdown
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Occupancy breakdown
                 </h2>
               </div>
 
-              <p className="mt-2 text-sm text-smart-secondary">
-                Live occupied and available bed capacity
+              <p className="mt-1 text-xs text-slate-500">
+                Occupied and available bed capacity across blocks
               </p>
             </div>
 
-            <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-mono text-slate-700">
               {occupancyData?.totalBeds || 0} Total Beds
             </span>
           </div>
 
-          <div className="h-[300px] w-full">
+          <div className="h-[280px] w-full">
             {occupancyChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={occupancyChartData}
-                  barGap={5}
-                  margin={{ top: 10, right: 4, left: -18, bottom: 0 }}
+                  barGap={4}
+                  margin={{ top: 10, right: 4, left: -20, bottom: 0 }}
                 >
                   <CartesianGrid
-                    stroke="#e2e8f0"
-                    strokeDasharray="4 4"
+                    stroke="#f1f5f9"
+                    strokeDasharray="3 3"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="name"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
+                    tick={{ fill: "#64748b", fontSize: 11 }}
                   />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
+                    tick={{ fill: "#64748b", fontSize: 11 }}
                   />
                   <Tooltip />
                   <Legend />
@@ -844,34 +791,34 @@ function AnalyticsDashboard() {
                     dataKey="occupied"
                     name="Occupied beds"
                     fill="#2563eb"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={34}
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={30}
                   />
                   <Bar
                     dataKey="available"
                     name="Available beds"
-                    fill="#bfdbfe"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={34}
+                    fill="#93c5fd"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={30}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState message="No hostel room or bed records found in database." />
+              <EmptyState message="No room or bed allocation records found." />
             )}
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-xs text-slate-500">Total occupied beds</p>
-              <p className="mt-1 text-lg font-bold text-slate-800">
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+            <div className="rounded-lg bg-slate-50 p-2.5">
+              <p className="text-[11px] text-slate-500">Total occupied beds</p>
+              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-slate-900">
                 {Number(occupancyData?.occupiedBeds || 0).toLocaleString()}
               </p>
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-xs text-slate-500">Total available beds</p>
-              <p className="mt-1 text-lg font-bold text-slate-800">
+            <div className="rounded-lg bg-slate-50 p-2.5">
+              <p className="text-[11px] text-slate-500">Total vacant beds</p>
+              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-slate-900">
                 {Number(occupancyData?.availableBeds || 0).toLocaleString()}
               </p>
             </div>
@@ -880,28 +827,28 @@ function AnalyticsDashboard() {
 
         {/* Revenue & Collections Chart */}
         <Card>
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                  <TrendingUp size={18} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                  <TrendingUp size={16} />
                 </div>
-                <h2 className="text-lg font-bold text-smart-primary">
-                  Fee Collections & Billing
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Fee collections and billing
                 </h2>
               </div>
 
-              <p className="mt-2 text-sm text-smart-secondary">
-                Aggregated monthly collections and invoiced fees (LKR)
+              <p className="mt-1 text-xs text-slate-500">
+                Monthly collected payments and invoiced amounts (LKR)
               </p>
             </div>
 
-            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-mono text-emerald-800">
               {financialData?.collectionRate ?? 0}% Collected
             </span>
           </div>
 
-          <div className="h-[300px] w-full">
+          <div className="h-[280px] w-full">
             {revenueChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -909,60 +856,60 @@ function AnalyticsDashboard() {
                   margin={{ top: 10, right: 8, left: 8, bottom: 0 }}
                 >
                   <CartesianGrid
-                    stroke="#e2e8f0"
-                    strokeDasharray="4 4"
+                    stroke="#f1f5f9"
+                    strokeDasharray="3 3"
                     vertical={false}
                   />
                   <XAxis
                     dataKey="month"
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 12 }}
+                    tick={{ fill: "#64748b", fontSize: 11 }}
                   />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 11 }}
-                    tickFormatter={(val) => formatShortCurrency(val).replace("Rs. ", "")}
+                    tick={{ fill: "#64748b", fontSize: 10 }}
+                    tickFormatter={(val) => formatShortCurrency(val).replace("LKR ", "")}
                   />
                   <Tooltip content={<CurrencyTooltip />} />
                   <Legend />
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    name="Collected Payments"
+                    name="Collected payments"
                     stroke="#059669"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#059669" }}
-                    activeDot={{ r: 6 }}
+                    strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: "#059669" }}
+                    activeDot={{ r: 5 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="billed"
-                    name="Invoiced Fees"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#f59e0b" }}
-                    activeDot={{ r: 6 }}
+                    name="Invoiced fees"
+                    stroke="#d97706"
+                    strokeWidth={2.5}
+                    dot={{ r: 3.5, fill: "#d97706" }}
+                    activeDot={{ r: 5 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState message="No payment transactions recorded in database yet." />
+              <EmptyState message="No payment transactions recorded yet." />
             )}
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4">
-            <div className="rounded-xl bg-emerald-50 p-3">
-              <p className="text-xs text-emerald-700">Collected amount</p>
-              <p className="mt-1 text-lg font-bold text-emerald-800">
+          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+            <div className="rounded-lg bg-emerald-50/70 p-2.5 border border-emerald-100">
+              <p className="text-[11px] text-emerald-800">Collected amount</p>
+              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-emerald-950">
                 {formatShortCurrency(financialData?.totalCollectedPayments || 0)}
               </p>
             </div>
 
-            <div className="rounded-xl bg-amber-50 p-3">
-              <p className="text-xs text-amber-700">Outstanding balance</p>
-              <p className="mt-1 text-lg font-bold text-amber-800">
+            <div className="rounded-lg bg-amber-50/70 p-2.5 border border-amber-100">
+              <p className="text-[11px] text-amber-800">Outstanding balance</p>
+              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-amber-950">
                 {formatShortCurrency(financialData?.outstandingBalance || 0)}
               </p>
             </div>
@@ -975,18 +922,18 @@ function AnalyticsDashboard() {
         {/* Complaint Category Breakdown */}
         <div className="xl:col-span-3">
           <Card>
-            <div className="mb-5">
-              <h2 className="text-lg font-bold text-smart-primary">
-                Complaint Analysis
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Complaint analysis
               </h2>
-              <p className="mt-1 text-sm text-smart-secondary">
-                Reported maintenance issues grouped by category
+              <p className="text-xs text-slate-500">
+                Maintenance tickets categorized by facility type
               </p>
             </div>
 
             {complaintCategoryTotal > 0 ? (
               <div className="grid items-center gap-4 md:grid-cols-2">
-                <div className="h-[270px] min-w-0">
+                <div className="h-[250px] min-w-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -995,9 +942,9 @@ function AnalyticsDashboard() {
                         nameKey="category"
                         cx="50%"
                         cy="50%"
-                        innerRadius={65}
-                        outerRadius={100}
-                        paddingAngle={4}
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={3}
                       >
                         {complaintChartData.map((entry, index) => (
                           <Cell
@@ -1011,12 +958,12 @@ function AnalyticsDashboard() {
                   </ResponsiveContainer>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="rounded-2xl bg-slate-50 p-4">
-                    <p className="text-sm text-slate-500">
-                      Total logged complaints
+                <div className="space-y-3">
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <p className="text-xs text-slate-500">
+                      Total logged tickets
                     </p>
-                    <p className="mt-1 text-3xl font-bold text-slate-900">
+                    <p className="mt-0.5 text-2xl font-semibold font-mono tabular-nums text-slate-900">
                       {complaintCategoryTotal.toLocaleString()}
                     </p>
                   </div>
@@ -1029,27 +976,27 @@ function AnalyticsDashboard() {
 
                     return (
                       <div key={item.category}>
-                        <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <div className="mb-1 flex items-center justify-between gap-3 text-xs">
                           <div className="flex items-center gap-2">
                             <span
-                              className="h-2.5 w-2.5 rounded-full"
+                              className="h-2 w-2 rounded-full"
                               style={{
                                 backgroundColor: COLORS[index % COLORS.length],
                               }}
                             />
-                            <span className="font-medium text-slate-700">
+                            <span className="text-slate-700">
                               {item.category}
                             </span>
                           </div>
 
-                          <span className="font-bold text-slate-900">
+                          <span className="font-mono tabular-nums text-slate-900 font-medium">
                             {item.count} ({percentage.toFixed(0)}%)
                           </span>
                         </div>
 
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className="h-full rounded-full transition-all"
+                            className="h-full rounded-full transition-colors"
                             style={{
                               width: `${percentage}%`,
                               backgroundColor: COLORS[index % COLORS.length],
@@ -1070,22 +1017,22 @@ function AnalyticsDashboard() {
         {/* Financial Details Summary */}
         <div className="xl:col-span-2">
           <Card>
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-                <CircleDollarSign size={21} />
+            <div className="mb-4 flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                <CircleDollarSign size={16} />
               </div>
 
               <div>
-                <h2 className="text-lg font-bold text-smart-primary">
-                  Financial Summary
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Financial summary
                 </h2>
-                <p className="text-sm text-smart-secondary">
-                  Hostel fees & verified transactions
+                <p className="text-xs text-slate-500">
+                  Verified hostel billing records
                 </p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <FinancialRow
                 label="Total Invoiced"
                 value={formatCurrency(financialData?.totalBilledAmount || 0)}
@@ -1105,16 +1052,16 @@ function AnalyticsDashboard() {
                 value={`${(financialData?.collectionRate || 0).toFixed(1)}%`}
               />
               <FinancialRow
-                label="Successful Payments"
-                value={`${financialData?.paymentsSummary?.successfulCount || 0} transactions`}
+                label="Settled Transactions"
+                value={`${financialData?.paymentsSummary?.successfulCount || 0} receipts`}
               />
             </div>
           </Card>
         </div>
       </section>
 
-      <p className="px-1 text-center text-xs text-smart-secondary">
-        SmartStay Campus Operations &amp; Executive Analytics
+      <p className="text-center text-[11px] font-mono text-slate-400">
+        SmartStay Operations &amp; Executive Telemetry Console
       </p>
     </div>
   );

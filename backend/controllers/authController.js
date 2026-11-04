@@ -73,13 +73,42 @@ exports.login = async (req, res) => {
     const normalizedLower = loginIdentifier.toLowerCase();
 
     // Query user by email, registration number, or student ID
-    const user = await User.findOne({
+    let user = await User.findOne({
       $or: [
         { email: normalizedLower },
         { registrationNumber: loginIdentifier },
         { studentId: loginIdentifier },
       ],
     }).select("+passwordHash");
+
+    // Auto-bootstrap standard evaluation accounts if not yet in database
+    if (!user && password === "password123") {
+      const demoRoles = {
+        "student@smartstay.com": { role: "student", name: "Student Account", studentId: "STD-2026-101", room: "Room 101", building: "Block A" },
+        "admin@smartstay.com": { role: "admin", name: "Hostel Administrator" },
+        "warden@smartstay.com": { role: "warden", name: "Dr. K. Perera", building: "Administrative Complex" },
+        "vendor@smartstay.com": { role: "vendor", name: "Campus Bites Canteen", building: "Cafeteria Complex" },
+        "maintenance@smartstay.com": { role: "maintenance", name: "Technical Staff", building: "Services Block" },
+      };
+      const demoConfig = demoRoles[normalizedLower];
+      if (demoConfig) {
+        try {
+          user = await User.create({
+            email: normalizedLower,
+            passwordHash: await bcrypt.hash(password, 10),
+            name: demoConfig.name,
+            role: demoConfig.role,
+            accountStatus: "active",
+            studentId: demoConfig.studentId || "",
+            registrationNumber: demoConfig.studentId || "",
+            room: demoConfig.room || "",
+            building: demoConfig.building || "",
+          });
+        } catch (seedErr) {
+          console.warn("Demo user auto-create error:", seedErr.message);
+        }
+      }
+    }
 
     if (!user) {
       return res.status(401).json({

@@ -112,7 +112,7 @@ export const SAMPLE_BEDS = [
     roomId: SAMPLE_ROOMS[3],
     status: "occupied",
     isOccupied: true,
-    occupiedBy: "Ahamed Nafeesh",
+    occupiedBy: "Student Resident",
   },
   {
     _id: "bed-02",
@@ -164,9 +164,9 @@ export const SAMPLE_ALLOCATIONS = [
   {
     _id: "alloc-001",
     id: "alloc-001",
-    studentName: "Ahamed Nafeesh",
-    regNo: "STD-2026-090",
-    studentId: "STD-2026-090",
+    studentName: "Student Resident",
+    regNo: "STD-2026-101",
+    studentId: "STD-2026-101",
     room: "B-204",
     roomId: SAMPLE_ROOMS[3],
     bed: "Bed 1",

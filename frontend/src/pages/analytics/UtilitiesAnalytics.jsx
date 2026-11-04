@@ -54,7 +54,7 @@ const PERIOD_OPTIONS = [
 ];
 
 const formatCurrency = (value) =>
-  `Rs. ${Number(value || 0).toLocaleString("en-LK")}`;
+  `LKR ${Number(value || 0).toLocaleString("en-LK")}`;
 
 const downloadCSV = (filename, rows) => {
   if (!rows || rows.length === 0) {
@@ -792,7 +792,7 @@ export default function UtilitiesAnalytics() {
                       yAxisId="revenue"
                       type="monotone"
                       dataKey="revenue"
-                      name="Revenue (Rs.)"
+                      name="Revenue (LKR)"
                       stroke="#10b981"
                       strokeWidth={3}
                       dot={{ r: 4 }}

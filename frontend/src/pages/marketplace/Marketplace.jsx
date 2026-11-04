@@ -325,8 +325,8 @@ const dropLocations = [
 export default function Marketplace() {
   const { user } = useAuth();
   const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
-  const studentRegId = user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "");
-  const studentDisplayName = user?.name || (isDemo ? "Ahamed Nafeesh" : "Student");
+  const studentRegId = user?.studentId || user?.registrationNumber || "";
+  const studentDisplayName = user?.name || "Student";
   const [items] = useState(initialFoodItems);
   const [myOrders, setMyOrders] = useState(() =>
     studentRegId ? readFoodOrders().filter((order) => order.studentId === studentRegId) : []
@@ -530,7 +530,7 @@ export default function Marketplace() {
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Resident: <span className="text-slate-800 font-medium">{studentDisplayName}</span> (ID:{" "}
-            <span className="font-mono text-slate-700 font-medium">{studentRegId}</span>) · Drop-off at Hostel Block B
+            <span className="font-mono text-slate-700 font-medium">{studentRegId}</span>) · Drop-off at {user?.building || "Hostel Residence"}
           </p>
         </div>
 

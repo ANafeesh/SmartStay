@@ -16,6 +16,8 @@ import {
   RefreshCw,
   Check,
   Clock,
+  Download,
+  Copy,
 } from "lucide-react";
 import { useAuth, isDemoUser } from "../../context/AuthContext";
 import QRCodeLib from "qrcode";
@@ -31,11 +33,15 @@ function StudentDashboard() {
   const { user } = useAuth();
   const [showPassModal, setShowPassModal] = useState(false);
   const [scanResult, setScanResult] = useState(null);
+  const [copied, setCopied] = useState(false);
 
-  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
-  const studentName = user?.name || (isDemo ? "Ahamed Nafeesh" : "Student User");
-  const studentRegId = user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "Unassigned");
-  const roomNumber = user?.room || (isDemo ? "B-204" : "Not Allocated");
+  const isDemo = isDemoUser(user) || user?.isDemo;
+  const studentName = user?.name || "Student User";
+  const studentRegId = user?.studentId || user?.registrationNumber || (user?.email ? user.email.split("@")[0].toUpperCase() : "STD-ACTIVE");
+  const roomNumber = user?.room || "Room Assigned";
+  const buildingName = user?.building || "Hostel Residence";
+  const bedName = user?.bed || "Assigned Bed";
+  const roomType = user?.roomType || "Standard Resident";
 
   const dynamicStats = [
     {
@@ -84,11 +90,9 @@ function StudentDashboard() {
     const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
     return `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
       passDetails.passToken
-    )}&passNumber=${encodeURIComponent(
+    )}&studentId=${encodeURIComponent(studentRegId)}&passNumber=${encodeURIComponent(
       passDetails.passNumber
-    )}&studentId=${encodeURIComponent(studentRegId)}&name=${encodeURIComponent(
-      studentName
-    )}&room=${encodeURIComponent(roomNumber)}&status=Active`;
+    )}`;
   };
 
   const [realPassData, setRealPassData] = useState(null);
@@ -129,20 +133,16 @@ function StudentDashboard() {
       const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
       const verificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         tokenVal
-      )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(
-        sId
-      )}&name=${encodeURIComponent(sName)}&room=${encodeURIComponent(
-        sRoom
-      )}&status=${encodeURIComponent(sStatus)}`;
+      )}&studentId=${encodeURIComponent(sId)}&passNumber=${encodeURIComponent(passNum)}`;
 
       setVerificationDirectUrl(verificationUrl);
 
       const url = await QRCodeLib.toDataURL(verificationUrl, {
-        width: 240,
-        margin: 2,
+        width: 320,
+        margin: 4,
         errorCorrectionLevel: "M",
         color: {
-          dark: "#0f172a",
+          dark: "#000000",
           light: "#ffffff",
         },
       });
@@ -168,21 +168,19 @@ function StudentDashboard() {
       const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
       const fallbackVerificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         passDetails.passToken
-      )}&passNumber=${encodeURIComponent(
+      )}&studentId=${encodeURIComponent(studentRegId)}&passNumber=${encodeURIComponent(
         passDetails.passNumber
-      )}&studentId=${encodeURIComponent(studentRegId)}&name=${encodeURIComponent(
-        studentName
-      )}&room=${encodeURIComponent(roomNumber)}&status=Active`;
+      )}`;
 
       setVerificationDirectUrl(fallbackVerificationUrl);
 
       try {
         const fallbackUrl = await QRCodeLib.toDataURL(fallbackVerificationUrl, {
-          width: 240,
-          margin: 2,
+          width: 320,
+          margin: 4,
           errorCorrectionLevel: "M",
           color: {
-            dark: "#0f172a",
+            dark: "#000000",
             light: "#ffffff",
           },
         });
@@ -345,17 +343,17 @@ function StudentDashboard() {
             <div className="py-4">
               <p className="text-xs text-slate-400">Assigned hostel room</p>
               <h3 className="text-2xl font-semibold tracking-tight text-slate-900 mt-1 font-mono">
-                Room {roomNumber}
+                {roomNumber}
               </h3>
               <p className="text-xs text-slate-600 mt-1">
-                Hostel Block B · Bed 02 (Olu Block)
+                {buildingName} · {bedName}
               </p>
             </div>
 
             <div className="rounded-lg border border-slate-200/80 bg-slate-50/60 p-3.5 space-y-2 text-xs">
               <div className="flex items-center justify-between text-slate-600">
                 <span>Room type</span>
-                <span className="font-medium text-slate-800">Double Non-AC</span>
+                <span className="font-medium text-slate-800">{roomType}</span>
               </div>
               <div className="flex items-center justify-between text-slate-600">
                 <span>Gate status</span>
@@ -466,19 +464,20 @@ function StudentDashboard() {
 
             {/* Pass Card Container */}
             <div className="relative rounded-xl border border-slate-200 bg-white p-5 text-center">
-              {/* Scannable QR Code */}
-              <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-xl bg-white border-2 border-dashed border-emerald-300 p-2 shadow-xs">
-                {verificationDirectUrl ? (
-                  <QRCode
-                    value={verificationDirectUrl}
-                    size={190}
-                    title={`Digital Gate Pass QR code for ${studentName}`}
-                  />
-                ) : qrDataUrl ? (
+              {/* Scannable QR Code with Standard Quiet Zone */}
+              <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-2xl bg-white p-4 shadow-sm border border-slate-200/80">
+                {qrDataUrl ? (
                   <img
                     src={qrDataUrl}
                     alt={`Digital Gate Pass QR code for ${studentName}`}
-                    className="h-48 w-48 rounded object-contain"
+                    className="h-56 w-56 object-contain select-none"
+                  />
+                ) : verificationDirectUrl ? (
+                  <QRCode
+                    value={verificationDirectUrl}
+                    size={210}
+                    margin={4}
+                    title={`Digital Gate Pass QR code for ${studentName}`}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -540,19 +539,43 @@ function StudentDashboard() {
                 </div>
               )}
 
-              <div className="mt-3 text-center">
-                <p className="text-[11px] text-slate-400">
-                  Scan with camera to verify pass credentials
+              <div className="mt-4 text-center space-y-2.5">
+                <p className="text-xs text-slate-500 font-medium">
+                  Scan with phone camera or checkpoint terminal
                 </p>
-                <div className="mt-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {qrDataUrl && (
+                    <a
+                      href={qrDataUrl}
+                      download={`${(studentName || "student").toLowerCase().replace(/\s+/g, "-")}-gate-pass.png`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      <Download size={13} className="text-slate-500" />
+                      <span>Download QR</span>
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (verificationDirectUrl) {
+                        navigator.clipboard?.writeText(verificationDirectUrl);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} className="text-slate-500" />}
+                    <span>{copied ? "Copied!" : "Copy Link"}</span>
+                  </button>
                   <a
                     href={verificationDirectUrl || `${(import.meta.env.BASE_URL || "/").replace(/\/$/, "")}/gate/verify`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                   >
-                    <span>Open verification interface</span>
-                    <ExternalLink size={12} className="text-slate-400" />
+                    <ExternalLink size={13} className="text-slate-500" />
+                    <span>Open Gate Verification</span>
                   </a>
                 </div>
               </div>

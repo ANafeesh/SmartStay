@@ -31,7 +31,7 @@ export default function PaymentModal({
   const [method, setMethod] = useState("card");
 
   // Card Form State
-  const [cardHolder, setCardHolder] = useState(user?.name || (user?.isDemo ? "Ahamed Nafeesh" : ""));
+  const [cardHolder, setCardHolder] = useState(user?.name || "");
   const [cardNumber, setCardNumber] = useState("4532 8921 4402 8842");
   const [cardExpiry, setCardExpiry] = useState("09/28");
   const [cardCvv, setCardCvv] = useState("489");
@@ -142,8 +142,8 @@ export default function PaymentModal({
       refNo: txnRef,
       receiptNo: receiptNo,
       status: isSlip ? "Pending" : "Success",
-      studentName: user?.name || (user?.isDemo ? "Ahamed Nafeesh" : "Student User"),
-      studentRegNo: user?.studentId || user?.registrationNumber || (user?.isDemo ? "STD-2026-090" : "Unassigned"),
+      studentName: user?.name || "Student User",
+      studentRegNo: user?.studentId || user?.registrationNumber || "Unassigned",
       hostelRoom: user?.room ? `Hostel ${user.building || "Block"}, Room ${user.room}` : (user?.isDemo ? "Block B - Room 204" : "Not Allocated"),
     };
 

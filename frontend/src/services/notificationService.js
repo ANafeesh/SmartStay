@@ -128,7 +128,7 @@ export function buildRealLocalNotifications(user) {
   const studentRegId =
     user?.studentId ||
     user?.registrationNumber ||
-    (isDemo ? "STD-2026-090" : "STD-NEW");
+    (isDemo ? "STD-2026-101" : "STD-NEW");
   const studentName = user?.name || (isDemo ? "Ahamed Nafesh" : "Student");
   const roomName = user?.room || (isDemo ? "Block B - Room 204" : "");
 
@@ -221,7 +221,7 @@ export function buildRealLocalNotifications(user) {
           (o) =>
             o.studentId === studentRegId ||
             o.studentRegNo === studentRegId ||
-            (isDemo && (!o.studentId || o.studentId === "STD-2026-090"))
+            (isDemo && (!o.studentId || o.studentId === "STD-2026-101"))
         )
       : [];
 
@@ -368,7 +368,7 @@ export async function fetchUnifiedNotifications(user) {
   const studentRegId =
     user?.studentId ||
     user?.registrationNumber ||
-    (isDemo ? "STD-2026-090" : "STD-NEW");
+    (isDemo ? "STD-2026-101" : "STD-NEW");
 
   const readSet = getReadSet(userKey);
   const deletedSet = getDeletedSet(userKey);
