@@ -1,57 +1,56 @@
 const fs = require('fs');
 
-// 1. Simple High-Definition Mark SVG
-function getSimpleMarkSvg(isDark = false) {
-  const navy = isDark ? '#FFFFFF' : '#021F43';
-  const blue = '#0062FF';
-  const cyan = '#00B4D8';
+// SmartStay Main Color Theme:
+// Primary: #0F172A (Slate 900)
+// Blue: #2563EB (Tailwind Blue 600 / Smart Blue)
+// Cyan / Accent: #0EA5E9 (Sky 500 / Smart Accent)
+// Secondary: #64748B (Slate 500)
+// Muted Line: #CBD5E1 (Slate 300)
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" class="smartstay-mark-svg">
-  <!-- Circuit Traces & Terminal Rings -->
-  <g class="circuit-traces" stroke="${cyan}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Left trace & ring -->
-    <path d="M 58 39 L 55 24" />
-    <circle cx="55" cy="21" r="2.8" stroke="${cyan}" stroke-width="2.0" fill="none" />
+// 1. High-Definition Standalone Mark SVG
+function getThemeMarkSvg(isDark = false) {
+  const primary = isDark ? '#FFFFFF' : '#0F172A';
+  const blue = '#2563EB';
+  const cyan = '#0EA5E9';
 
-    <!-- Center trace & ring (tallest) -->
-    <path d="M 64 44 L 66 16" />
-    <circle cx="66" cy="13" r="3.0" stroke="${cyan}" stroke-width="2.2" fill="none" />
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" fill="none" class="smartstay-mark-svg">
+  <!-- Smart Circuit Traces & Terminal Nodes -->
+  <g stroke="${cyan}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 26 18 L 26 9" />
+    <circle cx="26" cy="7" r="2.0" stroke="${cyan}" stroke-width="1.6" fill="${cyan}" />
 
-    <!-- Right trace & ring -->
-    <path d="M 70 50 L 78 28" />
-    <circle cx="78" cy="25" r="2.8" stroke="${cyan}" stroke-width="2.0" fill="none" />
+    <path d="M 30 21 L 32 5" />
+    <circle cx="32" cy="4" r="2.2" stroke="${cyan}" stroke-width="1.8" fill="${cyan}" />
+
+    <path d="M 34 24 L 37 11" />
+    <circle cx="37" cy="9" r="2.0" stroke="${cyan}" stroke-width="1.6" fill="${cyan}" />
   </g>
 
-  <!-- Roof Gable (Deep Navy) -->
+  <!-- Roof Gable (Slate 900) -->
   <path
-    d="M 16 54 L 46 25 L 76 54 L 69.5 59.5 L 46 36.5 L 22.5 59.5 Z"
-    fill="${navy}"
+    d="M 6 24 L 22 10 L 38 24 L 35 26.8 L 22 15.2 L 9 26.8 Z"
+    fill="${primary}"
   />
 
-  <!-- 4 Window Panes (2x2 Grid) -->
-  <g class="windows" fill="${blue}">
-    <rect x="40.5" y="38" width="5.0" height="4.5" rx="0.8" />
-    <rect x="47.5" y="38" width="5.0" height="4.5" rx="0.8" />
-    <rect x="40.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
-    <rect x="47.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
+  <!-- 4 Window Panes (2x2 Grid in Smart Blue) -->
+  <g fill="${blue}">
+    <rect x="19.4" y="16.2" width="2.2" height="2.0" rx="0.4" />
+    <rect x="22.4" y="16.2" width="2.2" height="2.0" rx="0.4" />
+    <rect x="19.4" y="19.0" width="2.2" height="2.0" rx="0.4" />
+    <rect x="22.4" y="19.0" width="2.2" height="2.0" rx="0.4" />
   </g>
 
-  <!-- Navy Arched Doorway & Left Foundation -->
-  <g class="door-and-foundation" fill="${navy}">
-    <!-- Arched Doorway -->
-    <path d="M 38 84 L 38 73 A 7 7 0 0 1 52 73 L 52 84 Z" />
-    <!-- Left Base / Foundation -->
-    <rect x="20" y="78" width="14" height="6" rx="1" />
+  <!-- Arched Doorway & Left Foundation -->
+  <g fill="${primary}">
+    <path d="M 18 38 L 18 32 A 4 4 0 0 1 26 32 L 26 38 Z" />
+    <rect x="9" y="35" width="7" height="3" rx="0.6" />
   </g>
 
-  <!-- Simple Flowing "S" Path (Uniform-width smooth rounded stroke) -->
+  <!-- Simple Flowing "S" Path (Smart Blue) -->
   <path
-    d="M 21 59 
-       L 66 59 
-       C 75.5 59 75.5 73.5 66 73.5 
-       L 24 73.5"
+    d="M 9.5 26.8 L 30.5 26.8 C 35.5 26.8 35.5 33.5 30.5 33.5 L 11 33.5"
     stroke="${blue}"
-    stroke-width="6.8"
+    stroke-width="3.2"
     stroke-linecap="round"
     stroke-linejoin="round"
     fill="none"
@@ -59,110 +58,108 @@ function getSimpleMarkSvg(isDark = false) {
 </svg>`;
 }
 
-// 2. Simple High-Definition Full Horizontal Logo SVG
-function getSimpleFullLogoSvg(isDark = false, subtitle = 'Campus Living') {
-  const navy = isDark ? '#FFFFFF' : '#021F43';
-  const blue = '#0062FF';
-  const cyan = '#00B4D8';
-  const taglineColor = isDark ? '#E2E8F0' : '#021F43';
+// 2. High-Definition Full Horizontal Logo SVG
+function getThemeFullLogoSvg(isDark = false, subtitle = 'Campus Living') {
+  const primary = isDark ? '#FFFFFF' : '#0F172A';
+  const blue = '#2563EB';
+  const cyan = '#0EA5E9';
+  const tagline = isDark ? '#94A3B8' : '#64748B';
+  const lineCol = isDark ? '#475569' : '#CBD5E1';
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 96" fill="none" class="smartstay-full-logo-svg">
-  <!-- ==================== LEFT: SIMPLE ICON MARK ==================== -->
-  <g class="brand-mark" transform="translate(0, -2)">
-    <!-- Circuit Traces & Terminal Rings -->
-    <g class="circuit-traces" stroke="${cyan}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M 58 39 L 55 24" />
-      <circle cx="55" cy="21" r="2.8" stroke="${cyan}" stroke-width="2.0" fill="none" />
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" fill="none" class="smartstay-full-logo-svg">
+  <!-- ==================== LEFT: ICON MARK ==================== -->
+  <g class="brand-mark" transform="translate(2, 3)">
+    <!-- Circuit Traces -->
+    <g stroke="${cyan}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 26 18 L 26 9" />
+      <circle cx="26" cy="7" r="2.0" fill="${cyan}" />
 
-      <path d="M 64 44 L 66 16" />
-      <circle cx="66" cy="13" r="3.0" stroke="${cyan}" stroke-width="2.2" fill="none" />
+      <path d="M 30 21 L 32 5" />
+      <circle cx="32" cy="4" r="2.2" fill="${cyan}" />
 
-      <path d="M 70 50 L 78 28" />
-      <circle cx="78" cy="25" r="2.8" stroke="${cyan}" stroke-width="2.0" fill="none" />
+      <path d="M 34 24 L 37 11" />
+      <circle cx="37" cy="9" r="2.0" fill="${cyan}" />
     </g>
 
     <!-- Roof Gable -->
     <path
-      d="M 16 54 L 46 25 L 76 54 L 69.5 59.5 L 46 36.5 L 22.5 59.5 Z"
-      fill="${navy}"
+      d="M 6 24 L 22 10 L 38 24 L 35 26.8 L 22 15.2 L 9 26.8 Z"
+      fill="${primary}"
     />
 
-    <!-- 4 Window Panes -->
-    <g class="windows" fill="${blue}">
-      <rect x="40.5" y="38" width="5.0" height="4.5" rx="0.8" />
-      <rect x="47.5" y="38" width="5.0" height="4.5" rx="0.8" />
-      <rect x="40.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
-      <rect x="47.5" y="44.2" width="5.0" height="4.5" rx="0.8" />
+    <!-- 4 Windows -->
+    <g fill="${blue}">
+      <rect x="19.4" y="16.2" width="2.2" height="2.0" rx="0.4" />
+      <rect x="22.4" y="16.2" width="2.2" height="2.0" rx="0.4" />
+      <rect x="19.4" y="19.0" width="2.2" height="2.0" rx="0.4" />
+      <rect x="22.4" y="19.0" width="2.2" height="2.0" rx="0.4" />
     </g>
 
-    <!-- Navy Arched Doorway & Left Foundation -->
-    <g class="door-and-foundation" fill="${navy}">
-      <path d="M 38 84 L 38 73 A 7 7 0 0 1 52 73 L 52 84 Z" />
-      <rect x="20" y="78" width="14" height="6" rx="1" />
+    <!-- Door & Base -->
+    <g fill="${primary}">
+      <path d="M 18 38 L 18 32 A 4 4 0 0 1 26 32 L 26 38 Z" />
+      <rect x="9" y="35" width="7" height="3" rx="0.6" />
     </g>
 
-    <!-- Simple Flowing "S" Path -->
+    <!-- S Path -->
     <path
-      d="M 21 59 
-         L 66 59 
-         C 75.5 59 75.5 73.5 66 73.5 
-         L 24 73.5"
+      d="M 9.5 26.8 L 30.5 26.8 C 35.5 26.8 35.5 33.5 30.5 33.5 L 11 33.5"
       stroke="${blue}"
-      stroke-width="6.8"
+      stroke-width="3.2"
       stroke-linecap="round"
       stroke-linejoin="round"
       fill="none"
     />
   </g>
 
-  <!-- ==================== RIGHT: BRAND TYPOGRAPHY ==================== -->
-  <g class="brand-text" transform="translate(94, 0)">
+  <!-- ==================== RIGHT: TYPOGRAPHY ==================== -->
+  <g class="brand-text" transform="translate(50, 0)">
     <!-- Main Logotype: SmartStay -->
     <text
       x="0"
-      y="54"
-      font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif"
+      y="26"
+      font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
       font-weight="800"
-      font-size="46"
-      letter-spacing="-0.035em"
+      font-size="24"
+      letter-spacing="-0.03em"
     >
-      <tspan fill="${navy}">Smart</tspan><tspan fill="${blue}">Stay</tspan>
+      <tspan fill="${primary}">Smart</tspan><tspan fill="${blue}">Stay</tspan>
     </text>
 
     <!-- Tagline: "— Campus Living —" -->
-    <g class="brand-tagline" transform="translate(0, 77)">
+    <g class="brand-tagline" transform="translate(1, 40)">
       <!-- Left line -->
       <line
-        x1="2"
-        y1="-5.5"
-        x2="28"
-        y2="-5.5"
-        stroke="${taglineColor}"
-        stroke-width="2.4"
+        x1="0"
+        y1="-3.5"
+        x2="14"
+        y2="-3.5"
+        stroke="${lineCol}"
+        stroke-width="1.6"
         stroke-linecap="round"
       />
 
       <!-- Subtitle Text -->
       <text
-        x="36"
+        x="19"
         y="0"
-        font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, -apple-system, sans-serif"
+        font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
         font-weight="700"
-        font-size="16"
-        fill="${taglineColor}"
-        letter-spacing="0.06em"
+        font-size="9"
+        fill="${tagline}"
+        letter-spacing="0.12em"
       >
-        ${subtitle}
+        ${subtitle.toUpperCase()}
       </text>
 
       <!-- Right line -->
       <line
-        x1="168"
-        y1="-5.5"
-        x2="194"
-        y2="-5.5"
-        stroke="${taglineColor}"
-        stroke-width="2.4"
+        x1="112"
+        y1="-3.5"
+        x2="126"
+        y2="-3.5"
+        stroke="${lineCol}"
+        stroke-width="1.6"
         stroke-linecap="round"
       />
     </g>
@@ -171,9 +168,9 @@ function getSimpleFullLogoSvg(isDark = false, subtitle = 'Campus Living') {
 }
 
 // Write SVG files
-fs.writeFileSync('frontend/public/smartstay-mark.svg', getSimpleMarkSvg(false));
-fs.writeFileSync('frontend/public/smartstay-logo.svg', getSimpleFullLogoSvg(false));
-fs.writeFileSync('frontend/src/assets/smartstay-mark.svg', getSimpleMarkSvg(false));
-fs.writeFileSync('frontend/src/assets/smartstay-logo.svg', getSimpleFullLogoSvg(false));
+fs.writeFileSync('frontend/public/smartstay-mark.svg', getThemeMarkSvg(false));
+fs.writeFileSync('frontend/public/smartstay-logo.svg', getThemeFullLogoSvg(false));
+fs.writeFileSync('frontend/src/assets/smartstay-mark.svg', getThemeMarkSvg(false));
+fs.writeFileSync('frontend/src/assets/smartstay-logo.svg', getThemeFullLogoSvg(false));
 
-console.log('Successfully generated simple SVG files in public/ and src/assets/');
+console.log('Successfully generated theme SVGs');
