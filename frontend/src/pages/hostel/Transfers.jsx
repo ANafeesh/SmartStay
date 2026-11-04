@@ -11,6 +11,8 @@ import {
   BedDouble,
   CalendarDays,
   MessageSquareText,
+  Phone,
+  AlertTriangle,
 } from "lucide-react";
 
 import Card from "../../components/ui/Card";
@@ -129,6 +131,56 @@ function Transfers() {
       setSuccess(
         result.message || `Transfer ${newStatus.toLowerCase()} successfully`
       );
+
+      // Record student notification in local storage
+      try {
+        const studentReg = transfer.studentRegistrationId;
+        const destRoomText = roomLabel(transfer.toRoomId);
+        const destBedText = formatBedLabel(transfer.toBedId);
+
+        const notifTitle =
+          newStatus === "Approved"
+            ? "Room Transfer Approved - New Bed Allocated"
+            : "Room Transfer Request Rejected";
+
+        const notifMsg =
+          newStatus === "Approved"
+            ? `Great news! Your room transfer request to ${destRoomText} (${destBedText}) has been approved by the Warden and your room is now officially allocated.`
+            : `Your room transfer request to ${destRoomText} was reviewed and rejected by the Warden. Please consult the Hostel Office if you have questions.`;
+
+        const existingRaw = localStorage.getItem("smartstay_student_notifications");
+        const existingList = existingRaw ? JSON.parse(existingRaw) : [];
+        const newNotif = {
+          id: `transfer-${action}-${Date.now()}`,
+          type: "room",
+          title: notifTitle,
+          message: notifMsg,
+          date: new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }),
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          read: false,
+          recipientRegId: studentReg,
+        };
+
+        const updatedList = [newNotif, ...existingList];
+        localStorage.setItem(
+          "smartstay_student_notifications",
+          JSON.stringify(updatedList)
+        );
+        window.dispatchEvent(
+          new CustomEvent("smartstay-notifications-updated", {
+            detail: updatedList,
+          })
+        );
+      } catch (notifErr) {
+        console.warn("Could not dispatch transfer student notification:", notifErr);
+      }
 
       // Reload from MongoDB instead of only changing local state.
       await fetchTransfers();
@@ -379,6 +431,12 @@ function Transfers() {
                               <p className="text-xs text-smart-secondary">
                                 {transfer.studentRegistrationId}
                               </p>
+                              {transfer.contactPhone && (
+                                <p className="mt-0.5 flex items-center gap-1 text-[11px] text-smart-secondary">
+                                  <Phone size={11} className="text-smart-secondary/70" />
+                                  <span>{transfer.contactPhone}</span>
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -401,8 +459,28 @@ function Transfers() {
                           </p>
                         </td>
 
-                        <td className="max-w-xs px-5 py-4 text-sm text-smart-secondary">
-                          {transfer.reason}
+                        <td className="max-w-xs px-5 py-4">
+                          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                            {transfer.reasonCategory && (
+                              <span className="inline-block rounded-md bg-smart-blue/10 px-2 py-0.5 text-[11px] font-medium text-smart-blue">
+                                {transfer.reasonCategory}
+                              </span>
+                            )}
+                            {transfer.urgency && transfer.urgency !== "Normal" && (
+                              <span
+                                className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+                                  transfer.urgency === "Critical"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}
+                              >
+                                {transfer.urgency} Urgency
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-smart-secondary leading-snug line-clamp-2" title={transfer.reason}>
+                            {transfer.reason}
+                          </p>
                         </td>
 
                         <td className="whitespace-nowrap px-5 py-4">
@@ -483,14 +561,34 @@ function Transfers() {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-start gap-2">
-                      <MessageSquareText
-                        size={17}
-                        className="mt-0.5 shrink-0 text-smart-secondary"
-                      />
-                      <p className="text-sm text-smart-secondary">
-                        {transfer.reason}
-                      </p>
+                    <div className="mt-3 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {transfer.reasonCategory && (
+                          <span className="inline-block rounded-md bg-smart-blue/10 px-2 py-0.5 text-[11px] font-medium text-smart-blue">
+                            {transfer.reasonCategory}
+                          </span>
+                        )}
+                        {transfer.urgency && transfer.urgency !== "Normal" && (
+                          <span
+                            className={`inline-block rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+                              transfer.urgency === "Critical"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-amber-100 text-amber-700"
+                            }`}
+                          >
+                            {transfer.urgency} Urgency
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <MessageSquareText
+                          size={17}
+                          className="mt-0.5 shrink-0 text-smart-secondary"
+                        />
+                        <p className="text-sm text-smart-secondary">
+                          {transfer.reason}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="mt-3 flex items-center gap-2 text-xs text-smart-secondary">

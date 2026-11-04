@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const Transfer = require("../models/Transfer");
@@ -9,18 +8,42 @@ const Bed = require("../models/Bed");
 // Populate transfer details
 const populateTransfer = (query) => {
   return query
-    .populate("allocationId")
-    .populate("fromRoomId")
+    .populate({
+      path: "allocationId",
+      populate: [
+        { path: "roomId", populate: { path: "buildingId" } },
+        { path: "bedId" },
+      ],
+    })
+    .populate({
+      path: "fromRoomId",
+      populate: { path: "buildingId" },
+    })
     .populate("fromBedId")
-    .populate("toRoomId")
+    .populate({
+      path: "toRoomId",
+      populate: { path: "buildingId" },
+    })
     .populate("toBedId");
 };
 
 // GET /api/transfers
 const getTransfers = async (req, res) => {
   try {
+    const filter = {};
+    const studentId =
+      req.query.studentRegistrationId ||
+      req.query.studentId ||
+      (req.user && req.user.role === "student"
+        ? req.user.studentId || req.user.registrationNumber
+        : null);
+
+    if (studentId) {
+      filter.studentRegistrationId = studentId;
+    }
+
     const transfers = await populateTransfer(
-      Transfer.find().sort({ createdAt: -1 })
+      Transfer.find(filter).sort({ createdAt: -1 })
     );
 
     return res.status(200).json({
@@ -51,9 +74,7 @@ const getTransferById = async (req, res) => {
       });
     }
 
-    const transfer = await populateTransfer(
-      Transfer.findById(id)
-    );
+    const transfer = await populateTransfer(Transfer.findById(id));
 
     if (!transfer) {
       return res.status(404).json({
@@ -82,36 +103,64 @@ const createTransfer = async (req, res) => {
   try {
     const {
       allocationId,
+      studentRegistrationId,
       toRoomId,
       toBedId,
       reason,
+      reasonCategory,
+      urgency,
+      contactPhone,
+      additionalNotes,
     } = req.body;
 
-    if (!allocationId || !toRoomId || !toBedId || !reason?.trim()) {
+    if (!reason || reason.trim().length < 5) {
       return res.status(400).json({
         success: false,
-        message:
-          "allocationId, toRoomId, toBedId and reason are required",
+        message: "Please state a valid reason for your room transfer request (minimum 5 characters).",
+      });
+    }
+
+    if (!toRoomId || !toBedId) {
+      return res.status(400).json({
+        success: false,
+        message: "Requested destination room and bed are required.",
       });
     }
 
     if (
-      !mongoose.isValidObjectId(allocationId) ||
       !mongoose.isValidObjectId(toRoomId) ||
       !mongoose.isValidObjectId(toBedId)
     ) {
       return res.status(400).json({
         success: false,
-        message: "One or more IDs are invalid",
+        message: "Destination room or bed ID is invalid.",
       });
     }
 
-    const allocation = await Allocation.findById(allocationId);
+    // Auto-resolve allocation
+    let allocation = null;
+    if (allocationId && mongoose.isValidObjectId(allocationId)) {
+      allocation = await Allocation.findById(allocationId);
+    }
+
+    if (!allocation) {
+      const studentReg =
+        studentRegistrationId ||
+        req.user?.studentId ||
+        req.user?.registrationNumber;
+
+      if (studentReg) {
+        allocation = await Allocation.findOne({
+          studentRegistrationId: studentReg,
+          status: "Active",
+        });
+      }
+    }
 
     if (!allocation || allocation.status !== "Active") {
       return res.status(400).json({
         success: false,
-        message: "An active allocation is required",
+        message: "An active hostel room allocation is required before submitting a transfer request.",
       });
     }
 
@@ -129,25 +178,26 @@ const createTransfer = async (req, res) => {
     if (!destinationRoom || !destinationBed) {
       return res.status(404).json({
         success: false,
-        message: "Active destination room or bed not found",
+        message: "Active destination room or bed not found.",
       });
     }
 
     if (String(allocation.bedId) === String(toBedId)) {
       return res.status(400).json({
         success: false,
-        message: "Destination bed is already the current bed",
+        message: "Destination bed is already your current allocated bed.",
       });
     }
 
     if (destinationBed.status !== "Available") {
       return res.status(409).json({
         success: false,
-        message: "Destination bed is not available",
+        message: "Requested destination bed is currently occupied or unavailable.",
       });
     }
 
     const existingAllocation = await Allocation.findOne({
+      _id: { $ne: allocation._id },
       bedId: toBedId,
       status: { $in: ["Active", "Pending"] },
     });
@@ -155,40 +205,42 @@ const createTransfer = async (req, res) => {
     if (existingAllocation) {
       return res.status(409).json({
         success: false,
-        message: "Destination bed is already allocated",
+        message: "Destination bed is already allocated to another resident.",
       });
     }
 
     const existingTransfer = await Transfer.findOne({
-      allocationId,
+      allocationId: allocation._id,
       status: "Pending",
     });
 
     if (existingTransfer) {
       return res.status(409).json({
         success: false,
-        message: "This allocation already has a pending transfer",
+        message: "You already have a transfer request pending warden review.",
       });
     }
 
     const transfer = await Transfer.create({
-      allocationId,
+      allocationId: allocation._id,
       studentRegistrationId: allocation.studentRegistrationId,
       fromRoomId: allocation.roomId,
       fromBedId: allocation.bedId,
       toRoomId,
       toBedId,
       reason: reason.trim(),
+      reasonCategory: reasonCategory || "General Request",
+      urgency: urgency || "Normal",
+      contactPhone: contactPhone || "",
+      additionalNotes: additionalNotes || "",
       status: "Pending",
     });
 
-    const result = await populateTransfer(
-      Transfer.findById(transfer._id)
-    );
+    const result = await populateTransfer(Transfer.findById(transfer._id));
 
     return res.status(201).json({
       success: true,
-      message: "Transfer request created successfully",
+      message: "Room transfer request submitted successfully. Awaiting warden review.",
       data: result,
     });
   } catch (error) {
@@ -196,7 +248,7 @@ const createTransfer = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to create transfer",
+      message: "Failed to create transfer request",
       error: error.message,
     });
   }
@@ -230,15 +282,12 @@ const approveTransfer = async (req, res) => {
       });
     }
 
-    const allocation = await Allocation.findById(
-      transfer.allocationId
-    );
+    const allocation = await Allocation.findById(transfer.allocationId);
 
     if (
       !allocation ||
       allocation.status !== "Active" ||
-      allocation.studentRegistrationId !==
-        transfer.studentRegistrationId
+      allocation.studentRegistrationId !== transfer.studentRegistrationId
     ) {
       return res.status(409).json({
         success: false,
@@ -305,16 +354,16 @@ const approveTransfer = async (req, res) => {
       });
     }
 
-    // Move the allocation to the destination.
+    // Move the allocation to the destination
     allocation.roomId = transfer.toRoomId;
     allocation.bedId = transfer.toBedId;
     await allocation.save();
 
-    // Mark the destination bed as occupied.
+    // Mark the destination bed as occupied
     destinationBed.status = "Occupied";
     await destinationBed.save();
 
-    // Release the old bed if no other allocation uses it.
+    // Release the old bed if no other allocation uses it
     const oldBedStillUsed = await Allocation.exists({
       _id: { $ne: allocation._id },
       bedId: transfer.fromBedId,
@@ -326,18 +375,19 @@ const approveTransfer = async (req, res) => {
       await oldBed.save();
     }
 
-    // Update the transfer status.
+    // Update the transfer status
     transfer.status = "Approved";
     transfer.reviewedAt = new Date();
+    if (req.body?.wardenNotes) {
+      transfer.wardenNotes = req.body.wardenNotes;
+    }
     await transfer.save();
 
-    const result = await populateTransfer(
-      Transfer.findById(transfer._id)
-    );
+    const result = await populateTransfer(Transfer.findById(transfer._id));
 
     return res.status(200).json({
       success: true,
-      message: "Transfer approved successfully",
+      message: "Transfer approved successfully. Student room allocation updated.",
       data: result,
     });
   } catch (error) {
@@ -381,12 +431,13 @@ const rejectTransfer = async (req, res) => {
 
     transfer.status = "Rejected";
     transfer.reviewedAt = new Date();
+    if (req.body?.wardenNotes) {
+      transfer.wardenNotes = req.body.wardenNotes;
+    }
 
     await transfer.save();
 
-    const result = await populateTransfer(
-      Transfer.findById(transfer._id)
-    );
+    const result = await populateTransfer(Transfer.findById(transfer._id));
 
     return res.status(200).json({
       success: true,
@@ -404,10 +455,56 @@ const rejectTransfer = async (req, res) => {
   }
 };
 
+// DELETE /api/transfers/:id (Cancel pending request by student)
+const cancelTransfer = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid transfer ID",
+      });
+    }
+
+    const transfer = await Transfer.findById(id);
+
+    if (!transfer) {
+      return res.status(404).json({
+        success: false,
+        message: "Transfer request not found",
+      });
+    }
+
+    if (transfer.status !== "Pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Only pending transfers can be cancelled",
+      });
+    }
+
+    await Transfer.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Transfer request cancelled successfully",
+    });
+  } catch (error) {
+    console.error("Cancel transfer error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to cancel transfer",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getTransfers,
   getTransferById,
   createTransfer,
   approveTransfer,
   rejectTransfer,
+  cancelTransfer,
 };

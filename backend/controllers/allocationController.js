@@ -521,9 +521,70 @@ const checkoutAllocation = async (req, res) => {
   }
 };
 
+// GET: Get logged in student's active allocation
+const getMyAllocation = async (req, res) => {
+  try {
+    const studentRegId =
+      req.query.studentRegistrationId ||
+      req.query.studentId ||
+      req.user?.studentId ||
+      req.user?.registrationNumber;
+
+    if (!studentRegId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student registration ID could not be identified from authentication session.",
+      });
+    }
+
+    const allocation = await Allocation.findOne({
+      studentRegistrationId: studentRegId,
+      status: "Active",
+    })
+      .populate({
+        path: "roomId",
+        populate: { path: "buildingId" },
+      })
+      .populate("bedId");
+
+    if (!allocation) {
+      return res.status(404).json({
+        success: false,
+        message: "No active room allocation found for this student.",
+      });
+    }
+
+    // Find roommates in the same room
+    const roommates = await Allocation.find({
+      roomId: allocation.roomId._id,
+      _id: { $ne: allocation._id },
+      status: "Active",
+    }).select("studentName studentRegistrationId");
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        allocation,
+        room: allocation.roomId,
+        building: allocation.roomId.buildingId,
+        bed: allocation.bedId,
+        roommates,
+      },
+    });
+  } catch (error) {
+    console.error("Get my allocation error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve student allocation",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllocations,
   getAllocationById,
+  getMyAllocation,
   createAllocation,
   updateAllocation,
   checkoutAllocation,

@@ -22,6 +22,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import QRCodeLib from "qrcode";
 import Modal from "../../components/ui/Modal";
+import { getMyAllocation } from "../../services/transferService";
 import {
   getStudentPassDetails,
   getGateMovementState,
@@ -82,6 +83,31 @@ function StudentDashboard() {
   );
   const [scanResult, setScanResult] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [allocationData, setAllocationData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    getMyAllocation(studentRegId)
+      .then((res) => {
+        if (mounted && res) {
+          setAllocationData(res);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [studentRegId]);
+
+  const displayRoom = allocationData?.room?.roomNumber || roomNumber;
+  const displayBed = allocationData?.bed?.bedNumber ? (`Bed ${allocationData.bed.bedNumber}`) : "Bed 02";
+  const displayBuilding = allocationData?.building?.name || allocationData?.building?.code || "Hostel Block B";
+
+  const dynamicStats = stats.map((stat) =>
+    stat.title === "Room Assigned"
+      ? { ...stat, value: displayRoom }
+      : stat
+  );
 
   // Real backend digital pass state
   const [realPassData, setRealPassData] = useState(null);
@@ -206,7 +232,7 @@ function StudentDashboard() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        {stats.map((stat) => {
+        {dynamicStats.map((stat) => {
           const Icon = stat.icon;
 
           return (
@@ -297,10 +323,10 @@ function StudentDashboard() {
             <div className="py-4">
               <p className="text-xs text-slate-400 font-medium">Hostel Room</p>
               <h3 className="text-2xl font-black text-slate-900 mt-0.5">
-                Room {roomNumber}
+                Room {displayRoom}
               </h3>
               <p className="text-xs text-slate-600 mt-1">
-                Hostel Block B • Bed 02 (Olu Block)
+                {displayBuilding} • {displayBed}
               </p>
             </div>
 
