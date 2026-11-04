@@ -424,7 +424,7 @@ export default function GateVerification() {
       // Offline fallback: register movement locally and toggle location
       const isExit = direction === "OUT";
       setMovementResult({
-        success: true,
+        success: false,
         direction,
         message: `Student successfully logged ${isExit ? "OUT (Campus Departure)" : "IN (Campus Return)"}.`,
       });
