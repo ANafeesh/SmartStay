@@ -437,7 +437,7 @@ function HostelDashboard() {
               </p>
             </div>
             <Link
-              to="/complaints"
+              to="/maintenance"
               className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
             >
               <span>View All</span>
