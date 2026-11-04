@@ -583,7 +583,7 @@ export default function VendorApplications() {
                     {selectedApplicationForView.qrPassToken}
                   </p>
                   <span className="inline-block mt-1 text-[10px] text-emerald-400">
-                    âœ“ Valid for Hostel Drop-off
+                    ✓ Valid for Hostel Drop-off
                   </span>
                 </div>
               </div>

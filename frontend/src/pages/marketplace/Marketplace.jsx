@@ -16,6 +16,7 @@ import {
   AlertCircle,
   ChevronRight,
   Check,
+  Star,
 } from "lucide-react";
 import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 import { addRealNotification } from "../../services/notificationService";
@@ -32,7 +33,6 @@ const vendorsList = [
     deliveryTime: "20-25 mins",
     tags: ["Sri Lankan", "Rice & Kottu", "Halal"],
     hygieneGrade: "A+",
-    accentColor: "from-blue-600 to-indigo-600",
   },
   {
     id: "VND-02",
@@ -41,7 +41,6 @@ const vendorsList = [
     deliveryTime: "15-20 mins",
     tags: ["Burgers", "Snacks", "Quick Bites"],
     hygieneGrade: "A",
-    accentColor: "from-amber-600 to-orange-600",
   },
   {
     id: "VND-03",
@@ -50,7 +49,6 @@ const vendorsList = [
     deliveryTime: "10-15 mins",
     tags: ["Coffee", "Beverages", "Desserts"],
     hygieneGrade: "A+",
-    accentColor: "from-emerald-600 to-teal-600",
   },
 ];
 
@@ -240,35 +238,30 @@ const categories = ["All", "Main Dishes", "Fast Food", "Snacks", "Beverages"];
 export function getAvailableDeliverySlots(now = new Date()) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-  // Full day schedule:
-  // - Morning: available from early morning until 10:00 AM (auto-removed after morning)
-  // - Lunch: available until 2:00 PM (14:00) (auto-removed after 2:00 PM)
-  // - Dinner: available until 8:30 PM (20:30) (auto-removed after dinner)
-  // - Late Night: available until 11:00 PM (23:00) (only slot displayed at 9:50 PM)
   const baseSlots = [
     {
       slot: "08:00 AM - 08:45 AM (Breakfast Slot)",
-      cutoff: 10 * 60, // 10:00 AM
+      cutoff: 10 * 60,
     },
     {
       slot: "12:30 PM - 01:00 PM (Lunch Slot 1)",
-      cutoff: 14 * 60, // 2:00 PM (auto removed after 2:00 PM)
+      cutoff: 14 * 60,
     },
     {
       slot: "01:00 PM - 01:30 PM (Lunch Slot 2)",
-      cutoff: 14 * 60, // 2:00 PM (auto removed after 2:00 PM)
+      cutoff: 14 * 60,
     },
     {
       slot: "06:30 PM - 07:00 PM (Dinner Slot 1)",
-      cutoff: 20 * 60, // 8:00 PM
+      cutoff: 20 * 60,
     },
     {
       slot: "07:30 PM - 08:00 PM (Dinner Slot 2)",
-      cutoff: 20 * 60 + 30, // 8:30 PM
+      cutoff: 20 * 60 + 30,
     },
     {
       slot: "09:30 PM - 10:00 PM (Late Night)",
-      cutoff: 23 * 60, // 11:00 PM (Active for night time like 9:50 PM)
+      cutoff: 23 * 60,
     },
   ];
 
@@ -280,7 +273,6 @@ export function getAvailableDeliverySlots(now = new Date()) {
     return available;
   }
 
-  // If past 11:00 PM until early morning, show tomorrow pre-order slots
   return [
     "Tomorrow: 08:00 AM - 08:45 AM (Breakfast)",
     "Tomorrow: 12:30 PM - 01:00 PM (Lunch Slot 1)",
@@ -295,31 +287,31 @@ export function getActiveServiceBanner(now = new Date()) {
 
   if (currentMinutes < 10 * 60) {
     return {
-      title: "Breakfast & Day Delivery Slots Open Now",
-      badgeColor: "bg-emerald-500",
+      title: "Breakfast & Day Delivery Slots Open",
+      badgeColor: "bg-emerald-600",
     };
   }
   if (currentMinutes < 14 * 60) {
     return {
-      title: "Lunch Delivery Slots Open Now",
-      badgeColor: "bg-emerald-500",
+      title: "Lunch Delivery Slots Open",
+      badgeColor: "bg-emerald-600",
     };
   }
   if (currentMinutes < 20 * 60 + 30) {
     return {
-      title: "Dinner Delivery Slots Open Now",
-      badgeColor: "bg-emerald-500",
+      title: "Dinner Delivery Slots Open",
+      badgeColor: "bg-emerald-600",
     };
   }
   if (currentMinutes < 23 * 60) {
     return {
-      title: "Late Night Delivery Slots Open Now",
-      badgeColor: "bg-indigo-500",
+      title: "Late Night Delivery Slots Open",
+      badgeColor: "bg-slate-700",
     };
   }
   return {
     title: "Kitchen Closed for Today · Pre-Orders Open for Tomorrow",
-    badgeColor: "bg-blue-500",
+    badgeColor: "bg-slate-500",
   };
 }
 
@@ -358,9 +350,10 @@ export default function Marketplace() {
     };
 
     updateSlots();
-    const interval = setInterval(updateSlots, 30000); // refresh every 30s
+    const interval = setInterval(updateSlots, 30000);
     return () => clearInterval(interval);
   }, []);
+
   const [selectedDropLocation, setSelectedDropLocation] = useState(dropLocations[0]);
   const [paymentOption, setPaymentOption] = useState("room_bill");
   const [orderConfirmed, setOrderConfirmed] = useState(null);
@@ -377,7 +370,7 @@ export default function Marketplace() {
     };
     window.addEventListener("storage", refreshOrders);
     return () => window.removeEventListener("storage", refreshOrders);
-  }, []);
+  }, [studentRegId]);
 
   const addToCart = (item) => {
     if (cart.length > 0 && cart[0].vendorId !== item.vendorId) {
@@ -483,7 +476,7 @@ export default function Marketplace() {
         addRealNotification({
           id: `order-placed-${newOrder.id}`,
           title: "Food Order Placed",
-          message: `Your food order #${newOrder.id} (${newOrder.vendor}) for Rs. ${newOrder.totalAmount} has been placed.`,
+          message: `Your food order #${newOrder.id} (${newOrder.vendor}) for LKR ${newOrder.totalAmount.toLocaleString()} has been placed.`,
           type: "food",
         }, user);
       } catch (err) {
@@ -496,33 +489,6 @@ export default function Marketplace() {
       setIsCartOpen(false);
       setIsSubmitting(false);
     }, 350);
-  };
-
-  const simulateStatusStep = (orderId) => {
-    const steps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
-    const all = readFoodOrders();
-    const updated = all.map((o) => {
-      if (o.id === orderId) {
-        const idx = steps.indexOf(o.status);
-        const next = steps[Math.min(idx + 1, steps.length - 1)];
-        return { ...o, status: next };
-      }
-      return o;
-    });
-    saveFoodOrders(updated);
-    setMyOrders(updated.filter((o) => o.studentId === studentRegId));
-
-    try {
-      const target = updated.find((o) => o.id === orderId);
-      if (target) {
-        addRealNotification({
-          id: `order-step-${target.id}-${target.status}`,
-          title: `Food Order ${target.status}`,
-          message: `Your food order #${target.id} (${target.vendor}) is now ${target.status}.`,
-          type: "food",
-        }, user);
-      }
-    } catch {}
   };
 
   const filteredItems = items.filter((item) => {
@@ -550,22 +516,21 @@ export default function Marketplace() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-24">
-      {/* Top Interactive Banner & Action Toolbar */}
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Top Banner & Context Toolbar */}
+      <div className="rounded-xl border border-slate-200/80 bg-white p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className={`flex h-2.5 w-2.5 rounded-full ${activeBanner.badgeColor} animate-pulse`} />
-            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <span className={`h-2 w-2 rounded-full ${activeBanner.badgeColor}`} />
+            <span className="text-xs font-medium text-slate-700">
               {activeBanner.title}
             </span>
-            
           </div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900 mt-1.5">
             Campus Dining & Gate Delivery
-          </h2>
+          </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Student: <strong>{studentDisplayName}</strong> (ID:{" "}
-            <span className="font-mono text-blue-600 font-semibold">{studentRegId}</span>) · Drop-off at Hostel Block B
+            Resident: <span className="text-slate-800 font-medium">{studentDisplayName}</span> (ID:{" "}
+            <span className="font-mono text-slate-700 font-medium">{studentRegId}</span>) · Drop-off at Hostel Block B
           </p>
         </div>
 
@@ -573,18 +538,18 @@ export default function Marketplace() {
         <div className="flex items-center gap-2 self-start md:self-center">
           <button
             onClick={() => setActiveView(activeView === "orders" ? "menu" : "orders")}
-            className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold transition shadow-2xs cursor-pointer ${
+            className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-medium transition-colors cursor-pointer ${
               activeView === "orders"
-                ? "bg-blue-600 text-white shadow-blue-500/20"
-                : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                ? "bg-slate-900 text-white"
+                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
-            <ClipboardList size={16} />
+            <ClipboardList size={15} />
             <span>My Orders</span>
             {myOrders.length > 0 && (
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                  activeView === "orders" ? "bg-white text-blue-600" : "bg-blue-600 text-white"
+                className={`flex h-5 min-w-5 px-1.5 items-center justify-center rounded font-mono text-[11px] font-medium ${
+                  activeView === "orders" ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-700 border border-slate-200"
                 }`}
               >
                 {myOrders.length}
@@ -594,12 +559,12 @@ export default function Marketplace() {
 
           <button
             onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 transition cursor-pointer"
+            className="flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
-            <ShoppingCart size={16} />
+            <ShoppingCart size={15} />
             <span>Basket</span>
             {totalCartCount > 0 && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+              <span className="flex h-5 min-w-5 px-1.5 items-center justify-center rounded bg-white text-slate-900 font-mono text-[11px] font-medium">
                 {totalCartCount}
               </span>
             )}
@@ -607,37 +572,37 @@ export default function Marketplace() {
         </div>
       </div>
 
-      {/* Order Confirmed Alert */}
+      {/* Order Confirmed Banner */}
       {orderConfirmed && (
-        <div className="rounded-2xl border border-emerald-300 bg-emerald-50/95 p-5 shadow-sm transition-all animate-in slide-in-from-top-2 duration-300">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-xs">
-                <CheckCircle2 size={22} />
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                <CheckCircle2 size={18} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-emerald-950">
-                  Food Order Confirmed! Order #{orderConfirmed.id}
+                <h3 className="text-sm font-semibold text-emerald-950">
+                  Order confirmed · #{orderConfirmed.id}
                 </h3>
                 <p className="mt-1 text-xs text-emerald-900 leading-relaxed">
-                  Your order from <strong>{orderConfirmed.vendor}</strong> has been transmitted to kitchen dispatch.
-                  Collect during <strong>{orderConfirmed.timeSlot}</strong> at <strong>{orderConfirmed.deliveryLocation}</strong>.
+                  Your order from {orderConfirmed.vendor} has been sent to the kitchen.
+                  Collect during slot <span className="font-mono">{orderConfirmed.timeSlot}</span> at {orderConfirmed.deliveryLocation}.
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-emerald-950">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs font-mono text-emerald-950">
                   <span>Total: LKR {orderConfirmed.totalAmount.toLocaleString()}</span>
-                  <span>•</span>
+                  <span className="text-emerald-400">·</span>
                   <span>Payment: {orderConfirmed.paymentMethod}</span>
-                  <span>•</span>
-                  <span>Student: {studentDisplayName} ({studentRegId})</span>
+                  <span className="text-emerald-400">·</span>
+                  <span>Ref: {studentRegId}</span>
                 </div>
               </div>
             </div>
 
             <button
               onClick={() => setOrderConfirmed(null)}
-              className="rounded-lg p-1.5 text-emerald-700 hover:bg-emerald-100"
+              className="rounded-lg p-1 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -648,11 +613,11 @@ export default function Marketplace() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-base font-bold text-slate-900">
-                Active Food Orders & Delivery Tracking
+              <h3 className="text-sm font-semibold text-slate-900">
+                Active Orders & Delivery Tracking
               </h3>
               <p className="text-xs text-slate-500">
-                Track live preparation, delivery slot arrivals, and gate authorization status.
+                Live preparation, delivery arrival slots, and gate clearance
               </p>
             </div>
             <button
@@ -663,7 +628,7 @@ export default function Marketplace() {
                   ),
                 )
               }
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
             >
               <RotateCcw size={13} />
               <span>Refresh Status</span>
@@ -671,20 +636,20 @@ export default function Marketplace() {
           </div>
 
           {myOrders.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center shadow-2xs">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-3">
-                <ClipboardList size={28} />
+            <div className="rounded-xl border border-slate-200/80 bg-white p-12 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 text-slate-600 mb-3">
+                <ClipboardList size={22} />
               </div>
-              <h3 className="text-base font-bold text-slate-900">No Orders in Queue</h3>
+              <h3 className="text-sm font-semibold text-slate-900">No active orders in queue</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                Browse our approved campus vendors and reserve your lunch or dinner delivery slot.
+                Browse approved campus vendors and reserve a meal for your preferred gate delivery slot.
               </p>
               <button
                 onClick={() => setActiveView("menu")}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 transition shadow-xs cursor-pointer"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <span>Browse Menu</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={13} />
               </button>
             </div>
           ) : (
@@ -696,62 +661,60 @@ export default function Marketplace() {
                 return (
                   <div
                     key={order.id}
-                    className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs space-y-4"
+                    className="rounded-xl border border-slate-200/80 bg-white p-5 space-y-4"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-100 pb-4">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-blue-600">
+                          <span className="font-mono text-xs font-medium text-slate-900">
                             {order.id}
                           </span>
-                          <span className="text-slate-300">•</span>
-                          <h3 className="text-sm font-bold text-slate-900">
+                          <span className="text-slate-300">·</span>
+                          <h3 className="text-sm font-semibold text-slate-900">
                             {order.vendor || "Campus Vendor"}
                           </h3>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Placed: {order.createdAt} · Delivery Slot: <strong>{order.timeSlot}</strong>
+                        <p className="text-xs text-slate-500 font-mono mt-1">
+                          Placed: {order.createdAt} · Slot: {order.timeSlot}
                         </p>
                         <p className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
-                          <MapPin size={12} className="text-rose-500" />
+                          <MapPin size={12} className="text-slate-400" />
                           <span>Drop-off: <strong>{order.deliveryLocation || "Hostel Block B"}</strong></span>
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3 self-end sm:self-start">
+                      <div className="flex items-center gap-2 self-start">
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold border ${
+                          className={`rounded-md px-2.5 py-0.5 text-[11px] font-medium border ${
                             order.status === "Delivered"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                               : order.status === "Out for Delivery"
-                                ? "bg-purple-50 text-purple-700 border-purple-200"
+                                ? "bg-slate-900 text-white border-slate-900"
                                 : order.status === "Preparing"
-                                  ? "bg-blue-50 text-blue-700 border-blue-200"
-                                  : "bg-amber-50 text-amber-700 border-amber-200"
+                                  ? "bg-slate-100 text-slate-800 border-slate-200"
+                                  : "bg-amber-50 text-amber-800 border-amber-200"
                           }`}
                         >
                           {order.status}
                         </span>
-
-                        
                       </div>
                     </div>
 
-                    {/* Progress Bar Stepper */}
-                    <div className="pt-2">
+                    {/* Progress Stepper */}
+                    <div className="pt-1">
                       <div className="grid grid-cols-4 gap-2">
                         {steps.map((step, idx) => {
                           const isDone = currentStep >= idx;
                           return (
-                            <div key={step} className="space-y-1.5">
+                            <div key={step} className="space-y-1">
                               <div
-                                className={`h-2 rounded-full transition-all duration-300 ${
-                                  isDone ? "bg-blue-600 shadow-2xs" : "bg-slate-100"
+                                className={`h-1.5 rounded-full ${
+                                  isDone ? "bg-slate-900" : "bg-slate-100"
                                 }`}
                               />
                               <span
-                                className={`block text-[11px] font-semibold ${
-                                  isDone ? "text-slate-900" : "text-slate-400"
+                                className={`block text-[11px] font-mono ${
+                                  isDone ? "text-slate-900 font-medium" : "text-slate-400"
                                 }`}
                               >
                                 {step}
@@ -765,9 +728,9 @@ export default function Marketplace() {
                     {/* Items & Amount */}
                     <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                       <div className="text-slate-600">
-                        {order.items?.map((i) => `${i.qty}x ${i.name}`).join(", ") || "Meals bundle"}
+                        {order.items?.map((i) => `${i.qty}× ${i.name}`).join(", ") || "Meals bundle"}
                       </div>
-                      <div className="font-bold text-slate-900 text-sm">
+                      <div className="font-semibold font-mono tabular-nums text-slate-900 text-sm">
                         Total: LKR {(order.totalAmount || 0).toLocaleString()}
                       </div>
                     </div>
@@ -780,13 +743,13 @@ export default function Marketplace() {
       ) : (
         /* VIEW: MENU CATALOG */
         <div className="space-y-6">
-          {/* Approved Campus Outlets Showcase */}
+          {/* Approved Campus Outlets */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Approved Campus Food Outlets
+              <h3 className="text-xs font-semibold text-slate-700">
+                Approved campus food outlets
               </h3>
-              <span className="text-xs text-slate-400">Security Gate Authorized</span>
+              <span className="text-[11px] font-mono text-slate-400">Security Gate Authorized</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -796,36 +759,37 @@ export default function Marketplace() {
                   <div
                     key={v.id}
                     onClick={() => setSelectedVendor(isSelected ? "All" : v.name)}
-                    className={`rounded-3xl border p-5 transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`rounded-xl border p-4 sm:p-5 transition-colors cursor-pointer flex flex-col justify-between ${
                       isSelected
-                        ? "border-blue-600 bg-blue-50/70 ring-2 ring-blue-500/30 shadow-md shadow-blue-500/10"
-                        : "border-slate-200/80 bg-white hover:border-slate-300 shadow-2xs hover:shadow-xs"
+                        ? "border-slate-900 bg-slate-50/60"
+                        : "border-slate-200/80 bg-white hover:border-slate-300"
                     }`}
                   >
                     <div>
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                            <Store size={18} />
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                            <Store size={16} />
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-slate-900">{v.name}</h4>
-                            <p className="text-[11px] text-slate-500">
-                              â± {v.deliveryTime} · Grade {v.hygieneGrade}
+                            <h4 className="text-sm font-semibold text-slate-900">{v.name}</h4>
+                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                              ~ {v.deliveryTime} · Grade {v.hygieneGrade}
                             </p>
                           </div>
                         </div>
 
-                        <span className="rounded-lg bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
-                          ★ {v.rating}
+                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                          <Star size={11} className="text-amber-500 fill-amber-500" />
+                          <span>{v.rating}</span>
                         </span>
                       </div>
 
-                      <div className="mt-3.5 flex flex-wrap gap-1.5">
+                      <div className="mt-3 flex flex-wrap gap-1.5">
                         {v.tags.map((t) => (
                           <span
                             key={t}
-                            className="rounded-lg bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600"
+                            className="rounded-md bg-slate-100 border border-slate-200/60 px-2 py-0.5 text-[11px] text-slate-600"
                           >
                             {t}
                           </span>
@@ -834,15 +798,15 @@ export default function Marketplace() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="text-[11px] text-slate-400">
-                        {isSelected ? "Filtering menu" : "Click to view outlet menu"}
+                      <span className="text-[11px] text-slate-500">
+                        {isSelected ? "Active filter" : "Select outlet"}
                       </span>
                       {isSelected ? (
-                        <span className="inline-flex items-center gap-1 font-bold text-blue-600">
-                          <Check size={14} /> Active Filter
+                        <span className="inline-flex items-center gap-1 font-medium text-slate-900">
+                          <Check size={14} /> Selected
                         </span>
                       ) : (
-                        <span className="text-slate-400 group-hover:text-slate-700">
+                        <span className="text-slate-400">
                           <ChevronRight size={14} />
                         </span>
                       )}
@@ -853,65 +817,63 @@ export default function Marketplace() {
             </div>
           </div>
 
-          {/* Clean, Non-Cramped Search & Filter Toolbar */}
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-2xs space-y-4">
+          {/* Search & Filter Toolbar */}
+          <div className="rounded-xl border border-slate-200/80 bg-white p-4 sm:p-5 space-y-4">
             {/* Row 1: Search Bar + Dietary Preferences */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative flex-1">
                 <Search
-                  size={17}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                 />
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search meals, kottu, burger, drinks, or ingredients..."
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 pl-10 pr-10 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none transition"
+                  placeholder="Search menu items or vendors..."
+                  className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-9 py-2 text-xs text-slate-800 placeholder-slate-400 focus:border-slate-900 focus:outline-none transition-colors"
                 />
                 {searchTerm && (
                   <button
                     onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                   >
-                    <X size={15} />
+                    <X size={14} />
                   </button>
                 )}
               </div>
 
-              {/* Dietary Tags (Clean pill design with no scrollbar) */}
+              {/* Dietary Tags */}
               <div className="flex items-center gap-1.5 self-start sm:self-center">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                <span className="text-xs text-slate-500 mr-1">
                   Diet:
                 </span>
                 {["All", "Halal", "Veg", "Spicy"].map((diet) => (
                   <button
                     key={diet}
                     onClick={() => setDietaryFilter(diet)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer border ${
                       dietaryFilter === diet
-                        ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
-                        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                        ? "bg-slate-900 text-white border-slate-900"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                     }`}
                   >
-                    {diet === "Veg" && "🌱 "}
-                    {diet === "Spicy" && "🌶️  "}
-                    {diet}
+                    {diet === "Veg" ? "Vegetarian" : diet}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Row 2: Categories (Segmented Pills without scrollbar clutter) */}
+            {/* Row 2: Categories */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`rounded-xl px-3.5 py-1.5 text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                    className={`rounded-lg px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
                       selectedCategory === cat
-                        ? "bg-blue-600 text-white shadow-xs"
+                        ? "bg-slate-900 text-white"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
@@ -920,15 +882,15 @@ export default function Marketplace() {
                 ))}
               </div>
 
-              <div className="text-xs text-slate-400 font-medium self-end sm:self-center">
-                Showing <strong className="text-slate-800">{filteredItems.length}</strong> offerings
-                {selectedVendor !== "All" && ` from ${selectedVendor}`}
+              <div className="text-xs text-slate-500 font-mono self-end sm:self-center">
+                Showing {filteredItems.length} items
+                {selectedVendor !== "All" && ` · ${selectedVendor}`}
               </div>
             </div>
           </div>
 
           {/* Menu Items Grid */}
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => {
               const inCartItem = cart.find((c) => c.id === item.id);
               const qty = inCartItem?.quantity || 0;
@@ -936,90 +898,91 @@ export default function Marketplace() {
               return (
                 <div
                   key={item.id}
-                  className="group flex flex-col overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-2xs hover:shadow-md transition-all duration-200 hover:border-slate-300"
+                  className="group flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white transition-colors hover:border-slate-300"
                 >
-                  {/* Image & Frosted Badges */}
-                  <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                  {/* Image & Clean Badges */}
+                  <div className="relative h-44 w-full overflow-hidden bg-slate-100">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover"
                     />
 
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      <span className="rounded-lg bg-slate-900/85 backdrop-blur-md px-2.5 py-0.5 text-xs font-bold text-white shadow-xs">
-                        ★ {item.rating}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-0.5 text-[11px] font-medium text-slate-800 shadow-xs border border-slate-200/70">
+                        <Star size={10} className="text-amber-500 fill-amber-500" />
+                        <span>{item.rating}</span>
                       </span>
                       {item.isHalal && (
-                        <span className="rounded-lg bg-emerald-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-emerald-200 shadow-xs">
+                        <span className="rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-slate-700 shadow-xs border border-slate-200/70">
                           Halal
                         </span>
                       )}
                       {item.isVeg && (
-                        <span className="rounded-lg bg-green-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-green-200 shadow-xs">
+                        <span className="rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-emerald-800 shadow-xs border border-slate-200/70">
                           Veg
                         </span>
                       )}
                       {item.isSpicy && (
-                        <span className="rounded-lg bg-rose-900/85 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-rose-200 shadow-xs">
-                          🌶️  Spicy
+                        <span className="rounded-md bg-white/95 px-2 py-0.5 text-[10px] font-medium text-rose-800 shadow-xs border border-slate-200/70">
+                          Spicy
                         </span>
                       )}
                     </div>
 
-                    <span className="absolute bottom-3 right-3 rounded-lg bg-white/95 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-slate-800 shadow-xs">
-                      â± {item.prepTime}
+                    <span className="absolute bottom-2.5 right-2.5 rounded-md bg-white/95 font-mono px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-xs border border-slate-200/70">
+                      ~ {item.prepTime}
                     </span>
                   </div>
 
                   {/* Details */}
-                  <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
+                  <div className="flex flex-1 flex-col justify-between p-4 sm:p-5 space-y-4">
                     <div>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
-                        <Store size={13} className="text-blue-600" />
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <Store size={13} className="text-slate-400" />
                         <span>{item.vendor}</span>
                       </div>
-                      <h3 className="mt-1 text-sm font-bold text-slate-900 leading-snug">
+                      <h3 className="mt-1 text-sm font-semibold text-slate-900 leading-snug">
                         {item.name}
                       </h3>
-                      <p className="mt-1.5 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
                         {item.description}
                       </p>
                     </div>
 
                     <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                       <div>
-                        <span className="text-[10px] text-slate-400 block font-medium">Price</span>
-                        <span className="text-base font-black text-slate-900">
+                        <span className="text-[10px] text-slate-400 block font-normal">Price</span>
+                        <span className="text-sm font-semibold font-mono tabular-nums text-slate-900">
                           LKR {item.price.toLocaleString()}
                         </span>
                       </div>
 
-                      {/* Interactive Add or Qty Stepper */}
+                      {/* Quantity Stepper */}
                       {qty === 0 ? (
                         <button
                           onClick={() => addToCart(item)}
-                          className="inline-flex items-center gap-1.5 rounded-2xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition-colors cursor-pointer"
                         >
-                          <Plus size={15} />
+                          <Plus size={14} />
                           <span>Add</span>
                         </button>
                       ) : (
-                        <div className="flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50/70 p-1">
+                        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="flex h-7 w-7 items-center justify-center rounded-xl bg-white text-slate-700 shadow-2xs hover:bg-slate-100 transition cursor-pointer"
+                            className="flex h-6 w-6 items-center justify-center rounded-md bg-white text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200/60"
                           >
-                            <Minus size={13} />
+                            <Minus size={12} />
                           </button>
-                          <span className="text-xs font-bold text-blue-900 px-1">
+                          <span className="text-xs font-semibold font-mono tabular-nums text-slate-900 px-1">
                             {qty}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="flex h-7 w-7 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs hover:bg-blue-500 transition cursor-pointer"
+                            className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-900 text-white hover:bg-slate-800 transition-colors cursor-pointer"
                           >
-                            <Plus size={13} />
+                            <Plus size={12} />
                           </button>
                         </div>
                       )}
@@ -1034,60 +997,60 @@ export default function Marketplace() {
 
       {/* Floating Bottom Cart Review Bar */}
       {cart.length > 0 && !isCartOpen && (
-        <div className="fixed bottom-6 inset-x-4 max-w-xl mx-auto z-40 animate-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center justify-between rounded-3xl bg-slate-900 text-white p-3.5 px-5 shadow-2xl border border-slate-800 backdrop-blur-md">
+        <div className="fixed bottom-6 inset-x-4 max-w-lg mx-auto z-40">
+          <div className="flex items-center justify-between rounded-xl bg-slate-900 text-white p-3.5 px-5 shadow-lg border border-slate-800">
             <div>
               <div className="flex items-center gap-2">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                <span className="text-xs font-bold text-white">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-medium text-white">
                   {totalCartCount} {totalCartCount === 1 ? "item" : "items"} · {cart[0]?.vendor}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300 mt-0.5">
-                Total: <strong className="text-white text-xs">LKR {grandTotal.toLocaleString()}</strong>
+              <p className="text-[11px] text-slate-400 mt-0.5 font-mono">
+                Total: <span className="text-white font-medium">LKR {grandTotal.toLocaleString()}</span>
               </p>
             </div>
 
             <button
               onClick={() => setIsCartOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white text-slate-900 px-3.5 py-1.5 text-xs font-medium hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <span>Review Order</span>
-              <ArrowRight size={14} />
+              <ArrowRight size={13} />
             </button>
           </div>
         </div>
       )}
 
-      {/* Cart Conflict Warning Modal */}
+      {/* Cart Conflict Modal */}
       {cartConflictModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-              <AlertCircle size={24} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+              <AlertCircle size={20} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-sm font-semibold text-slate-900">
                 Single Vendor Order Rule
               </h3>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Your basket currently contains meals from <strong>{cartConflictModal.existingVendor}</strong>.
-                Each delivery slot is verified through a dedicated vendor QR pass.
+                Your basket currently contains items from <strong>{cartConflictModal.existingVendor}</strong>.
+                Each delivery slot is dispatched individually through a dedicated vendor QR pass.
               </p>
-              <p className="text-xs text-slate-700 font-semibold mt-2">
-                Would you like to clear existing items and order from <strong>{cartConflictModal.newVendor}</strong>?
+              <p className="text-xs text-slate-700 font-medium mt-2">
+                Replace existing items and order from <strong>{cartConflictModal.newVendor}</strong>?
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => handleResolveConflict("keep")}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Keep Existing Cart
               </button>
               <button
                 onClick={() => handleResolveConflict("replace")}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500 shadow-xs cursor-pointer"
+                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 cursor-pointer"
               >
                 Replace & Add Item
               </button>
@@ -1096,61 +1059,55 @@ export default function Marketplace() {
         </div>
       )}
 
-      
       {/* ORDER PLACED SUCCESSFULLY MODAL */}
       {showSuccessModal && orderConfirmed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md sm:max-w-lg rounded-3xl bg-white p-6 sm:p-7 shadow-2xl border border-slate-100 text-left animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            {/* Close X */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl border border-slate-200 text-left max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setShowSuccessModal(false)}
-              className="absolute top-5 right-5 rounded-full p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              className="absolute top-4 right-4 rounded-lg p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               aria-label="Close"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
 
-            {/* Success Icon & Header */}
             <div className="text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60 mb-3.5 animate-in zoom-in-75 duration-300">
-                <CheckCircle2 size={36} className="text-emerald-600 stroke-[2.2]" />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200 mb-3">
+                <CheckCircle2 size={24} />
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-800 uppercase tracking-wider mb-2">
-                Order Confirmed
-              </span>
-              <h2 className="text-xl font-extrabold text-slate-900">
-                Order Placed Successfully!
+              <h2 className="text-lg font-semibold text-slate-900">
+                Order placed successfully
               </h2>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Your order has been sent to <strong>{orderConfirmed.vendor}</strong> and is being prepared for kitchen dispatch.
+              <p className="text-xs text-slate-500 mt-1">
+                Your order has been sent to {orderConfirmed.vendor} and is being prepared.
               </p>
             </div>
 
             {/* Receipt Summary Card */}
-            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 space-y-3 text-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200/70">
+            <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/80">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-blue-600 text-sm">
+                  <span className="font-mono font-medium text-slate-900">
                     {orderConfirmed.id}
                   </span>
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-700 font-semibold truncate max-w-[180px]">
+                  <span className="text-slate-300">·</span>
+                  <span className="text-slate-600 truncate max-w-[180px]">
                     {orderConfirmed.vendor}
                   </span>
                 </div>
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[11px] font-bold text-blue-800">
+                <span className="rounded bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
                   {orderConfirmed.status}
                 </span>
               </div>
 
               {/* Items List */}
-              <div className="space-y-1.5 py-1">
+              <div className="space-y-1 py-1">
                 {orderConfirmed.items?.map((item, idx) => (
                   <div key={idx} className="flex justify-between text-slate-700">
                     <span className="truncate pr-2">
-                      <strong className="text-slate-900">{item.qty}×</strong> {item.name}
+                      <strong className="text-slate-900 font-mono">{item.qty}×</strong> {item.name}
                     </span>
-                    <span className="font-mono font-semibold shrink-0">
+                    <span className="font-mono text-slate-900 shrink-0">
                       LKR {(item.price * item.qty).toLocaleString()}
                     </span>
                   </div>
@@ -1158,22 +1115,16 @@ export default function Marketplace() {
               </div>
 
               {/* Delivery Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-200/70 text-[11px] text-slate-600">
-                <div className="flex items-center gap-1.5">
-                  <Clock size={13} className="text-blue-600 shrink-0" />
-                  <span>Slot: <strong className="text-slate-800">{orderConfirmed.timeSlot?.split(" ")[0]} {orderConfirmed.timeSlot?.split(" ")[1]}</strong></span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={13} className="text-rose-600 shrink-0" />
-                  <span className="truncate">Drop: <strong className="text-slate-800">{orderConfirmed.deliveryLocation}</strong></span>
-                </div>
+              <div className="grid grid-cols-1 gap-1 pt-2 border-t border-slate-200/80 text-[11px] text-slate-600 font-mono">
+                <div>Slot: {orderConfirmed.timeSlot}</div>
+                <div>Drop: {orderConfirmed.deliveryLocation}</div>
               </div>
 
               {/* Payment & Total */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200/70 font-semibold text-slate-700">
-                <span>Payment: <span className="font-normal">{orderConfirmed.paymentMethod}</span></span>
-                <span className="text-sm font-extrabold text-blue-600">
-                  Total: LKR {orderConfirmed.totalAmount?.toLocaleString()}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 font-medium text-slate-700">
+                <span>{orderConfirmed.paymentMethod}</span>
+                <span className="text-sm font-semibold font-mono text-slate-900">
+                  LKR {orderConfirmed.totalAmount?.toLocaleString()}
                 </span>
               </div>
             </div>
@@ -1186,15 +1137,15 @@ export default function Marketplace() {
                   setShowSuccessModal(false);
                   setActiveView("orders");
                 }}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500 transition cursor-pointer"
+                className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 py-2 text-xs font-medium text-white hover:bg-slate-800 transition-colors cursor-pointer"
               >
-                <ClipboardList size={15} />
+                <ClipboardList size={14} />
                 <span>Track Order</span>
               </button>
               <button
                 type="button"
                 onClick={() => setShowSuccessModal(false)}
-                className="flex items-center justify-center rounded-2xl border border-slate-200 bg-white py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                className="flex items-center justify-center rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Back to Menu
               </button>
@@ -1205,93 +1156,93 @@ export default function Marketplace() {
 
       {/* SLIDE-OVER SHOPPING CART DRAWER */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs">
+          <div className="flex h-full w-full max-w-md flex-col bg-white shadow-xl border-l border-slate-200">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/70">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-2">
-                <ShoppingCart size={18} className="text-blue-600" />
-                <h2 className="text-sm font-bold text-slate-900">
+                <ShoppingCart size={16} className="text-slate-700" />
+                <h2 className="text-sm font-semibold text-slate-900">
                   Food Order Basket ({totalCartCount})
                 </h2>
               </div>
               <button
                 onClick={() => setIsCartOpen(false)}
-                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             {/* Cart Items Scroll */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {cart.length === 0 ? (
                 <div className="py-16 text-center text-xs text-slate-400">
-                  <ShoppingCart size={32} className="mx-auto text-slate-300 mb-2" />
-                  Your food cart is currently empty.
+                  <ShoppingCart size={28} className="mx-auto text-slate-300 mb-2" />
+                  Your food cart is currently empty
                 </div>
               ) : (
                 <>
-                  <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-3.5 flex items-center justify-between text-xs">
-                    <span className="text-blue-900 font-semibold flex items-center gap-1.5">
-                      <Store size={14} className="text-blue-600" />
+                  <div className="rounded-lg bg-slate-50 border border-slate-200/80 p-3 flex items-center justify-between text-xs">
+                    <span className="text-slate-700 font-medium flex items-center gap-1.5">
+                      <Store size={14} className="text-slate-500" />
                       Vendor: <strong>{cart[0]?.vendor}</strong>
                     </span>
                     <button
                       onClick={() => setCart([])}
-                      className="text-rose-600 font-bold hover:underline"
+                      className="text-rose-600 font-medium hover:underline cursor-pointer"
                     >
                       Clear
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {cart.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50/60 p-3.5"
+                        className="flex items-center justify-between rounded-lg border border-slate-200/80 bg-white p-3"
                       >
                         <div className="flex-1 pr-3">
-                          <h4 className="text-xs font-bold text-slate-900">
+                          <h4 className="text-xs font-medium text-slate-900">
                             {item.name}
                           </h4>
-                          <span className="text-xs font-bold text-blue-600">
+                          <span className="text-xs font-mono font-medium text-slate-700">
                             LKR {(item.price * item.quantity).toLocaleString()}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+                        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
                           <button
                             onClick={() => updateQuantity(item.id, -1)}
-                            className="p-1 text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
+                            className="p-1 text-slate-600 hover:bg-white rounded transition-colors cursor-pointer"
                           >
-                            <Minus size={13} />
+                            <Minus size={12} />
                           </button>
-                          <span className="text-xs font-bold text-slate-900 px-1">
+                          <span className="text-xs font-mono font-medium text-slate-900 px-1">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => updateQuantity(item.id, 1)}
-                            className="p-1 text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
+                            className="p-1 text-slate-600 hover:bg-white rounded transition-colors cursor-pointer"
                           >
-                            <Plus size={13} />
+                            <Plus size={12} />
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Delivery Slot Selector */}
-                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 space-y-3">
+                  {/* Delivery Configuration */}
+                  <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-3.5 space-y-3">
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                        <Clock size={14} className="text-blue-600" />
-                        <span>Select Delivery Time Slot</span>
+                      <label className="text-[11px] font-medium text-slate-700 flex items-center gap-1.5 mb-1.5">
+                        <Clock size={13} className="text-slate-500" />
+                        <span>Delivery time slot</span>
                       </label>
                       <select
                         value={selectedSlot}
                         onChange={(e) => setSelectedSlot(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-medium text-slate-800 focus:border-blue-600 focus:outline-none"
+                        className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
                       >
                         {availableSlots.map((slot) => (
                           <option key={slot} value={slot}>
@@ -1302,14 +1253,14 @@ export default function Marketplace() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                        <MapPin size={14} className="text-rose-600" />
-                        <span>Hostel Drop-off Point</span>
+                      <label className="text-[11px] font-medium text-slate-700 flex items-center gap-1.5 mb-1.5">
+                        <MapPin size={13} className="text-slate-500" />
+                        <span>Hostel drop-off point</span>
                       </label>
                       <select
                         value={selectedDropLocation}
                         onChange={(e) => setSelectedDropLocation(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-xs font-medium text-slate-800 focus:border-blue-600 focus:outline-none"
+                        className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
                       >
                         {dropLocations.map((loc) => (
                           <option key={loc} value={loc}>
@@ -1320,17 +1271,17 @@ export default function Marketplace() {
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1.5">
-                        Settlement Method
+                      <label className="text-[11px] font-medium text-slate-700 block mb-1.5">
+                        Settlement method
                       </label>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <button
                           type="button"
                           onClick={() => setPaymentOption("room_bill")}
-                          className={`rounded-xl border p-2 text-left transition cursor-pointer ${
+                          className={`rounded-lg border p-2 text-left transition-colors cursor-pointer ${
                             paymentOption === "room_bill"
-                              ? "border-blue-600 bg-blue-50 font-bold text-blue-700"
-                              : "border-slate-200 bg-white text-slate-700"
+                              ? "border-slate-900 bg-white font-medium text-slate-900"
+                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white"
                           }`}
                         >
                           Hostel Bill
@@ -1338,10 +1289,10 @@ export default function Marketplace() {
                         <button
                           type="button"
                           onClick={() => setPaymentOption("cash")}
-                          className={`rounded-xl border p-2 text-left transition cursor-pointer ${
+                          className={`rounded-lg border p-2 text-left transition-colors cursor-pointer ${
                             paymentOption === "cash"
-                              ? "border-blue-600 bg-blue-50 font-bold text-blue-700"
-                              : "border-slate-200 bg-white text-slate-700"
+                              ? "border-slate-900 bg-white font-medium text-slate-900"
+                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white"
                           }`}
                         >
                           Cash at Gate
@@ -1355,23 +1306,23 @@ export default function Marketplace() {
 
             {/* Checkout Footer */}
             {cart.length > 0 && (
-              <div className="border-t border-slate-100 p-6 space-y-3 bg-slate-50/80">
-                <div className="space-y-1.5 text-xs text-slate-600">
+              <div className="border-t border-slate-200 p-5 space-y-3 bg-white">
+                <div className="space-y-1.5 text-xs text-slate-600 font-mono">
                   <div className="flex justify-between">
-                    <span>Food Subtotal</span>
+                    <span className="font-sans">Subtotal</span>
                     <span>LKR {subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Campus Gate Delivery</span>
+                    <span className="font-sans">Gate delivery</span>
                     <span>{deliveryFee === 0 ? "FREE" : `LKR ${deliveryFee}`}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Hostel Packaging Fee</span>
+                    <span className="font-sans">Packaging fee</span>
                     <span>LKR {hostelConvenience}</span>
                   </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-200 font-bold text-sm text-slate-900">
-                    <span>Total Due</span>
-                    <span className="text-blue-600">
+                  <div className="flex justify-between pt-2 border-t border-slate-200 font-semibold text-sm text-slate-900">
+                    <span className="font-sans">Total due</span>
+                    <span className="tabular-nums">
                       LKR {grandTotal.toLocaleString()}
                     </span>
                   </div>
@@ -1381,13 +1332,10 @@ export default function Marketplace() {
                   type="button"
                   onClick={handleCheckout}
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 rounded-2xl bg-blue-600 py-3.5 text-xs font-bold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500 transition cursor-pointer disabled:opacity-75"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg bg-slate-900 py-2.5 text-xs font-medium text-white hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
                 >
                   {isSubmitting ? (
-                    <>
-                      <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      <span>Placing Your Order...</span>
-                    </>
+                    <span>Placing order...</span>
                   ) : (
                     <>
                       <span>Confirm & Reserve Delivery Slot</span>

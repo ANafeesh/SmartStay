@@ -58,7 +58,7 @@ export default function ReceiptModal({ receipt, onClose }) {
         </div>
       </div>
       <div>
-        <span class="badge-paid">âœ“ Verified & Paid</span>
+        <span class="badge-paid">✓ Verified & Paid</span>
       </div>
     </div>
 
@@ -376,7 +376,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Bursary Accounts Division
               </p>
               <p className="text-[10px] text-emerald-400 font-mono mt-0.5">
-                âœ“ Digitally Signed & Sealed
+                ✓ Digitally Signed & Sealed
               </p>
             </div>
           </div>

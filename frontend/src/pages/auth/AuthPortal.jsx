@@ -20,10 +20,12 @@ import {
   Bed,
   CreditCard,
   Headphones,
+  Shield,
+  Store,
 } from "lucide-react";
 
 /**
- * Bottom-left soft pastel blue fluid wave decoration matching the design mockup.
+ * Bottom-left soft pastel blue fluid wave decoration matching brand styling.
  */
 function BottomLeftWaves() {
   return (
@@ -63,7 +65,7 @@ export default function AuthPortal({ initialTab = "login" }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [activeTab, setActiveTab] = useState(initialTab); // "login" | "register"
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // Sign In inputs
   const [identifier, setIdentifier] = useState("");
@@ -85,15 +87,15 @@ export default function AuthPortal({ initialTab = "login" }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showDemoMenu, setShowDemoMenu] = useState(false);
+  const [footerNotice, setFooterNotice] = useState(null);
 
-  // Keep active tab in sync with prop changes (e.g., navigating /login vs /register)
   useEffect(() => {
     setActiveTab(initialTab);
     setErrorMessage("");
     setSuccessMessage("");
+    setFooterNotice(null);
   }, [initialTab]);
 
-  // Check if a specific URL path is authorized for a given user role
   const checkRoleCanAccessPath = (roleKey, path) => {
     if (!path || typeof path !== "string") return false;
     const role = normalizeRole(roleKey);
@@ -115,7 +117,6 @@ export default function AuthPortal({ initialTab = "login" }) {
     return ["student", "admin"].includes(role);
   };
 
-  // Determine destination URL
   const getAppropriatePath = (targetUser, fallbackRole) => {
     const roleKey = normalizeRole(
       targetUser?.role || targetUser?.roleKey || fallbackRole
@@ -142,7 +143,6 @@ export default function AuthPortal({ initialTab = "login" }) {
     return "/dashboard";
   };
 
-  // Submit Handler for Sign In
   const handleSignIn = async (e) => {
     e.preventDefault();
     if (!identifier.trim() || !password) {
@@ -160,7 +160,7 @@ export default function AuthPortal({ initialTab = "login" }) {
         password,
       });
 
-      setSuccessMessage("Authentication successful! Redirecting...");
+      setSuccessMessage("Authentication successful. Redirecting...");
       setTimeout(() => {
         const destination = getAppropriatePath(loggedUser, loggedUser.role);
         navigate(destination, { replace: true });
@@ -168,14 +168,13 @@ export default function AuthPortal({ initialTab = "login" }) {
     } catch (err) {
       console.warn("Sign in error:", err.message);
       setErrorMessage(
-        err.message || "Invalid email or password. Please verify your credentials."
+        err.message || "Invalid credentials. Please verify your email and password."
       );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Submit Handler for Sign Up
   const handleSignUp = async (e) => {
     e.preventDefault();
     if (!regFullName.trim() || !regEmail.trim() || !regPassword) {
@@ -189,7 +188,7 @@ export default function AuthPortal({ initialTab = "login" }) {
     }
 
     if (regPassword.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+      setErrorMessage("Password must be at least 6 characters.");
       return;
     }
 
@@ -219,7 +218,7 @@ export default function AuthPortal({ initialTab = "login" }) {
         registrationNumber: regStudentId.trim() || autoId,
       });
 
-      setSuccessMessage("Account created successfully! Redirecting...");
+      setSuccessMessage("Account created successfully. Redirecting...");
       setTimeout(() => {
         const destination = getAppropriatePath(regUser, regRole);
         navigate(destination, { replace: true });
@@ -234,7 +233,6 @@ export default function AuthPortal({ initialTab = "login" }) {
     }
   };
 
-  // Quick Demo Account Helper
   const fillDemoAccount = (email) => {
     setIdentifier(email);
     setPassword("password123");
@@ -243,12 +241,11 @@ export default function AuthPortal({ initialTab = "login" }) {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white selection:bg-blue-600 selection:text-white font-sans antialiased">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white selection:bg-[#1A73E8] selection:text-white font-sans antialiased">
       {/* =========================================================================
-          LEFT PANEL: Exact layout from mockup with brand logo, form, and waves
+          LEFT PANEL: Authentication Card & Form View
          ========================================================================= */}
       <div className="relative w-full lg:w-[42%] xl:w-[40%] flex flex-col justify-between p-6 sm:p-10 md:p-12 lg:p-12 xl:p-14 bg-white min-h-screen z-10">
-        {/* Soft Background Wave at Bottom Left */}
         <BottomLeftWaves />
 
         {/* Top Header: Brand Logo */}
@@ -263,17 +260,17 @@ export default function AuthPortal({ initialTab = "login" }) {
 
         {/* Center Container: Main Form Card */}
         <div className="relative z-10 w-full max-w-sm sm:max-w-md mx-auto my-auto py-2">
-          {/* Active Session Notice (when already logged in) */}
+          {/* Active Session Notice */}
           {isLoggedIn && user && (
-            <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-3.5 text-xs text-blue-900 animate-in fade-in">
+            <div className="mb-5 flex items-center justify-between gap-3 rounded-lg border border-blue-100 bg-[#EBF3FE]/70 p-3 text-xs text-blue-900">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1A73E8] text-xs font-bold text-white shadow-xs">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-[#1A73E8] text-xs font-medium text-white">
                   {user.initials || "ST"}
                 </div>
                 <div className="truncate">
-                  <p className="font-semibold text-slate-900 truncate">{user.name}</p>
-                  <p className="text-blue-700 text-[11px] capitalize">
-                    {user.role} Account Active
+                  <p className="font-medium text-slate-900 truncate">{user.name}</p>
+                  <p className="text-slate-500 text-[11px] capitalize font-mono">
+                    {user.role} account active
                   </p>
                 </div>
               </div>
@@ -284,28 +281,28 @@ export default function AuthPortal({ initialTab = "login" }) {
                     replace: true,
                   })
                 }
-                className="inline-flex items-center gap-1 rounded-lg bg-[#1A73E8] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#1557B0] transition cursor-pointer shrink-0"
+                className="inline-flex items-center gap-1 rounded-md bg-[#1A73E8] px-2.5 py-1 text-xs font-medium text-white hover:bg-[#1557B0] transition-colors cursor-pointer shrink-0"
               >
                 <span>Continue</span>
-                <ArrowRight size={13} />
+                <ArrowRight size={12} />
               </button>
             </div>
           )}
 
           {/* Heading */}
           <div className="mb-6">
-            <h1 className="text-3xl sm:text-[32px] font-bold tracking-tight text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
               {activeTab === "login" ? "Welcome back" : "Create account"}
             </h1>
-            <p className="mt-1.5 text-sm text-slate-500 font-normal">
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">
               {activeTab === "login"
-                ? "Sign in to manage your campus stay."
-                : "Register to manage rooms, dining, and campus services."}
+                ? "Sign in to access hostel residency, dining, and campus services."
+                : "Register as a resident student, warden, or facility staff."}
             </p>
           </div>
 
-          {/* Tab Pill Switcher (Matches Mockup) */}
-          <div className="rounded-2xl bg-slate-100/90 p-1 flex items-center gap-1 mb-6 border border-slate-200/50">
+          {/* Tab Pill Switcher */}
+          <div className="rounded-xl bg-slate-100 p-1 flex items-center gap-1 mb-6 border border-slate-200/60">
             <button
               type="button"
               onClick={() => {
@@ -313,13 +310,13 @@ export default function AuthPortal({ initialTab = "login" }) {
                 setErrorMessage("");
                 setSuccessMessage("");
               }}
-              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === "login"
-                  ? "bg-[#EBF3FE] text-[#1A73E8] shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "bg-[#EBF3FE] text-[#1A73E8]"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <LogIn size={16} />
+              <LogIn size={15} />
               <span>Sign in</span>
             </button>
 
@@ -330,13 +327,13 @@ export default function AuthPortal({ initialTab = "login" }) {
                 setErrorMessage("");
                 setSuccessMessage("");
               }}
-              className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+              className={`flex-1 flex items-center justify-center gap-2 rounded-lg py-2 text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === "register"
-                  ? "bg-[#EBF3FE] text-[#1A73E8] shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
+                  ? "bg-[#EBF3FE] text-[#1A73E8]"
+                  : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <UserPlus size={16} />
+              <UserPlus size={15} />
               <span>Create account</span>
             </button>
           </div>
@@ -345,25 +342,25 @@ export default function AuthPortal({ initialTab = "login" }) {
           {errorMessage && (
             <div
               role="alert"
-              className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50/90 p-3 text-xs text-rose-800 animate-in fade-in"
+              className="mb-4 flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50/90 p-3 text-xs text-rose-800"
             >
-              <AlertCircle size={16} className="shrink-0 text-rose-600 mt-0.5" />
-              <span className="font-medium leading-relaxed">{errorMessage}</span>
+              <AlertCircle size={15} className="shrink-0 text-rose-600 mt-0.5" />
+              <span className="leading-relaxed">{errorMessage}</span>
             </div>
           )}
 
           {successMessage && (
             <div
               role="status"
-              className="mb-4 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/90 p-3 text-xs text-emerald-800 animate-in fade-in"
+              className="mb-4 flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/90 p-3 text-xs text-emerald-800"
             >
-              <CheckCircle2 size={16} className="shrink-0 text-emerald-600 mt-0.5" />
-              <span className="font-semibold leading-relaxed">{successMessage}</span>
+              <CheckCircle2 size={15} className="shrink-0 text-emerald-600 mt-0.5" />
+              <span className="font-medium leading-relaxed">{successMessage}</span>
             </div>
           )}
 
           {/* =============================================================
-              TAB 1: SIGN IN (Pixel-accurate to provided mockup image)
+              TAB 1: SIGN IN
              ============================================================= */}
           {activeTab === "login" && (
             <form onSubmit={handleSignIn} className="space-y-4">
@@ -371,24 +368,24 @@ export default function AuthPortal({ initialTab = "login" }) {
               <div>
                 <label
                   htmlFor="login-email"
-                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-700 mb-1.5"
                 >
-                  Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
+                  Email address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <Mail
-                    size={17}
-                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                    size={15}
+                    className="absolute left-3 text-slate-400 pointer-events-none"
                   />
                   <input
                     id="login-email"
                     type="email"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="Enter your email address"
+                    placeholder="student@campus.edu"
                     required
                     autoComplete="username"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-colors focus:border-[#1A73E8] focus:outline-none"
                   />
                 </div>
               </div>
@@ -397,14 +394,14 @@ export default function AuthPortal({ initialTab = "login" }) {
               <div>
                 <label
                   htmlFor="login-password"
-                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-700 mb-1.5"
                 >
-                  Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                  Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <Lock
-                    size={17}
-                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                    size={15}
+                    className="absolute left-3 text-slate-400 pointer-events-none"
                   />
                   <input
                     id="login-password"
@@ -414,15 +411,15 @@ export default function AuthPortal({ initialTab = "login" }) {
                     placeholder="Enter your password"
                     required
                     autoComplete="current-password"
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 py-3 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-colors focus:border-[#1A73E8] focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 transition focus:outline-none cursor-pointer"
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -434,9 +431,9 @@ export default function AuthPortal({ initialTab = "login" }) {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-[#1A73E8] focus:ring-[#1A73E8] accent-[#1A73E8] cursor-pointer"
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-[#1A73E8] focus:ring-[#1A73E8] accent-[#1A73E8] cursor-pointer"
                   />
-                  <span className="text-xs sm:text-sm text-slate-700 font-medium">
+                  <span className="text-xs text-slate-600">
                     Remember me
                   </span>
                 </label>
@@ -445,10 +442,10 @@ export default function AuthPortal({ initialTab = "login" }) {
                   type="button"
                   onClick={() =>
                     setErrorMessage(
-                      "To reset your password, contact your hostel warden desk or admin office."
+                      "To reset credentials, contact your hostel warden desk or university administrative office."
                     )
                   }
-                  className="text-xs sm:text-sm font-semibold text-[#1A73E8] hover:text-blue-700 transition cursor-pointer"
+                  className="text-xs font-medium text-[#1A73E8] hover:text-[#1557B0] transition-colors cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -458,55 +455,59 @@ export default function AuthPortal({ initialTab = "login" }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold py-3.5 px-6 rounded-xl transition duration-150 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed mt-2"
+                className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer disabled:opacity-70 mt-2"
               >
                 <span>{isSubmitting ? "Signing in..." : "Sign in to SmartStay"}</span>
-                {!isSubmitting && <ArrowRight size={18} />}
+                {!isSubmitting && <ArrowRight size={15} />}
               </button>
 
-              {/* Discreet Demo Account Helper Toggle */}
+              {/* Demo Account Selector */}
               <div className="pt-2 text-center">
                 <button
                   type="button"
                   onClick={() => setShowDemoMenu(!showDemoMenu)}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
-                  <span>Quick demo credentials</span>
+                  <span>Demo accounts</span>
                   <ChevronDown
                     size={12}
-                    className={`transition-transform ${showDemoMenu ? "rotate-180" : ""}`}
+                    className={`transition-transform duration-150 ${showDemoMenu ? "rotate-180" : ""}`}
                   />
                 </button>
 
                 {showDemoMenu && (
-                  <div className="mt-2.5 p-2 rounded-xl border border-slate-200 bg-slate-50/80 text-left grid grid-cols-2 gap-1.5 animate-in fade-in text-xs">
+                  <div className="mt-2.5 p-2 rounded-lg border border-slate-200 bg-slate-50 text-left grid grid-cols-2 gap-1.5 text-xs">
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("student@smartstay.com")}
-                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
                     >
-                      🎓 Student
+                      <User size={13} className="text-slate-500" />
+                      <span>Student</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("admin@smartstay.com")}
-                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
                     >
-                      🛡️ Admin
+                      <Shield size={13} className="text-slate-500" />
+                      <span>Admin</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("warden@smartstay.com")}
-                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
                     >
-                      🏢 Warden
+                      <Building size={13} className="text-slate-500" />
+                      <span>Warden</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("vendor@smartstay.com")}
-                      className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-medium hover:bg-blue-50 hover:border-blue-200 transition text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
                     >
-                      ☕ Vendor
+                      <Store size={13} className="text-slate-500" />
+                      <span>Vendor</span>
                     </button>
                   </div>
                 )}
@@ -523,23 +524,23 @@ export default function AuthPortal({ initialTab = "login" }) {
               <div>
                 <label
                   htmlFor="reg-name"
-                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-700 mb-1.5"
                 >
-                  Full Name <span className="text-red-500 font-bold ml-0.5">*</span>
+                  Full name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <User
-                    size={17}
-                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                    size={15}
+                    className="absolute left-3 text-slate-400 pointer-events-none"
                   />
                   <input
                     id="reg-name"
                     type="text"
                     value={regFullName}
                     onChange={(e) => setRegFullName(e.target.value)}
-                    placeholder="e.g. Alex Morgan"
+                    placeholder="Alex Morgan"
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-colors focus:border-[#1A73E8] focus:outline-none"
                   />
                 </div>
               </div>
@@ -548,14 +549,14 @@ export default function AuthPortal({ initialTab = "login" }) {
               <div>
                 <label
                   htmlFor="reg-email"
-                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-700 mb-1.5"
                 >
-                  Email Address <span className="text-red-500 font-bold ml-0.5">*</span>
+                  Email address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <Mail
-                    size={17}
-                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                    size={15}
+                    className="absolute left-3 text-slate-400 pointer-events-none"
                   />
                   <input
                     id="reg-email"
@@ -564,7 +565,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegEmail(e.target.value)}
                     placeholder="user@smartstay.com"
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 transition-all focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-colors focus:border-[#1A73E8] focus:outline-none"
                   />
                 </div>
               </div>
@@ -574,15 +575,15 @@ export default function AuthPortal({ initialTab = "login" }) {
                 <div>
                   <label
                     htmlFor="reg-role"
-                    className="block text-xs font-semibold text-slate-800 mb-1.5"
+                    className="block text-xs font-medium text-slate-700 mb-1.5"
                   >
-                    Account Role <span className="text-red-500 font-bold ml-0.5">*</span>
+                    Account role <span className="text-rose-500">*</span>
                   </label>
                   <select
                     id="reg-role"
                     value={regRole}
                     onChange={(e) => setRegRole(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs sm:text-sm font-medium text-slate-800 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800 focus:border-[#1A73E8] focus:outline-none"
                   >
                     <option value="student">Student</option>
                     <option value="admin">Hostel Admin</option>
@@ -595,13 +596,13 @@ export default function AuthPortal({ initialTab = "login" }) {
                 <div>
                   <label
                     htmlFor="reg-id"
-                    className="block text-xs font-semibold text-slate-800 mb-1.5"
+                    className="block text-xs font-medium text-slate-700 mb-1.5"
                   >
                     {regRole === "student" ? "Student ID" : "Staff / Vendor ID"}
                   </label>
                   <div className="relative flex items-center">
                     <Building
-                      size={16}
+                      size={15}
                       className="absolute left-3 text-slate-400 pointer-events-none"
                     />
                     <input
@@ -610,7 +611,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                       value={regStudentId}
                       onChange={(e) => setRegStudentId(e.target.value)}
                       placeholder={regRole === "student" ? "STD-2026-090" : "EMP-01"}
-                      className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none font-mono"
                     />
                   </div>
                 </div>
@@ -620,30 +621,30 @@ export default function AuthPortal({ initialTab = "login" }) {
               <div>
                 <label
                   htmlFor="reg-pass"
-                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-700 mb-1.5"
                 >
-                  Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                  Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <Lock
-                    size={17}
-                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                    size={15}
+                    className="absolute left-3 text-slate-400 pointer-events-none"
                   />
                   <input
                     id="reg-pass"
                     type={showRegPassword ? "text" : "password"}
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
-                    placeholder="Min 6 characters"
+                    placeholder="Minimum 6 characters"
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-11 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-10 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegPassword(!showRegPassword)}
-                    className="absolute right-3.5 text-slate-400 hover:text-slate-600 transition focus:outline-none cursor-pointer"
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none cursor-pointer"
                   >
-                    {showRegPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showRegPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -652,14 +653,14 @@ export default function AuthPortal({ initialTab = "login" }) {
               <div>
                 <label
                   htmlFor="reg-confirm-pass"
-                  className="block text-xs font-semibold text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-700 mb-1.5"
                 >
-                  Confirm Password <span className="text-red-500 font-bold ml-0.5">*</span>
+                  Confirm password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <Lock
-                    size={17}
-                    className="absolute left-3.5 text-slate-400 pointer-events-none"
+                    size={15}
+                    className="absolute left-3 text-slate-400 pointer-events-none"
                   />
                   <input
                     id="reg-confirm-pass"
@@ -668,7 +669,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:border-[#1A73E8] focus:outline-none"
                   />
                 </div>
               </div>
@@ -677,54 +678,68 @@ export default function AuthPortal({ initialTab = "login" }) {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white font-semibold py-3.5 px-6 rounded-xl transition duration-150 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed mt-3"
+                className="w-full bg-[#1A73E8] hover:bg-[#1557B0] text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer disabled:opacity-70 mt-3"
               >
                 <span>{isSubmitting ? "Creating account..." : "Create Account"}</span>
-                {!isSubmitting && <ArrowRight size={18} />}
+                {!isSubmitting && <ArrowRight size={15} />}
               </button>
 
               <p className="text-center text-xs text-slate-500 pt-1">
-                Already have an account?{" "}
+                Already registered?{" "}
                 <button
                   type="button"
                   onClick={() => setActiveTab("login")}
-                  className="font-semibold text-[#1A73E8] hover:text-blue-700 cursor-pointer"
+                  className="font-medium text-[#1A73E8] hover:text-[#1557B0] cursor-pointer"
                 >
-                  Sign in here
+                  Sign in
                 </button>
               </p>
             </form>
           )}
+
+          {/* Footer Informational Callout */}
+          {footerNotice && (
+            <div className="mt-4 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center justify-between">
+              <span>{footerNotice}</span>
+              <button
+                type="button"
+                onClick={() => setFooterNotice(null)}
+                className="text-slate-400 hover:text-slate-600 ml-2"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Bottom Clean Footer Links (Matches Mockup: Privacy | Terms | Help) */}
+        {/* Bottom Footer Links */}
         <div className="relative z-10 pt-6 flex items-center justify-center gap-3 text-xs text-slate-400">
           <button
             type="button"
             onClick={() =>
-              alert("SmartStay Privacy Policy: All student & resident data is securely encrypted.")
+              setFooterNotice("Privacy: Student and resident data is securely encrypted under university policy.")
             }
-            className="hover:text-slate-600 transition cursor-pointer"
+            className="hover:text-slate-600 transition-colors cursor-pointer"
           >
             Privacy
           </button>
-          <span>|</span>
+          <span>·</span>
           <button
             type="button"
             onClick={() =>
-              alert("SmartStay Terms of Service: Campus living terms and regulations apply.")
+              setFooterNotice("Terms: Campus residency regulations and hostel guidelines apply.")
             }
-            className="hover:text-slate-600 transition cursor-pointer"
+            className="hover:text-slate-600 transition-colors cursor-pointer"
           >
             Terms
           </button>
-          <span>|</span>
+          <span>·</span>
           <button
             type="button"
             onClick={() =>
-              alert("Campus Support Desk: Available 24/7 at support@smartstay.campus or Ext. 108.")
+              setFooterNotice("Help: Campus Support Desk is available at support@smartstay.campus or Ext. 108.")
             }
-            className="hover:text-slate-600 transition cursor-pointer"
+            className="hover:text-slate-600 transition-colors cursor-pointer"
           >
             Help
           </button>
@@ -732,7 +747,7 @@ export default function AuthPortal({ initialTab = "login" }) {
       </div>
 
       {/* =========================================================================
-          RIGHT PANEL: High-resolution Campus Hostel Photograph with glass overlay
+          RIGHT PANEL: Campus Hostel Photograph with refined glass overlay
          ========================================================================= */}
       <div
         className="hidden lg:flex lg:w-[58%] xl:w-[60%] relative bg-cover bg-center min-h-screen flex-col justify-between p-8 xl:p-12 overflow-hidden"
@@ -740,40 +755,40 @@ export default function AuthPortal({ initialTab = "login" }) {
           backgroundImage: `url(${campusHostelBg})`,
         }}
       >
-        {/* Subtle gradient vignette to guarantee contrast and readability */}
+        {/* Vignette for contrast and readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-slate-950/30 pointer-events-none" />
 
-        {/* Top Floating Badge: Campus Residence */}
+        {/* Top Residence Badge */}
         <div className="relative z-10 flex justify-end">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/75 backdrop-blur-md px-4 py-2 text-xs font-semibold text-white shadow-lg">
-            <Home size={14} className="text-white" />
+          <div className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-slate-950/60 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-white shadow-sm">
+            <Home size={13} className="text-white" />
             <span>Campus Residence</span>
           </div>
         </div>
 
-        {/* Bottom Floating Glass Card Showcase (Matches design mockup exactly) */}
+        {/* Bottom Glass Card */}
         <div className="relative z-10 max-w-lg">
-          <div className="rounded-3xl border border-white/20 bg-slate-950/65 backdrop-blur-xl p-6 sm:p-7 text-white shadow-2xl">
-            <h2 className="text-xl sm:text-2xl font-bold text-white leading-snug">
+          <div className="rounded-2xl border border-white/20 bg-slate-950/70 backdrop-blur-md p-6 text-white shadow-xl">
+            <h2 className="text-xl sm:text-2xl font-semibold text-white leading-snug">
               A better way to <br />
               manage <span className="text-[#38BDF8]">campus living</span>
             </h2>
 
             <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-              Book rooms, manage payments and access campus services easily.
+              Book rooms, manage payments, and access campus services easily.
             </p>
 
             <div className="mt-5 grid grid-cols-3 gap-2 border-t border-white/15 pt-4 text-xs text-slate-200">
               <div className="flex items-center gap-2">
-                <Bed size={15} className="text-white shrink-0" />
+                <Bed size={14} className="text-slate-300 shrink-0" />
                 <span>Rooms</span>
               </div>
               <div className="flex items-center gap-2">
-                <CreditCard size={15} className="text-white shrink-0" />
+                <CreditCard size={14} className="text-slate-300 shrink-0" />
                 <span>Payments</span>
               </div>
               <div className="flex items-center gap-2">
-                <Headphones size={15} className="text-white shrink-0" />
+                <Headphones size={14} className="text-slate-300 shrink-0" />
                 <span>Support</span>
               </div>
             </div>

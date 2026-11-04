@@ -48,6 +48,51 @@ const payoutHistory = [
 
 function VendorEarnings() {
   const [payouts] = useState(payoutHistory);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
+
+  const handleExportStatement = () => {
+    setIsExporting(true);
+
+    try {
+      const csvRows = [
+        ["SMARTSTAY VENDOR FINANCIAL STATEMENT"],
+        [`Generated On: ${new Date().toLocaleString()}`],
+        ["Period: September 2026", "Status: Verified & Audited"],
+        [],
+        ["--- REVENUE SUMMARY ---"],
+        ["Metric", "Amount (LKR)"],
+        ["Today's Revenue", earningsSummary.todayEarnings],
+        ["This Week's Revenue", earningsSummary.thisWeekEarnings],
+        ["This Month's Revenue", earningsSummary.thisMonthEarnings],
+        ["Pending Withdrawal", earningsSummary.pendingPayout],
+        [],
+        ["--- FOOD CATEGORY PERFORMANCE ---"],
+        ["Category", "Revenue (LKR)", "Share (%)"],
+        ...salesByCategory.map((c) => [c.category, c.amount, `${c.percentage}%`]),
+        [],
+        ["--- SETTLEMENT & PAYOUT HISTORY ---"],
+        ["Payout ID", "Date", "Disbursement Method", "Amount (LKR)", "Status"],
+        ...payouts.map((p) => [p.id, p.date, `"${p.method}"`, p.amount, p.status]),
+      ];
+
+      const csvContent = "data:text/csv;charset=utf-8," + csvRows.map((e) => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `smartstay-vendor-statement-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (err) {
+      console.error("Export error:", err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-12">
@@ -63,9 +108,23 @@ function VendorEarnings() {
           </p>
         </div>
 
-        <button className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition shrink-0">
-          <Download size={16} />
-          <span>Export Financial Statement</span>
+        <button
+          onClick={handleExportStatement}
+          disabled={isExporting}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition shrink-0 cursor-pointer ${
+            exportSuccess
+              ? "bg-emerald-600 hover:bg-emerald-500"
+              : "bg-slate-900 hover:bg-slate-800"
+          }`}
+        >
+          {exportSuccess ? <CheckCircle2 size={16} /> : <Download size={16} />}
+          <span>
+            {isExporting
+              ? "Generating Statement..."
+              : exportSuccess
+              ? "Statement Exported ✓"
+              : "Export Financial Statement"}
+          </span>
         </button>
       </div>
 

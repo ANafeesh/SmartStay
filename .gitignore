@@ -146,3 +146,6 @@ vite.config.ts.timestamp-*
 
 # Vercel output
 .vercel
+
+# Agent generated files
+.agents/
