@@ -1,4 +1,5 @@
 const Bill = require("../models/Bill");
+const PaymentNotification = require("../models/PaymentNotification");
 
 // Create a new bill
 const createBill = async (req, res) => {
@@ -22,6 +23,21 @@ const createBill = async (req, res) => {
       lateFee,
       description,
     });
+
+    try {
+      if (studentId) {
+        await PaymentNotification.create({
+          recipientId: String(studentId),
+          title: "New Bill Issued",
+          message: `A new ${billType || "Hostel"} bill for Rs. ${Number(amount || 0).toLocaleString()} has been generated. Due date: ${dueDate ? new Date(dueDate).toLocaleDateString() : "Pending"}.`,
+          type: "warning",
+          referenceType: "Bill",
+          referenceId: String(bill._id),
+        });
+      }
+    } catch (notifErr) {
+      console.warn("Could not dispatch bill notification:", notifErr.message);
+    }
 
     res.status(201).json({
       success: true,

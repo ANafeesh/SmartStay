@@ -273,10 +273,23 @@ const verifyReceipt = async (req, res) => {
 
 const getNotifications = async (req, res) => {
   try {
-    if (!req.query.recipientId) {
+    let filter = {};
+    if (req.query.recipientId) {
+      filter.recipientId = req.query.recipientId;
+    } else if (req.user) {
+      const userRole = (req.user.role || "").toLowerCase().trim();
+      if (userRole !== "admin") {
+        const identifiers = [
+          String(req.user._id),
+          req.user.studentId,
+          req.user.registrationNumber,
+          req.user.email,
+        ].filter(Boolean);
+        filter.recipientId = { $in: identifiers };
+      }
+    } else {
       return res.status(400).json({ success: false, message: "recipientId is required." });
     }
-    const filter = { recipientId: req.query.recipientId };
     if (req.query.unread === "true") filter.readAt = null;
     const notifications = await PaymentNotification.find(filter).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: notifications.length, data: notifications });
@@ -315,6 +328,30 @@ const markNotificationRead = async (req, res) => {
   }
 };
 
+const markAllNotificationsRead = async (req, res) => {
+  try {
+    let filter = { readAt: null };
+    if (req.query.recipientId) {
+      filter.recipientId = req.query.recipientId;
+    } else if (req.user) {
+      const userRole = (req.user.role || "").toLowerCase().trim();
+      if (userRole !== "admin") {
+        const identifiers = [
+          String(req.user._id),
+          req.user.studentId,
+          req.user.registrationNumber,
+          req.user.email,
+        ].filter(Boolean);
+        filter.recipientId = { $in: identifiers };
+      }
+    }
+    await PaymentNotification.updateMany(filter, { $set: { readAt: new Date() } });
+    return res.status(200).json({ success: true, message: "All notifications marked as read." });
+  } catch (error) {
+    return handleError(res, error, "Failed to update notifications.");
+  }
+};
+
 const deleteNotification = async (req, res) => {
   try {
     const notification = await PaymentNotification.findByIdAndDelete(req.params.id);
@@ -336,5 +373,6 @@ module.exports = {
   getNotifications,
   createNotification,
   markNotificationRead,
+  markAllNotificationsRead,
   deleteNotification,
 };

@@ -19,6 +19,7 @@ import {
   getComplaintsFromDB,
   submitComplaintToDB,
 } from "../../services/complaintApi";
+import { addRealNotification } from "../../services/notificationService";
 
 const initialComplaints = [
   {
@@ -201,19 +202,12 @@ function Complaints() {
 
       // Add auto-notification for student
       try {
-        const existingNotifs = JSON.parse(localStorage.getItem("smartstay_student_notifications") || "[]");
-        const notif = {
-          id: Date.now(),
+        addRealNotification({
+          id: `cmp-notif-${Date.now()}`,
           title: "Complaint Logged with Warden",
           message: "Complaint #" + newComplaint.id + " (" + newComplaint.title + ") has been received and routed to Hostel Warden Dr. K. Perera.",
-          date: "Today",
-          time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
           type: "maintenance",
-          read: false,
-        };
-        const updatedNotifs = [notif, ...existingNotifs];
-        localStorage.setItem("smartstay_student_notifications", JSON.stringify(updatedNotifs));
-        window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: updatedNotifs }));
+        }, user);
       } catch {}
     } catch (e) {
       const newComplaint = {

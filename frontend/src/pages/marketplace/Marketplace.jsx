@@ -18,6 +18,7 @@ import {
   Check,
 } from "lucide-react";
 import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
+import { addRealNotification } from "../../services/notificationService";
 
 function createOrderId() {
   return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -479,6 +480,12 @@ export default function Marketplace() {
       );
       try {
         saveFoodOrders(updatedOrders);
+        addRealNotification({
+          id: `order-placed-${newOrder.id}`,
+          title: "Food Order Placed",
+          message: `Your food order #${newOrder.id} (${newOrder.vendor}) for Rs. ${newOrder.totalAmount} has been placed.`,
+          type: "food",
+        }, user);
       } catch (err) {
         console.error("Unable to save order.", err);
       }
@@ -504,6 +511,18 @@ export default function Marketplace() {
     });
     saveFoodOrders(updated);
     setMyOrders(updated.filter((o) => o.studentId === studentRegId));
+
+    try {
+      const target = updated.find((o) => o.id === orderId);
+      if (target) {
+        addRealNotification({
+          id: `order-step-${target.id}-${target.status}`,
+          title: `Food Order ${target.status}`,
+          message: `Your food order #${target.id} (${target.vendor}) is now ${target.status}.`,
+          type: "food",
+        }, user);
+      }
+    } catch {}
   };
 
   const filteredItems = items.filter((item) => {

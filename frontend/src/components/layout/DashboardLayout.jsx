@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
+import { getUnreadNotificationCount } from "../../services/notificationService";
 import {
   Activity,
   AlertTriangle,
@@ -136,30 +137,26 @@ const navigationGroups = [
 function DashboardLayout() {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [unreadNotifCount, setUnreadNotifCount] = useState(() => {
-    try {
-      const raw = localStorage.getItem("smartstay_student_notifications");
-      if (raw) return JSON.parse(raw).filter(n => !n.read).length;
-    } catch {}
-    return 3;
-  });
+  const [unreadNotifCount, setUnreadNotifCount] = useState(() =>
+    getUnreadNotificationCount(user)
+  );
 
   useEffect(() => {
     const handleSync = () => {
-      try {
-        const raw = localStorage.getItem("smartstay_student_notifications");
-        if (raw) {
-          setUnreadNotifCount(JSON.parse(raw).filter(n => !n.read).length);
-        }
-      } catch {}
+      setUnreadNotifCount(getUnreadNotificationCount(user));
     };
+    handleSync();
     window.addEventListener("smartstay-notifications-updated", handleSync);
+    window.addEventListener("smartstay-complaints-updated", handleSync);
+    window.addEventListener("smartstay-food-orders-updated", handleSync);
     window.addEventListener("storage", handleSync);
     return () => {
       window.removeEventListener("smartstay-notifications-updated", handleSync);
+      window.removeEventListener("smartstay-complaints-updated", handleSync);
+      window.removeEventListener("smartstay-food-orders-updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, []);
+  }, [user]);
     const sidebarCollapsed = false;
   const location = useLocation();
 

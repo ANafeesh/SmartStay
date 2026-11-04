@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   CreditCard,
@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
+import { addRealNotification } from "../../services/notificationService";
 // Module3TestSuite retired from user view
 
 const initialBills = [
@@ -275,6 +276,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "success",
@@ -297,6 +306,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "warning",
@@ -318,6 +335,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "info",
@@ -339,6 +364,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "danger",

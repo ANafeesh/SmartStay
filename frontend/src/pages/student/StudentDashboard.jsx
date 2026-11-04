@@ -153,11 +153,18 @@ function StudentDashboard() {
       const tokenVal = data?.qrToken || pass?.qrToken || passDetails.passToken;
       const passNum = pass?.passNumber || passDetails.passNumber;
       const sId = pass?.studentRegistrationId || studentRegId;
+      const sName = pass?.studentName || studentName;
+      const sRoom = pass?.room || roomNumber;
+      const sStatus = pass?.status || "Active";
 
       const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
       const verificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         tokenVal
-      )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(sId)}`;
+      )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(
+        sId
+      )}&name=${encodeURIComponent(sName)}&room=${encodeURIComponent(
+        sRoom
+      )}&status=${encodeURIComponent(sStatus)}`;
 
       setVerificationDirectUrl(verificationUrl);
 
@@ -194,7 +201,9 @@ function StudentDashboard() {
         passDetails.passToken
       )}&passNumber=${encodeURIComponent(
         passDetails.passNumber
-      )}&studentId=${encodeURIComponent(studentRegId)}`;
+      )}&studentId=${encodeURIComponent(studentRegId)}&name=${encodeURIComponent(
+        studentName
+      )}&room=${encodeURIComponent(roomNumber)}&status=Active`;
 
       setVerificationDirectUrl(fallbackVerificationUrl);
 
