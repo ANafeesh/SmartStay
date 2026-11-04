@@ -1,4 +1,5 @@
 const Complaint = require("../models/Complaint");
+const PaymentNotification = require("../models/PaymentNotification");
 const { uploadBufferToCloudinary } = require("../config/cloudinary");
 
 /**
@@ -89,6 +90,26 @@ exports.createComplaint = async (req, res) => {
     });
 
     const saved = await complaint.save();
+
+    try {
+      const targetStudent =
+        studentId ||
+        req.user?.studentId ||
+        req.user?.registrationNumber ||
+        String(req.user?._id || "");
+      if (targetStudent) {
+        await PaymentNotification.create({
+          recipientId: String(targetStudent),
+          title: "Complaint Logged",
+          message: `Complaint #${complaintId} (${title.trim()}) has been received and routed to hostel maintenance.`,
+          type: "warning",
+          referenceType: "Complaint",
+          referenceId: complaintId,
+        });
+      }
+    } catch (notifErr) {
+      console.warn("Could not dispatch complaint notification:", notifErr.message);
+    }
 
     return res.status(201).json({
       success: true,
@@ -195,6 +216,21 @@ exports.updateComplaintStatus = async (req, res) => {
     if (assignedTo) complaint.assignedTo = assignedTo;
 
     const updated = await complaint.save();
+
+    try {
+      if (complaint.studentId) {
+        await PaymentNotification.create({
+          recipientId: String(complaint.studentId),
+          title: `Complaint ${status || "Updated"}`,
+          message: `Complaint #${complaint.complaintId} (${complaint.title}) status has been updated to "${status}".`,
+          type: status === "Resolved" ? "success" : status === "In Progress" ? "info" : "warning",
+          referenceType: "Complaint",
+          referenceId: complaint.complaintId,
+        });
+      }
+    } catch (notifErr) {
+      console.warn("Could not dispatch complaint update notification:", notifErr.message);
+    }
 
     return res.status(200).json({
       success: true,

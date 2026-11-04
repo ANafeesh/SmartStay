@@ -80,7 +80,7 @@ app.use("/api/monitoring", monitoringRoutes);
 app.use("/api/analytics", analyticsRoutes);
 
 // Home route
-app.get("/", (req, res) => {
+app.get(["/", "/api", "/api/health"], (req, res) => {
   res.status(200).json({
     success: true,
     message: "SmartStay Backend API is running",
@@ -97,7 +97,7 @@ app.use((req, res) => {
 
 connectDB();
 
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "test" && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`SmartStay backend running on port ${PORT}`);
   });
