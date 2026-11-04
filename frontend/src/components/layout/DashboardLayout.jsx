@@ -69,7 +69,6 @@ const navigationGroups = [
       { name: "Allocations", href: "/hostel/allocations", icon: Users },
       { name: "Transfers", href: "/hostel/transfers", icon: ArrowLeftRight },
       { name: "Occupancy", href: "/hostel/occupancy", icon: BarChart3 },
-      { name: "Student Complaints", href: "/maintenance", icon: AlertTriangle },
     ],
   },
   {
