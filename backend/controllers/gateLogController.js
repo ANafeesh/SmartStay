@@ -295,6 +295,9 @@ exports.recordMovement = async (req, res) => {
       });
     }
 
+    let officerId = null;
+    let officerName = null;
+
     // 8. Record Gate Movement Log with Safe CAS Compensating Recovery
     let log;
     try {
@@ -303,8 +306,8 @@ exports.recordMovement = async (req, res) => {
         ["security", "security_officer", "admin", "warden"].includes(
           String(req.user.role).toLowerCase().trim()
         );
-      let officerId = isStaffUser ? req.user._id : null;
-      let officerName = isStaffUser ? req.user.name || "Campus Security Officer" : "Main Campus Gatekeeper";
+      officerId = isStaffUser ? req.user._id : null;
+      officerName = isStaffUser ? req.user.name || "Campus Security Officer" : "Main Campus Gatekeeper";
 
       if (!officerId) {
         const User = require("../models/User");
@@ -415,12 +418,14 @@ exports.recordMovement = async (req, res) => {
       } catch (leaveErr) {
         leaveCompletionError = leaveErr;
         console.error("Leave completion failed after log confirmation:", leaveErr.message);
-        await GateEntryExit.findByIdAndUpdate(log._id, {
-          $set: {
-            leaveCompletionStatus: "FAILED",
-            reconciliationNotes: `Leave completion failed: ${leaveErr.message}`,
-          },
-        });
+        try {
+          await GateEntryExit.findByIdAndUpdate(log._id, {
+            $set: {
+              leaveCompletionStatus: "FAILED",
+              reconciliationNotes: `Leave completion failed: ${leaveErr.message}`,
+            },
+          });
+        } catch {}
       }
     }
 
@@ -434,26 +439,30 @@ exports.recordMovement = async (req, res) => {
           severity: "Minor",
           description: `Student entered through ${gateName} at ${now.toLocaleTimeString()} during curfew hours (Asia/Colombo) without a valid approved leave request. Gate movement ref: ${log._id}.`,
           location: gateName,
-          reportedBy: req.user._id,
-          reporterName: req.user.name || "Gate Security Officer",
+          reportedBy: req.user?._id || officerId,
+          reporterName: req.user?.name || officerName || "Gate Security Officer",
           reportedByRole: "security",
           incidentDate: now,
           fineAmount: 500,
           fineStatus: "Pending",
           status: "Open",
         });
-        await GateEntryExit.findByIdAndUpdate(log._id, {
-          $set: { curfewViolationStatus: "CREATED" },
-        });
+        try {
+          await GateEntryExit.findByIdAndUpdate(log._id, {
+            $set: { curfewViolationStatus: "CREATED" },
+          });
+        } catch {}
       } catch (violErr) {
         violationCreationError = violErr;
         console.error("Curfew violation creation failed after log confirmation:", violErr.message);
-        await GateEntryExit.findByIdAndUpdate(log._id, {
-          $set: {
-            curfewViolationStatus: "FAILED",
-            reconciliationNotes: `Curfew violation creation failed: ${violErr.message}`,
-          },
-        });
+        try {
+          await GateEntryExit.findByIdAndUpdate(log._id, {
+            $set: {
+              curfewViolationStatus: "FAILED",
+              reconciliationNotes: `Curfew violation creation failed: ${violErr.message}`,
+            },
+          });
+        } catch {}
       }
     }
 

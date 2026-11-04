@@ -476,7 +476,7 @@ export default function Marketplace() {
         addRealNotification({
           id: `order-placed-${newOrder.id}`,
           title: "Food Order Placed",
-          message: `Your food order #${newOrder.id} (${newOrder.vendor}) for LKR ${newOrder.totalAmount.toLocaleString()} has been placed.`,
+                    message: `Your food order #${newOrder.id} (${newOrder.vendor}) for LKR ${newOrder.totalAmount.toLocaleString()} has been placed.`,
           type: "food",
         }, user);
       } catch (err) {
@@ -490,6 +490,34 @@ export default function Marketplace() {
       setIsSubmitting(false);
     }, 350);
   };
+
+  const simulateStatusStep = (orderId) => {
+    const steps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
+    const all = readFoodOrders();
+    const updated = all.map((o) => {
+      if (o.id === orderId) {
+        const idx = steps.indexOf(o.status);
+        const next = steps[Math.min(idx + 1, steps.length - 1)];
+        return { ...o, status: next };
+      }
+      return o;
+    });
+    saveFoodOrders(updated);
+    setMyOrders(updated.filter((o) => o.studentId === studentRegId));
+
+    try {
+      const target = updated.find((o) => o.id === orderId);
+      if (target) {
+        addRealNotification({
+          id: `order-step-${target.id}-${target.status}`,
+          title: `Food Order ${target.status}`,
+          message: `Your food order #${target.id} (${target.vendor}) is now ${target.status}.`,
+          type: "food",
+        }, user);
+      }
+    } catch {}
+  };
+
 
   const filteredItems = items.filter((item) => {
     const matchesCategory =
