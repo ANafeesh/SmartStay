@@ -63,7 +63,8 @@ function Modal({
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "smartstay-modal-title" : undefined}
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+      style={{ zIndex: 99999 }}
+      className="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
     >
       {/* Full-screen Backdrop */}
       <div
@@ -74,8 +75,10 @@ function Modal({
 
       {/* Modal Dialog Box */}
       <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ zIndex: 100000 }}
         className={`
-          relative w-full rounded-2xl bg-white shadow-2xl border border-slate-100
+          relative z-10 w-full rounded-2xl bg-white shadow-2xl border border-slate-100
           transition-all duration-200 flex flex-col max-h-[90vh]
           ${sizeClasses[size] || sizeClasses.md}
           ${className}
@@ -103,7 +106,10 @@ function Modal({
             {showCloseButton && (
               <button
                 type="button"
-                onClick={onClose}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose?.();
+                }}
                 aria-label="Close dialog"
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
               >
@@ -115,7 +121,10 @@ function Modal({
           /* Floating close button when no header title exists */
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose?.();
+            }}
             aria-label="Close dialog"
             className="absolute top-4 right-4 z-10 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition cursor-pointer"
           >

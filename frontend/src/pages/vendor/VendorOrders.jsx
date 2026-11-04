@@ -11,8 +11,8 @@ import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 const initialOrders = [
   {
     id: "ORD-9041",
-    studentName: "Ahamed Nafeesh",
-    regNo: "STD-2026-090",
+    studentName: "Student Resident",
+    regNo: "STD-2026-101",
     phone: "+94 77 123 4567",
     timeSlot: "12:30 PM - 01:00 PM (Lunch)",
     deliveryLocation: "Hostel Block B - Room 204",

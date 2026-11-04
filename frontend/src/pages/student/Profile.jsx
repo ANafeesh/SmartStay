@@ -21,16 +21,16 @@ import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 
 const demoStudentProfile = {
-  name: "Ahamed Nafeesh",
-  studentId: "STD-2026-090",
-  email: "nafeesh@campus.edu",
+  name: "Student Account",
+  studentId: "STD-2026-101",
+  email: "student@smartstay.com",
   phone: "+94 77 123 4567",
   address: "Campus Student Residence Block B",
   course: "BICT (Hons)",
   faculty: "Faculty of Applied Sciences",
   year: "Second Year",
-  hostel: "Block B",
-  room: "B-204",
+  hostel: "Block A",
+  room: "Room 101",
   joinedDate: "05 Jan 2026",
 };
 

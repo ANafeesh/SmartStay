@@ -48,11 +48,11 @@ const protect = async (req, res, next) => {
     const studentProps =
       roleKey === "student"
         ? {
-            name: "Ahamed Nafeesh",
-            registrationNumber: "STD-2026-090",
-            studentId: "STD-2026-090",
-            room: "Block B - Room 204",
-            building: "Olu Block",
+            name: "Student Account",
+            registrationNumber: "STD-2026-101",
+            studentId: "STD-2026-101",
+            room: "Room 101",
+            building: "Block A",
           }
         : {
             name:

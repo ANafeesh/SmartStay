@@ -64,13 +64,13 @@ export async function fetchGateLogsApi(params = {}) {
  */
 export function getStudentPassDetails(user) {
   const isDemo = user?.isDemo || user?.email === "nafeesh@campus.edu";
-  const studentId = user?.studentId || user?.registrationNumber || (isDemo ? "STD-2026-090" : "STD-NEW");
-  const name = user?.name || (isDemo ? "Ahamed Nafeesh" : "Student User");
-  const room = user?.room || (isDemo ? "Block B - Room 204" : "Not Allocated");
-  const building = user?.building || (isDemo ? "Olu Block" : "Campus Residence");
+  const studentId = user?.studentId || user?.registrationNumber || (user?.email ? user.email.split("@")[0].toUpperCase() : "STD-ACTIVE");
+  const name = user?.name || "Student User";
+  const room = user?.room || "Room Allocated";
+  const building = user?.building || "Hostel Residence";
 
-  const passNumber = `SP-2026-${studentId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "090"}`;
-  const passToken = `QR-SS-STU-${studentId.replace(/[^a-zA-Z0-9]/g, "")}-${passNumber}`;
+  const passNumber = `SP-2026-${String(studentId).replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "101"}`;
+  const passToken = `QR-SS-STU-${String(studentId).replace(/[^a-zA-Z0-9]/g, "")}-${passNumber}`;
 
   return {
     studentId,
@@ -87,7 +87,7 @@ export function getStudentPassDetails(user) {
 /**
  * Returns student's live location and movement history from localStorage
  */
-export function getGateMovementState(studentId = "STD-2026-090") {
+export function getGateMovementState(studentId = "STD-ACTIVE") {
   const key = `${STORAGE_PREFIX}${studentId}`;
   try {
     const raw = localStorage.getItem(key);

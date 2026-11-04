@@ -55,12 +55,12 @@ export const isDemoUser = (user) => {
   const email = (user.email || "").toLowerCase().trim();
   const username = (user.username || "").toLowerCase().trim();
   return (
-    email === "nafeesh@campus.edu" ||
+    email === "student@smartstay.com" ||
     email === "warden@campus.edu" ||
     email === "maintenance@campus.edu" ||
     email === "vendor@campusbites.edu" ||
     email === "executive@campus.edu" ||
-    username === "nafeesh" ||
+    username === "student" ||
     username === "warden_perera" ||
     username === "tech_wickrama" ||
     username === "campus_bites" ||
@@ -88,7 +88,7 @@ export const enrichUser = (backendUser, isExplicitDemo = false) => {
       .map((n) => n[0])
       .join("")
       .substring(0, 2)
-      .toUpperCase() || (isDemo ? "AN" : "U");
+      .toUpperCase() || (isDemo ? "SA" : "U");
 
   return {
     ...(demoFallback || {}),

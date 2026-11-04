@@ -464,9 +464,9 @@ export function createQRCodeModel(text, errorCorrectLevel = QRErrorCorrectLevel.
  */
 export default function QRCode({
   value,
-  size = 180,
-  margin = 2,
-  darkColor = "#0f172a",
+  size = 200,
+  margin = 4,
+  darkColor = "#000000",
   lightColor = "#ffffff",
   className = "",
   title = "QR Code",

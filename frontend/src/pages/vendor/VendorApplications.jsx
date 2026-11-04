@@ -17,7 +17,7 @@ const initialApplications = [
     vendorId: "VND-2026-09",
     businessName: "Campus Diner & Cafe",
     ownerName: "Canteen Operator",
-    regNo: "STD-2026-090",
+    regNo: "STD-2026-101",
     email: "diner@example.com",
     phone: "+94 77 123 4567",
     category: "Meals",
@@ -75,7 +75,7 @@ export default function VendorApplications() {
   const [form, setForm] = useState({
     businessName: "",
     ownerName: "",
-    regNo: "STD-2026-090",
+    regNo: "STD-2026-101",
     email: "",
     phone: "",
     category: "Meals",
@@ -102,7 +102,7 @@ export default function VendorApplications() {
     setForm({
       businessName: "Campus Diner & Cafe",
       ownerName: "Canteen Operator",
-      regNo: "STD-2026-090",
+      regNo: "STD-2026-101",
       email: "ahamed.nafeesh@seu.ac.lk",
       phone: "+94 77 123 4567",
       category: "Meals",
@@ -132,7 +132,7 @@ export default function VendorApplications() {
     setForm({
       businessName: "",
       ownerName: "",
-      regNo: "STD-2026-090",
+      regNo: "STD-2026-101",
       email: "",
       phone: "",
       category: "Meals",
@@ -583,7 +583,7 @@ export default function VendorApplications() {
                     {selectedApplicationForView.qrPassToken}
                   </p>
                   <span className="inline-block mt-1 text-[10px] text-emerald-400">
-                    âœ“ Valid for Hostel Drop-off
+                    ✓ Valid for Hostel Drop-off
                   </span>
                 </div>
               </div>
