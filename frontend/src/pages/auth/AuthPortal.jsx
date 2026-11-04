@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
 import Logo from "../../components/ui/Logo";
+import campusHostelBg from "../../assets/campus-hostel-bg.jpg";
 import {
   LogIn,
   UserPlus,
@@ -14,8 +15,11 @@ import {
   CheckCircle2,
   Building,
   User,
-  ShieldCheck,
   ChevronDown,
+  Home,
+  Bed,
+  CreditCard,
+  Headphones,
 } from "lucide-react";
 
 /**
@@ -728,14 +732,54 @@ export default function AuthPortal({ initialTab = "login" }) {
       </div>
 
       {/* =========================================================================
-          RIGHT PANEL: University Campus Hostel Photograph matching provided photo
+          RIGHT PANEL: High-resolution Campus Hostel Photograph with glass overlay
          ========================================================================= */}
       <div
-        className="hidden lg:flex lg:w-[58%] xl:w-[60%] relative bg-cover bg-center min-h-screen"
+        className="hidden lg:flex lg:w-[58%] xl:w-[60%] relative bg-cover bg-center min-h-screen flex-col justify-between p-8 xl:p-12 overflow-hidden"
         style={{
-          backgroundImage: "url('/campus-hostel-bg.jpg')",
+          backgroundImage: `url(${campusHostelBg})`,
         }}
-      />
+      >
+        {/* Subtle gradient vignette to guarantee contrast and readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-slate-950/30 pointer-events-none" />
+
+        {/* Top Floating Badge: Campus Residence */}
+        <div className="relative z-10 flex justify-end">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-slate-900/75 backdrop-blur-md px-4 py-2 text-xs font-semibold text-white shadow-lg">
+            <Home size={14} className="text-white" />
+            <span>Campus Residence</span>
+          </div>
+        </div>
+
+        {/* Bottom Floating Glass Card Showcase (Matches design mockup exactly) */}
+        <div className="relative z-10 max-w-lg">
+          <div className="rounded-3xl border border-white/20 bg-slate-950/65 backdrop-blur-xl p-6 sm:p-7 text-white shadow-2xl">
+            <h2 className="text-xl sm:text-2xl font-bold text-white leading-snug">
+              A better way to <br />
+              manage <span className="text-[#38BDF8]">campus living</span>
+            </h2>
+
+            <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              Book rooms, manage payments and access campus services easily.
+            </p>
+
+            <div className="mt-5 grid grid-cols-3 gap-2 border-t border-white/15 pt-4 text-xs text-slate-200">
+              <div className="flex items-center gap-2">
+                <Bed size={15} className="text-white shrink-0" />
+                <span>Rooms</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CreditCard size={15} className="text-white shrink-0" />
+                <span>Payments</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Headphones size={15} className="text-white shrink-0" />
+                <span>Support</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

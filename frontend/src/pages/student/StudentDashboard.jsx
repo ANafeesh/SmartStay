@@ -120,8 +120,6 @@ function StudentDashboard() {
   const [gateState, setGateState] = useState(() =>
     getGateMovementState(studentRegId)
   );
-  const [scanResult, setScanResult] = useState(null);
-  const [isSimulating, setIsSimulating] = useState(false);
 
   // Real backend digital pass state
   const [realPassData, setRealPassData] = useState(null);
@@ -138,26 +136,28 @@ function StudentDashboard() {
       setRealPassData(data);
       const pass = data?.pass;
 
-      const hostIp = data?.lanIp || "172.16.34.50";
+      const hostIp =
+        window.location.hostname &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+          ? window.location.hostname
+          : data?.lanIp || "localhost";
+
       const origin =
-        window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+        window.location.hostname &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
           ? window.location.origin
           : `http://${hostIp}:${window.location.port || "5173"}`;
 
-      const tokenVal = data?.qrToken || passDetails.passToken;
+      const tokenVal = data?.qrToken || pass?.qrToken || passDetails.passToken;
       const passNum = pass?.passNumber || passDetails.passNumber;
       const sId = pass?.studentRegistrationId || studentRegId;
-      const sName = studentName;
-      const sRoom = roomNumber;
 
       const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
       const verificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         tokenVal
-      )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(
-        sId
-      )}&name=${encodeURIComponent(sName)}&room=${encodeURIComponent(
-        sRoom
-      )}&status=Active`;
+      )}&passNumber=${encodeURIComponent(passNum)}&studentId=${encodeURIComponent(sId)}`;
 
       setVerificationDirectUrl(verificationUrl);
 
@@ -175,21 +175,26 @@ function StudentDashboard() {
       console.warn("Could not load backend pass, fallback to display helper:", err);
       setPassError(err.message || "Failed to retrieve live pass from backend.");
 
+      const hostIp =
+        window.location.hostname &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+          ? window.location.hostname
+          : "localhost";
+
       const origin =
-        window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1"
+        window.location.hostname &&
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
           ? window.location.origin
-          : `http://172.16.34.50:${window.location.port || "5173"}`;
+          : `http://${hostIp}:${window.location.port || "5173"}`;
 
       const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
       const fallbackVerificationUrl = `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
         passDetails.passToken
       )}&passNumber=${encodeURIComponent(
         passDetails.passNumber
-      )}&studentId=${encodeURIComponent(
-        studentRegId
-      )}&name=${encodeURIComponent(studentName)}&room=${encodeURIComponent(
-        roomNumber
-      )}&status=Active`;
+      )}&studentId=${encodeURIComponent(studentRegId)}`;
 
       setVerificationDirectUrl(fallbackVerificationUrl);
 
@@ -211,46 +216,37 @@ function StudentDashboard() {
     }
   };
 
+  // Load pass on mount and keep synchronized live
   useEffect(() => {
-    if (showPassModal) {
+    loadBackendPass();
+  }, [studentRegId]);
+
+  useEffect(() => {
+    if (!showPassModal) return;
+
+    loadBackendPass();
+
+    // Poll every 3 seconds while pass modal is open so movements update live
+    const pollTimer = setInterval(() => {
       loadBackendPass();
-    }
+    }, 3000);
+
+    const onFocus = () => loadBackendPass();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(pollTimer);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [showPassModal, studentRegId]);
 
   useEffect(() => {
     setGateState(getGateMovementState(studentRegId));
   }, [studentRegId, showPassModal]);
 
-  // Interactive Gatekeeper Scan Simulator (Test Actions)
-  const handleSimulateScan = async (forcedDirection = null) => {
-    setIsSimulating(true);
-    try {
-      const res = await recordStudentMovement({
-        studentId: studentRegId,
-        studentName,
-        room: roomNumber,
-        targetDirection: forcedDirection,
-        gateName: "Main Campus Gate 01",
-        officerName: "Officer on Duty (Gate 01)",
-        qrToken: realPassData?.qrToken,
-        passNumber: realPassData?.pass?.passNumber,
-      });
-
-      setScanResult(res);
-      if (res.state) {
-        setGateState(res.state);
-      }
-      if (res.success) {
-        loadBackendPass();
-      }
-    } finally {
-      setIsSimulating(false);
-    }
-  };
-
   const isCurrentlyInside =
     realPassData?.pass?.lastMovementDirection
-      ? realPassData.pass.lastMovementDirection === "IN"
+      ? realPassData.pass.lastMovementDirection !== "OUT" && realPassData.pass.status !== "OnLeave"
       : gateState?.currentLocation === "INSIDE";
 
   return (
@@ -587,61 +583,36 @@ function StudentDashboard() {
               </div>
             </div>
 
-            {/* GATEKEEPER SCAN SIMULATOR CONTROLS */}
+            {/* OFFICIAL GATE TERMINAL & CHECKPOINT ACTIONS */}
             <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-3.5 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                  <Scan size={15} className="text-blue-600" />
-                  <span>Testing Simulator (Module 2 Verification)</span>
+                  <ShieldCheck size={15} className="text-emerald-600" />
+                  <span>Campus Gate Checkpoint</span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-semibold">
-                  Simulated Scan Actions
+                <span className="text-[10px] text-slate-500 font-semibold">
+                  Official Verification Terminal
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={isSimulating}
-                  onClick={() => handleSimulateScan("OUT")}
-                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition shadow-xs cursor-pointer ${
-                    scanResult?.direction === "OUT"
-                      ? "bg-blue-600 text-white ring-2 ring-blue-400"
-                      : "bg-white border border-slate-200 text-blue-700 hover:bg-blue-50"
-                  }`}
-                >
-                  <LogOut size={14} />
-                  <span>🧪 Test Simulator: EXIT</span>
-                </button>
+              <p className="text-[11px] text-slate-600 leading-relaxed text-left">
+                Present this QR code to security at any campus entrance or exit checkpoint. Movement is verified and recorded atomically in university gate logs.
+              </p>
 
-                <button
-                  type="button"
-                  disabled={isSimulating}
-                  onClick={() => handleSimulateScan("IN")}
-                  className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition shadow-xs cursor-pointer ${
-                    scanResult?.direction === "IN"
-                      ? "bg-emerald-600 text-white ring-2 ring-emerald-400"
-                      : "bg-white border border-slate-200 text-emerald-700 hover:bg-emerald-50"
-                  }`}
-                >
-                  <LogIn size={14} />
-                  <span>🧪 Test Simulator: ENTER</span>
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/80">
                 <Link
                   to="/gate/verify"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
                 >
-                  <span>Open Full Gatekeeper Terminal</span>
+                  <Scan size={13} />
+                  <span>Open Gatekeeper Verification Terminal</span>
                   <ExternalLink size={12} />
                 </Link>
 
-                <span className="text-[10px] font-mono text-slate-400">
-                  State: {isCurrentlyInside ? "IN" : "OUT"}
+                <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded-md">
+                  Current: {isCurrentlyInside ? "IN" : "OUT"}
                 </span>
               </div>
             </div>
