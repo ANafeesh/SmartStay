@@ -48,6 +48,13 @@ function roomLabel(room) {
     : roomNumber;
 }
 
+function formatBedLabel(bed) {
+  if (!bed) return "—";
+  const label = typeof bed === "object" ? (bed.bedNumber || bed.name || bed.number) : bed;
+  if (!label) return "—";
+  return String(label).toLowerCase().startsWith("bed") ? String(label) : `Bed ${label}`;
+}
+
 function Transfers() {
   const [transfers, setTransfers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -381,7 +388,7 @@ function Transfers() {
                             {roomLabel(transfer.fromRoomId)}
                           </p>
                           <p className="text-xs text-smart-secondary">
-                            Bed {transfer.fromBedId?.bedNumber || "—"}
+                            {formatBedLabel(transfer.fromBedId)}
                           </p>
                         </td>
 
@@ -390,7 +397,7 @@ function Transfers() {
                             {roomLabel(transfer.toRoomId)}
                           </p>
                           <p className="text-xs text-smart-secondary">
-                            Bed {transfer.toBedId?.bedNumber || "—"}
+                            {formatBedLabel(transfer.toBedId)}
                           </p>
                         </td>
 
@@ -459,7 +466,7 @@ function Transfers() {
                           {roomLabel(transfer.fromRoomId)}
                         </p>
                         <p className="text-xs text-smart-secondary">
-                          Bed {transfer.fromBedId?.bedNumber || "—"}
+                          {formatBedLabel(transfer.fromBedId)}
                         </p>
                       </div>
 
@@ -471,7 +478,7 @@ function Transfers() {
                           {roomLabel(transfer.toRoomId)}
                         </p>
                         <p className="text-xs text-smart-secondary">
-                          Bed {transfer.toBedId?.bedNumber || "—"}
+                          {formatBedLabel(transfer.toBedId)}
                         </p>
                       </div>
                     </div>

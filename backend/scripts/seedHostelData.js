@@ -81,7 +81,7 @@ const KEY_STUDENT_ALLOCATIONS = [
     regId: "STD-2026-045",
     name: "Kavindu Perera",
     blockPrefix: "A",
-    roomNumber: "A-105",
+    roomNumber: "A-302",
     bedNumber: "Bed 1",
   },
   {
@@ -249,6 +249,10 @@ async function seedHostel(disconnectAfter = true) {
   }
 
   // 6. Allocate background students to achieve realistic ~54% campus occupancy
+  const RESERVED_EMPTY_BED_KEYS = new Set([
+    "A-104:Bed 2", // Reserved for Kavindu Perera's pending transfer
+  ]);
+
   let nameIndex = 0;
   for (const room of createdRooms) {
     const roomNum = parseInt(room.roomNumber.split("-")[1], 10);
@@ -258,7 +262,7 @@ async function seedHostel(disconnectAfter = true) {
       const bedKey = `${room.roomNumber}:Bed ${bedIdx}`;
       const bed = bedMap.get(bedKey);
 
-      if (bed && !occupiedBedIds.has(String(bed._id))) {
+      if (bed && !occupiedBedIds.has(String(bed._id)) && !RESERVED_EMPTY_BED_KEYS.has(bedKey)) {
         const studentName = RESIDENT_NAMES[nameIndex % RESIDENT_NAMES.length];
         const studentRegId = `STD-2026-${String(200 + nameIndex).padStart(3, "0")}`;
         nameIndex++;

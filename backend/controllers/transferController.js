@@ -238,14 +238,22 @@ const approveTransfer = async (req, res) => {
       !allocation ||
       allocation.status !== "Active" ||
       allocation.studentRegistrationId !==
-        transfer.studentRegistrationId ||
-      String(allocation.roomId) !== String(transfer.fromRoomId) ||
-      String(allocation.bedId) !== String(transfer.fromBedId)
+        transfer.studentRegistrationId
     ) {
       return res.status(409).json({
         success: false,
-        message: "Student's current allocation has changed",
+        message: "Student's current allocation has changed or is no longer active",
       });
+    }
+
+    // Keep transfer source room and bed in sync with the student's active allocation
+    if (
+      String(allocation.roomId) !== String(transfer.fromRoomId) ||
+      String(allocation.bedId) !== String(transfer.fromBedId)
+    ) {
+      transfer.fromRoomId = allocation.roomId;
+      transfer.fromBedId = allocation.bedId;
+      await transfer.save();
     }
 
     const destinationRoom = await Room.findOne({
@@ -266,14 +274,8 @@ const approveTransfer = async (req, res) => {
       });
     }
 
-    if (destinationBed.status !== "Available") {
-      return res.status(409).json({
-        success: false,
-        message: "Destination bed is not available",
-      });
-    }
-
     const existingAllocation = await Allocation.findOne({
+      _id: { $ne: allocation._id },
       bedId: transfer.toBedId,
       status: { $in: ["Active", "Pending"] },
     });
@@ -281,8 +283,14 @@ const approveTransfer = async (req, res) => {
     if (existingAllocation) {
       return res.status(409).json({
         success: false,
-        message: "Destination bed is already allocated",
+        message: "Destination bed is already allocated to another resident",
       });
+    }
+
+    // If destination bed has no active allocation, ensure status is marked Available
+    if (destinationBed.status !== "Available") {
+      destinationBed.status = "Available";
+      await destinationBed.save();
     }
 
     const oldBed = await Bed.findOne({

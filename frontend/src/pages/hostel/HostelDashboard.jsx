@@ -104,11 +104,14 @@ function getBedLabel(bed, rooms) {
   const room = rooms.find((item) => getId(item) === roomId);
   const roomNumber = room ? getRoomLabel(room) : "";
 
-  const bedNumber = bed.bedNumber ?? bed.name ?? bed._id ?? "Unknown bed";
+  const rawBed = bed.bedNumber ?? bed.name ?? bed._id ?? "Unknown bed";
+  const bedNumber = String(rawBed).toLowerCase().startsWith("bed")
+    ? rawBed
+    : `Bed ${rawBed}`;
 
   return roomNumber
-    ? `${roomNumber} / Bed ${bedNumber}`
-    : `Bed ${bedNumber}`;
+    ? `${roomNumber} / ${bedNumber}`
+    : bedNumber;
 }
 
 function getStudentLabel(transfer) {
