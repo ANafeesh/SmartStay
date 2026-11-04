@@ -198,6 +198,30 @@ const createAllocation = async (req, res) => {
     bed.status = "Occupied";
     await bed.save();
 
+    // Sync student user profile in database
+    try {
+      const User = require("../models/User");
+      const Building = require("../models/Building");
+      const bld = await Building.findById(room.buildingId);
+      const bldName = bld?.name || bld?.code || "Hostel";
+      await User.updateMany(
+        {
+          $or: [
+            { studentId: registrationId.trim() },
+            { registrationNumber: registrationId.trim() },
+          ],
+        },
+        {
+          $set: {
+            room: room.roomNumber,
+            building: bldName,
+          },
+        }
+      );
+    } catch (uErr) {
+      console.warn("Could not sync user profile in createAllocation:", uErr.message);
+    }
+
     const result = await Allocation.findById(allocation._id)
       .populate({
         path: "roomId",
@@ -422,6 +446,30 @@ const updateAllocation = async (req, res) => {
         bed.status = "Available";
         await bed.save();
       }
+    }
+
+    // Sync student user profile in database
+    try {
+      const User = require("../models/User");
+      const Building = require("../models/Building");
+      const bld = await Building.findById(room.buildingId);
+      const bldName = bld?.name || bld?.code || "Hostel";
+      await User.updateMany(
+        {
+          $or: [
+            { studentId: registrationId.trim() },
+            { registrationNumber: registrationId.trim() },
+          ],
+        },
+        {
+          $set: {
+            room: room.roomNumber,
+            building: bldName,
+          },
+        }
+      );
+    } catch (uErr) {
+      console.warn("Could not sync user profile in updateAllocation:", uErr.message);
     }
 
     const result = await Allocation.findById(id)

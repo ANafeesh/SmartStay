@@ -178,6 +178,53 @@ function Transfers() {
             detail: updatedList,
           })
         );
+
+        if (newStatus === "Approved") {
+          try {
+            const destBuildingName =
+              transfer.toRoomId?.buildingId?.name ||
+              transfer.toRoomId?.buildingId?.code ||
+              "Hostel Block";
+            const destRoomNum = transfer.toRoomId?.roomNumber || destRoomText;
+
+            // Sync cached student profile
+            const cachedProfRaw = localStorage.getItem("smartstay_student_profile");
+            const cachedProf = cachedProfRaw ? JSON.parse(cachedProfRaw) : {};
+            const updatedProf = {
+              ...cachedProf,
+              hostel: destBuildingName,
+              room: destRoomNum,
+              bed: destBedText,
+              address: `Campus Student Residence ${destBuildingName}, Room ${destRoomNum}`,
+              allocationStatus: "Confirmed",
+            };
+            if (transfer.contactPhone) {
+              updatedProf.phone = transfer.contactPhone;
+            }
+            localStorage.setItem("smartstay_student_profile", JSON.stringify(updatedProf));
+
+            // Sync cached user
+            const cachedUserRaw = localStorage.getItem("smartstay_user");
+            if (cachedUserRaw) {
+              const cachedUser = JSON.parse(cachedUserRaw);
+              cachedUser.room = destRoomNum;
+              cachedUser.building = destBuildingName;
+              if (transfer.contactPhone) {
+                cachedUser.phone = transfer.contactPhone;
+              }
+              localStorage.setItem("smartstay_user", JSON.stringify(cachedUser));
+            }
+
+            // Dispatch profile update event for live UI update across all components
+            window.dispatchEvent(
+              new CustomEvent("smartstay-profile-updated", {
+                detail: updatedProf,
+              })
+            );
+          } catch (profErr) {
+            console.warn("Could not sync local student profile:", profErr);
+          }
+        }
       } catch (notifErr) {
         console.warn("Could not dispatch transfer student notification:", notifErr);
       }

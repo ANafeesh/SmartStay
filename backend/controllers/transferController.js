@@ -383,6 +383,37 @@ const approveTransfer = async (req, res) => {
     }
     await transfer.save();
 
+    // Synchronize the student's User profile record in database
+    try {
+      const User = require("../models/User");
+      const Building = require("../models/Building");
+      const destBld = await Building.findById(destinationRoom.buildingId);
+      const bldName = destBld?.name || destBld?.code || "Hostel Block B";
+      const roomNum = destinationRoom.roomNumber;
+
+      const userUpdate = {
+        room: roomNum,
+        building: bldName,
+      };
+      if (transfer.contactPhone) {
+        userUpdate.phone = transfer.contactPhone;
+      }
+
+      await User.updateMany(
+        {
+          $or: [
+            { studentId: transfer.studentRegistrationId },
+            { registrationNumber: transfer.studentRegistrationId },
+          ],
+        },
+        {
+          $set: userUpdate,
+        }
+      );
+    } catch (userErr) {
+      console.warn("Could not sync student user document on transfer approval:", userErr.message);
+    }
+
     const result = await populateTransfer(Transfer.findById(transfer._id));
 
     return res.status(200).json({

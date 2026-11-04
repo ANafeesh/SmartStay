@@ -235,9 +235,38 @@ exports.getMe = async (req, res) => {
       });
     }
 
+    const userData = formatUserResponse(req.user);
+
+    // If student, enrich with active allocation's room and building
+    if (req.user.role === "student") {
+      try {
+        const Allocation = require("../models/Allocation");
+        const studentReg = req.user.studentId || req.user.registrationNumber;
+        if (studentReg) {
+          const alloc = await Allocation.findOne({
+            studentRegistrationId: studentReg,
+            status: "Active",
+          }).populate({
+            path: "roomId",
+            populate: { path: "buildingId" },
+          });
+
+          if (alloc?.roomId) {
+            userData.room = alloc.roomId.roomNumber || userData.room;
+            const bld = alloc.roomId.buildingId;
+            if (bld) {
+              userData.building = bld.name || bld.code || userData.building;
+            }
+          }
+        }
+      } catch (allocErr) {
+        console.warn("Could not enrich getMe with allocation:", allocErr.message);
+      }
+    }
+
     return res.status(200).json({
       success: true,
-      user: formatUserResponse(req.user),
+      user: userData,
     });
   } catch (error) {
     return res.status(500).json({
