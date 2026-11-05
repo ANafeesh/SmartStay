@@ -345,56 +345,61 @@ const verifyOtpAndCompletePayment = async (req, res) => {
     payment.receiptId = receipt._id;
     await payment.save();
 
-    // Query Authorized Persons (Wardens, Admins, Finance Staff)
-    let wardenEmails = [];
+    // 1. Dynamically query all Admins, Wardens, and Finance staff from MongoDB (no hardcoding)
+    let staffRecipients = [];
     try {
-      const authorizedStaff = await User.find(
+      staffRecipients = await User.find(
         { role: { $in: ["warden", "admin", "hostel_admin", "finance", "finance_staff"] } },
-        { email: 1 }
+        { _id: 1, name: 1, email: 1, role: 1 }
       );
-      wardenEmails = authorizedStaff.map((u) => u.email).filter(Boolean);
     } catch (err) {
-      console.warn("Could not query warden users from DB:", err.message);
+      console.warn("Could not query staff from DB:", err.message);
     }
 
-    // Always include environment / fallback warden email
-    const fallbackWarden = process.env.WARDEN_EMAIL || "warden@campus.edu";
-    if (!wardenEmails.includes(fallbackWarden)) {
-      wardenEmails.push(fallbackWarden);
+    const adminAndWardenEmails = Array.from(
+      new Set(
+        [
+          ...staffRecipients.map((u) => u.email),
+          process.env.WARDEN_EMAIL,
+          process.env.ADMIN_EMAIL,
+        ].filter(Boolean)
+      )
+    );
+
+    // 2. Dispatch Official Bursary Settlement Email to all Admins and Wardens
+    if (adminAndWardenEmails.length > 0) {
+      await sendWardenPaymentNotification({
+        wardenEmails: adminAndWardenEmails,
+        student: {
+          name: studentNameVal,
+          regNo: studentRegNo,
+          email: studentEmail,
+          hostelRoom: hostelRoomVal,
+        },
+        bill: {
+          id: billId,
+          title: bill.title || "Hostel Fee Settlement",
+          type: bill.type || "Room Fee",
+          period: bill.period || "Current Cycle",
+        },
+        payment: {
+          amount: totalAmount,
+          refNo: txnRef,
+          receiptNo: receiptNo,
+          method: payment.method,
+          date: new Date().toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+        receipt,
+      });
     }
 
-    // 1. Dispatch Email to Authorized Persons (Warden / Admin)
-    await sendWardenPaymentNotification({
-      wardenEmails,
-      student: {
-        name: studentNameVal,
-        regNo: studentRegNo,
-        email: studentEmail,
-        hostelRoom: hostelRoomVal,
-      },
-      bill: {
-        id: billId,
-        title: bill.title || "Hostel Fee Settlement",
-        type: bill.type || "Room Fee",
-        period: bill.period || "Current Cycle",
-      },
-      payment: {
-        amount: totalAmount,
-        refNo: txnRef,
-        receiptNo: receiptNo,
-        method: payment.method,
-        date: new Date().toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      },
-      receipt,
-    });
-
-    // 2. Dispatch Official Receipt Confirmation Email to Student
+    // 3. Dispatch Official Receipt Confirmation Email to Student
     await sendStudentPaymentReceipt({
       toEmail: studentEmail,
       student: {
@@ -412,16 +417,19 @@ const verifyOtpAndCompletePayment = async (req, res) => {
         receiptNo: receiptNo,
         method: payment.method,
         date: new Date().toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
         }),
       },
       receipt,
     });
 
-    // 3. Create System Notifications in MongoDB
+    // 4. Create in-app System Notifications for Student AND all Admins & Wardens dynamically
     try {
+      // Notify Student
       await notify(
         studentIdVal,
         "Payment Confirmed",
@@ -431,15 +439,17 @@ const verifyOtpAndCompletePayment = async (req, res) => {
         receipt._id
       );
 
-      // Notify Warden in system
-      await notify(
-        "WARDEN_BROADCAST",
-        "Student Bill Payment Received",
-        `${studentNameVal} (${studentRegNo}) paid LKR ${totalAmount.toLocaleString()} for ${bill.title || "bill"}. Receipt: ${receiptNo}.`,
-        "info",
-        "Payment",
-        payment._id
-      );
+      // Notify each Admin & Warden in their in-app notifications inbox
+      for (const staff of staffRecipients) {
+        await notify(
+          String(staff._id),
+          "Student Bill Payment Received",
+          `Official Bursary Receipt #${receiptNo} issued: ${studentNameVal} (${studentRegNo}) settled LKR ${totalAmount.toLocaleString()} for ${bill.title || "bill"} via ${payment.method}. Ref: ${txnRef}.`,
+          "success",
+          "Receipt",
+          receipt._id
+        );
+      }
     } catch (notifErr) {
       console.warn("Could not dispatch system notification:", notifErr.message);
     }
@@ -510,10 +520,28 @@ const submitDepositSlip = async (req, res) => {
       status: "Pending",
     });
 
-    // Alert Warden
-    const fallbackWarden = process.env.WARDEN_EMAIL || "warden@campus.edu";
+    // Dynamically query all Admins and Wardens from MongoDB
+    let staffRecipients = [];
+    try {
+      staffRecipients = await User.find(
+        { role: { $in: ["warden", "admin", "hostel_admin", "finance", "finance_staff"] } },
+        { _id: 1, name: 1, email: 1, role: 1 }
+      );
+    } catch (err) {}
+
+    const adminAndWardenEmails = Array.from(
+      new Set(
+        [
+          ...staffRecipients.map((u) => u.email),
+          process.env.WARDEN_EMAIL,
+          process.env.ADMIN_EMAIL,
+        ].filter(Boolean)
+      )
+    );
+
+    // Alert Admin & Warden
     await sendWardenPaymentNotification({
-      wardenEmails: [fallbackWarden],
+      wardenEmails: adminAndWardenEmails,
       student: {
         name: studentNameVal,
         regNo: studentRegNo,
