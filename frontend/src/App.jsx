@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const AuthPortal = lazy(() => import("./pages/auth/AuthPortal"));
@@ -31,6 +31,7 @@ const FoodItems = lazy(() => import("./pages/vendor/FoodItems"));
 const VendorOrders = lazy(() => import("./pages/vendor/VendorOrders"));
 const VendorPass = lazy(() => import("./pages/vendor/VendorPass"));
 const VendorEarnings = lazy(() => import("./pages/vendor/VendorEarnings"));
+const VendorProfile = lazy(() => import("./pages/vendor/VendorProfile"));
 
 const AnalyticsDashboard = lazy(
   () => import("./pages/analytics/AnalyticsDashboard"),
@@ -71,6 +72,14 @@ function RouteLoading() {
   );
 }
 
+function AdaptiveProfile() {
+  const { user } = useAuth();
+  if (user?.role === "vendor") {
+    return <VendorProfile />;
+  }
+  return <Profile />;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -101,7 +110,7 @@ function App() {
               {/* Module 2 & 3: Student Portal */}
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={["student", "admin", "warden", "finance"]} />
+                  <ProtectedRoute allowedRoles={["student", "admin", "warden", "finance", "vendor"]} />
                 }
               >
                 <Route path="/dashboard" element={<StudentDashboard />} />
@@ -109,7 +118,7 @@ function App() {
                 <Route path="/room" element={<Room />} />
                 <Route path="/complaints" element={<Complaints />} />
                 <Route path="/notifications" element={<Notifications />} />
-                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile" element={<AdaptiveProfile />} />
                 <Route path="/marketplace" element={<Marketplace />} />
               </Route>
 
@@ -129,6 +138,7 @@ function App() {
                 <Route path="/vendor/orders" element={<VendorOrders />} />
                 <Route path="/vendor/pass" element={<VendorPass />} />
                 <Route path="/vendor/earnings" element={<VendorEarnings />} />
+                <Route path="/vendor/profile" element={<VendorProfile />} />
               </Route>
 
               {/* Module 1: Hostel Management */}

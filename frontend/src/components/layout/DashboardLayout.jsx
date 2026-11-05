@@ -57,6 +57,7 @@ const navigationGroups = [
       { name: "Live Orders", href: "/vendor/orders", icon: ClipboardList },
       { name: "Gate Pass", href: "/vendor/pass", icon: QrCode },
       { name: "Earnings", href: "/vendor/earnings", icon: DollarSign },
+      { name: "Profile", href: "/vendor/profile", icon: User },
     ],
   },
   {
@@ -115,7 +116,8 @@ const navigationGroups = [
     role: "security",
     allowedRoles: ["security", "admin"],
     items: [
-      { name: "Digital Gate Passes", href: "/vendor/pass", icon: QrCode }, { name: "Gate Clearance", href: "/dashboard", icon: ShieldCheck }
+      { name: "Digital Gate Passes", href: "/vendor/pass", icon: QrCode },
+      { name: "Gate Clearance", href: "/dashboard", icon: ShieldCheck },
     ],
   },
 ];
@@ -143,7 +145,8 @@ function DashboardLayout() {
       window.removeEventListener("storage", handleSync);
     };
   }, [user]);
-    const sidebarCollapsed = false;
+
+  const sidebarCollapsed = false;
   const location = useLocation();
 
   const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
@@ -168,6 +171,7 @@ function DashboardLayout() {
       }),
     }))
     .filter((group) => group.items.length > 0);
+
   const currentPage = navigationGroups
     .flatMap((group) => group.items)
     .find((item) => item.href === location.pathname);
@@ -228,7 +232,6 @@ function DashboardLayout() {
           <Logo
             variant="horizontal"
             size="md"
-            
             subtitle="Hostel Living OS"
             asLink
           />
@@ -320,7 +323,7 @@ function DashboardLayout() {
         {/* User / Member ID Footer */}
         <div className="border-t border-slate-100 p-3 bg-slate-50/50">
           <Link
-            to="/profile"
+            to={user?.role === "vendor" ? "/vendor/profile" : "/profile"}
             title="View Profile"
             className="w-full text-left flex items-center justify-between rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-2xs hover:border-blue-300 hover:bg-blue-50/30 transition cursor-pointer"
           >
@@ -400,8 +403,6 @@ function DashboardLayout() {
           <Outlet />
         </div>
       </main>
-
-      
     </div>
   );
 }
