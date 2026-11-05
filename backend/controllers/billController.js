@@ -1,5 +1,11 @@
+const mongoose = require("mongoose");
 const Bill = require("../models/Bill");
 const PaymentNotification = require("../models/PaymentNotification");
+
+const isValidObjectId = (id) =>
+  id &&
+  mongoose.Types.ObjectId.isValid(id) &&
+  String(new mongoose.Types.ObjectId(id)) === String(id);
 
 // Create a new bill
 const createBill = async (req, res) => {
@@ -12,11 +18,14 @@ const createBill = async (req, res) => {
       billingPeriod,
       lateFee,
       description,
+      title,
     } = req.body;
 
     const bill = await Bill.create({
       studentId,
-      billType,
+      billType: billType || "Room Fee",
+      title: title || `${billType || "Room Fee"} - ${billingPeriod || "Current Cycle"}`,
+      billCode: `BIL-2026-${Math.floor(100 + Math.random() * 900)}`,
       amount,
       dueDate,
       billingPeriod,
@@ -83,7 +92,13 @@ const getStudentBills = async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    const bills = await Bill.find({ studentId }).sort({ createdAt: -1 });
+    const query = [
+      { studentId: studentId },
+      { billCode: studentId },
+      ...(isValidObjectId(studentId) ? [{ studentId: new mongoose.Types.ObjectId(studentId) }] : []),
+    ];
+
+    const bills = await Bill.find({ $or: query }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -91,7 +106,7 @@ const getStudentBills = async (req, res) => {
       data: bills,
     });
   } catch (error) {
-    res.status(error.name === "CastError" ? 400 : 500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to fetch student bills",
       error: error.message,
@@ -102,7 +117,11 @@ const getStudentBills = async (req, res) => {
 // Get one bill
 const getBillById = async (req, res) => {
   try {
-    const bill = await Bill.findById(req.params.id);
+    const query = isValidObjectId(req.params.id)
+      ? { _id: req.params.id }
+      : { billCode: String(req.params.id) };
+
+    const bill = await Bill.findOne(query);
 
     if (!bill) {
       return res.status(404).json({
@@ -116,7 +135,7 @@ const getBillById = async (req, res) => {
       data: bill,
     });
   } catch (error) {
-    res.status(error.name === "CastError" ? 400 : 500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to fetch bill",
       error: error.message,
@@ -135,8 +154,12 @@ const updateBillStatus = async (req, res) => {
       });
     }
 
-    const bill = await Bill.findByIdAndUpdate(
-      req.params.id,
+    const query = isValidObjectId(req.params.id)
+      ? { _id: req.params.id }
+      : { billCode: String(req.params.id) };
+
+    const bill = await Bill.findOneAndUpdate(
+      query,
       { status },
       { new: true, runValidators: true },
     );
@@ -154,7 +177,7 @@ const updateBillStatus = async (req, res) => {
       data: bill,
     });
   } catch (error) {
-    res.status(error.name === "CastError" ? 400 : error.name === "ValidationError" ? 400 : 500).json({
+    res.status(500).json({
       success: false,
       message: "Failed to update bill status",
       error: error.message,
