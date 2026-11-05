@@ -135,7 +135,6 @@ const requestPaymentOtp = async (req, res) => {
       success: true,
       message: `A 6-digit verification code has been dispatched to ${maskedEmail}.`,
       maskedEmail,
-      otpCode,
     });
   } catch (error) {
     return handleError(res, error, "Failed to send payment verification OTP.");
@@ -227,6 +226,54 @@ const verifyOtpAndCompletePayment = async (req, res) => {
       }
     }
 
+    // Check if an approved payment already exists for this bill to avoid duplicate charges
+    const existingPayment = await Payment.findOne({
+      $or: [
+        { billId: dbBill ? dbBill._id : billId },
+        { billId: String(billId) },
+        ...(bill && bill.title ? [{ billTitle: bill.title }] : []),
+      ],
+      status: { $in: ["Success", "successful"] },
+    });
+
+    if (existingPayment) {
+      if (dbBill && dbBill.status !== "Paid") {
+        dbBill.status = "Paid";
+        await dbBill.save();
+      }
+      const existingReceipt = await Receipt.findOne({
+        $or: [{ paymentId: existingPayment._id }, { billId: dbBill ? dbBill._id : billId }],
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Payment successfully verified and authorized.",
+        data: {
+          payment: {
+            id: String(existingPayment._id),
+            billId: billId,
+            title: bill.title || existingPayment.billTitle,
+            type: bill.type || "Hostel Fee",
+            amount: existingPayment.amount,
+            lateFee: 0,
+            period: bill.period || "Current Cycle",
+            date: "Paid",
+            method: existingPayment.method || "SmartStay PayGate",
+            refNo: existingPayment.reference || existingPayment.referenceNumber || "TXN-VERIFIED",
+            receiptNo: existingReceipt ? existingReceipt.receiptNo : "RCT-VERIFIED",
+            status: "Success",
+            studentName: studentNameVal,
+            studentRegNo: studentRegNo,
+            hostelRoom: hostelRoomVal,
+          },
+          receipt: existingReceipt || {
+            receiptNo: existingPayment.receiptNo || "RCT-VERIFIED",
+            amount: existingPayment.amount,
+          },
+        },
+      });
+    }
+
     // Record Payment in DB with unique key collision protection
     let payment;
     try {
@@ -242,6 +289,7 @@ const verifyOtpAndCompletePayment = async (req, res) => {
         lateFee: bill.lateFee || 0,
         method: method || "Credit / Debit Card (Visa)",
         reference: txnRef,
+        referenceNumber: txnRef,
         receiptNo: receiptNo,
         status: "Success",
       });
@@ -259,6 +307,7 @@ const verifyOtpAndCompletePayment = async (req, res) => {
         lateFee: bill.lateFee || 0,
         method: method || "Credit / Debit Card (Visa)",
         reference: fallbackTxn,
+        referenceNumber: fallbackTxn,
         receiptNo: receiptNo,
         status: "Success",
       });
