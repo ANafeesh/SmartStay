@@ -176,6 +176,8 @@ function DashboardLayout() {
       ? "Submit Complaint"
       : currentPage?.name ?? "Dashboard";
   const sidebarWidth = sidebarCollapsed ? "lg:w-20" : "lg:w-72";
+  const notificationsHref =
+    currentRole === "executive" ? "/notifications-center" : "/notifications";
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 lg:flex-row antialiased font-sans">
@@ -184,7 +186,7 @@ function DashboardLayout() {
         <Logo variant="horizontal" size="sm" asLink />
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
-            to="/notifications"
+            to={notificationsHref}
             aria-label="View notifications"
             className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-50 active:scale-95"
           >
@@ -368,7 +370,7 @@ function DashboardLayout() {
 
           <div className="flex shrink-0 items-center gap-3">
             <Link
-              to="/notifications"
+              to={notificationsHref}
               aria-label="View notifications"
               title="Notifications"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-blue-300 hover:text-blue-600 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

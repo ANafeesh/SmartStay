@@ -8,8 +8,13 @@ const {
   getLatestReadings,
 } = require("../controllers/monitoringController");
 
-// IoT ingest (Maintenance, Admin)
-router.post("/", protect, authorizeRole("admin", "maintenance"), createReading);
+// IoT ingest (Maintenance, Admin, Warden, Executive)
+router.post(
+  "/",
+  protect,
+  authorizeRole("admin", "maintenance", "warden", "executive"),
+  createReading
+);
 
 // Telemetry reading (Maintenance, Admin, Warden, Executive)
 router.get("/", protect, authorizeRole("admin", "maintenance", "warden", "executive"), getReadings);

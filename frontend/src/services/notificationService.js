@@ -615,6 +615,15 @@ export function addRealNotification(notif, user) {
  */
 export function getUnreadNotificationCount(user) {
   try {
+    const userRole = user?.role || user?.roleKey;
+    if (userRole === "executive") {
+      const unreadAlerts = localStorage.getItem("smartstay_executive_unread_count");
+      if (unreadAlerts !== null) {
+        return Math.max(0, Number(unreadAlerts) || 0);
+      }
+      return 0;
+    }
+
     const userKey = user?._id || user?.id || user?.email || "guest";
     const readSet = getReadSet(userKey);
     const deletedSet = getDeletedSet(userKey);
