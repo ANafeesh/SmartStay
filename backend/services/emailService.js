@@ -1,4 +1,9 @@
-const nodemailer = require("nodemailer");
+let nodemailer = null;
+try {
+  nodemailer = require("nodemailer");
+} catch (err) {
+  console.warn("Notice: nodemailer not found, running email service in mock/log mode");
+}
 const path = require("path");
 const dotenv = require("dotenv");
 
@@ -13,6 +18,9 @@ let transporter = null;
 let currentAuthUser = null;
 
 function getTransporter() {
+  if (!nodemailer) {
+    return null;
+  }
   // Re-read process.env in case .env was recently modified
   dotenv.config({ path: path.join(__dirname, "../.env") });
 
