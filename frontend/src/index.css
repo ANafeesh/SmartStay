@@ -1,22 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  /* SmartStay Original High-Clarity Palette */
-  --color-smart-primary: #0f172a;
-  --color-smart-blue: #2563eb;
-  --color-smart-teal: #0891b2;
-  --color-smart-accent: #06b6d4;
 
-  /* SmartStay Status Colors */
-  --color-smart-success: #10b981;
-  --color-smart-warning: #f59e0b;
-  --color-smart-danger: #ef4444;
 
-  /* Clean, Spacious Neutral Colors */
-  --color-smart-background: #f8fafc;
-  --color-smart-white: #ffffff;
-  --color-smart-text: #0f172a;
-  --color-smart-secondary: #64748b;
 
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
@@ -123,6 +109,7 @@
 
 /* Print utilities */
 @media print {
+
   aside,
   header,
   nav,

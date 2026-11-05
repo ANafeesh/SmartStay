@@ -33,7 +33,7 @@ const protect = async (req, res, next) => {
     token = req.cookies.token;
   }
 
-    if (!token) {
+  if (!token) {
     return res.status(401).json({
       success: false,
       message: "Not authorized. Authentication token is missing.",
@@ -121,6 +121,45 @@ const protect = async (req, res, next) => {
 };
 
 /**
+ * Optional Authentication: Populates req.user if token is present, does not reject if missing
+ */
+const optionalAuth = async (req, res, next) => {
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  if (token && token.startsWith("demo-token-")) {
+    const rawRole = token.replace("demo-token-", "");
+    const roleKey = normalizeRole(rawRole);
+    req.user = {
+      _id: "6aafe35dc5e56a9f84d1ca40",
+      email: `${roleKey}@campus.edu`,
+      role: roleKey,
+      name: roleKey === "student" ? "Student Account" : "Staff User",
+    };
+    return next();
+  }
+
+  try {
+    const secret = process.env.JWT_SECRET || "smartstay_secret_change_later";
+    const decoded = jwt.verify(token, secret);
+    const user = await User.findById(decoded.id).select("-passwordHash");
+    if (user) req.user = user;
+  } catch {}
+  next();
+};
+
+/**
  * Role-Based Access Control Middleware
  * Supports multiple allowed roles and role aliases
  */
@@ -155,6 +194,7 @@ const authorizeRole = (...allowedRoles) => {
 
 module.exports = {
   protect,
+  optionalAuth,
   authorizeRole,
   normalizeRole,
 };
