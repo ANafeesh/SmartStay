@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
+import { apiFetch } from "../../services/apiClient";
 import { addRealNotification } from "../../services/notificationService";
 // Module3TestSuite retired from user view
 
@@ -38,8 +39,10 @@ const initialBills = [
     dueDate: "05 Oct 2026",
     amount: 15000,
     lateFee: 0,
-    status: "Pending",
+    status: "Paid",
     type: "Room Fee",
+    paidAt: "05 Nov 2026",
+    receiptNo: "RCT-32030",
   },
   {
     id: "BIL-2026-08U",
@@ -48,8 +51,10 @@ const initialBills = [
     dueDate: "20 Sep 2026",
     amount: 2800,
     lateFee: 250,
-    status: "Overdue",
+    status: "Paid",
     type: "Utilities",
+    paidAt: "05 Nov 2026",
+    receiptNo: "RCT-29272",
   },
   {
     id: "BIL-2026-09W",
@@ -58,8 +63,10 @@ const initialBills = [
     dueDate: "15 Oct 2026",
     amount: 1200,
     lateFee: 0,
-    status: "Pending",
+    status: "Paid",
     type: "Maintenance",
+    paidAt: "05 Nov 2026",
+    receiptNo: "RCT-1793847094212-18475D",
   },
 ];
 
@@ -221,6 +228,56 @@ export default function Payments() {
     }
   }, [notifications, userKey]);
 
+  // Live Database Sync: Ensure paid bills in MongoDB reflect immediately in student UI
+  useEffect(() => {
+    let isMounted = true;
+    async function syncBillsWithBackend() {
+      try {
+        const [billsRes, paymentsRes] = await Promise.allSettled([
+          apiFetch("/bills"),
+          apiFetch("/payments"),
+        ]);
+        if (!isMounted) return;
+
+        const dbBills = billsRes.status === "fulfilled" && billsRes.value?.success && Array.isArray(billsRes.value.data)
+          ? billsRes.value.data : [];
+        const dbPayments = paymentsRes.status === "fulfilled" && paymentsRes.value?.success && Array.isArray(paymentsRes.value.data)
+          ? paymentsRes.value.data : [];
+
+        setBills((prevBills) => {
+          return prevBills.map((b) => {
+            const matchedDb = dbBills.find(
+              (db) =>
+                (db.billCode && (db.billCode === b.id || db.billCode === b.code)) ||
+                (db._id && (String(db._id) === String(b.id) || String(db._id) === String(b._id))) ||
+                (db.title && b.title && db.title.toLowerCase().trim() === b.title.toLowerCase().trim())
+            );
+
+            const matchedPayment = dbPayments.find(
+              (p) =>
+                (p.billId && (String(p.billId) === String(b.id) || (matchedDb && String(p.billId) === String(matchedDb._id)))) ||
+                (p.billTitle && b.title && p.billTitle.toLowerCase().trim() === b.title.toLowerCase().trim())
+            );
+
+            if (matchedDb?.status === "Paid" || matchedPayment?.status === "Success" || matchedPayment?.status === "successful") {
+              return {
+                ...b,
+                status: "Paid",
+                receiptNo: matchedPayment?.receiptNo || b.receiptNo || "RCT-VERIFIED",
+                paidAt: matchedPayment?.paymentDate || matchedPayment?.createdAt || b.paidAt || "Paid",
+              };
+            }
+            return b;
+          });
+        });
+      } catch (err) {
+        console.warn("Notice: could not sync bills with server:", err.message);
+      }
+    }
+    syncBillsWithBackend();
+    return () => { isMounted = false; };
+  }, [userKey]);
+
   const [selectedBillForPayment, setSelectedBillForPayment] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [latestAlert, setLatestAlert] = useState(null);
@@ -262,7 +319,7 @@ export default function Payments() {
       // Mark bill as Paid with receipt details
       setBills((prev) =>
         prev.map((b) =>
-          b.id === paymentRecord.billId
+          (b.id === paymentRecord.billId || b.id === paymentRecord.billCode || b.title === paymentRecord.title)
             ? { ...b, status: "Paid", paidAt: paymentRecord.date, receiptNo: paymentRecord.receiptNo }
             : b
         )
