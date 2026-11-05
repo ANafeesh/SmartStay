@@ -502,7 +502,7 @@ export default function AuthPortal({ initialTab = "login" }) {
           {/* ── REGISTER ── */}
           {activeTab === "register" && (
             <form onSubmit={handleSignUp} className="space-y-3.5">
-              <div>
+              <div className="anim-fade-up" style={{ animationDelay: "220ms" }}>
                 <label htmlFor="reg-name" className="block text-xs font-medium text-slate-700 mb-1.5">
                   Full name <span className="text-red-500">*</span>
                 </label>
@@ -515,12 +515,12 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegFullName(e.target.value)}
                     placeholder="Alex Morgan"
                     required
-                    className={inp}
+                    className={`${inp} inp-field`}
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="anim-fade-up" style={{ animationDelay: "270ms" }}>
                 <label htmlFor="reg-email" className="block text-xs font-medium text-slate-700 mb-1.5">
                   Email address <span className="text-red-500">*</span>
                 </label>
@@ -533,12 +533,12 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegEmail(e.target.value)}
                     placeholder="user@smartstay.com"
                     required
-                    className={inp}
+                    className={`${inp} inp-field`}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 anim-fade-up" style={{ animationDelay: "320ms" }}>
                 <div>
                   <label htmlFor="reg-role" className="block text-xs font-medium text-slate-700 mb-1.5">
                     Role <span className="text-red-500">*</span>
@@ -547,7 +547,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                     id="reg-role"
                     value={regRole}
                     onChange={(e) => setRegRole(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition inp-field"
                   >
                     <option value="student">Student</option>
                     <option value="admin">Hostel Admin</option>
@@ -568,13 +568,13 @@ export default function AuthPortal({ initialTab = "login" }) {
                       value={regStudentId}
                       onChange={(e) => setRegStudentId(e.target.value)}
                       placeholder={regRole === "student" ? "STD-2026" : "EMP-01"}
-                      className={`${inp} font-mono`}
+                      className={`${inp} font-mono inp-field`}
                     />
                   </div>
                 </div>
               </div>
 
-              <div>
+              <div className="anim-fade-up" style={{ animationDelay: "370ms" }}>
                 <label htmlFor="reg-pass" className="block text-xs font-medium text-slate-700 mb-1.5">
                   Password <span className="text-red-500">*</span>
                 </label>
@@ -587,7 +587,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="Minimum 6 characters"
                     required
-                    className={`${inp} pr-10`}
+                    className={`${inp} pr-10 inp-field`}
                   />
                   <button
                     type="button"
@@ -599,7 +599,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                 </div>
               </div>
 
-              <div>
+              <div className="anim-fade-up" style={{ animationDelay: "420ms" }}>
                 <label htmlFor="reg-confirm" className="block text-xs font-medium text-slate-700 mb-1.5">
                   Confirm password <span className="text-red-500">*</span>
                 </label>
@@ -612,20 +612,22 @@ export default function AuthPortal({ initialTab = "login" }) {
                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                     placeholder="Re-enter password"
                     required
-                    className={inp}
+                    className={`${inp} inp-field`}
                   />
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 cursor-pointer mt-1"
-              >
-                {isSubmitting ? "Creating account…" : <><span>Create Account</span><ArrowRight size={15} /></>}
-              </button>
+              <div className="anim-fade-up" style={{ animationDelay: "460ms" }}>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 cursor-pointer mt-1 btn-primary"
+                >
+                  {isSubmitting ? "Creating account…" : <><span>Create Account</span><ArrowRight size={15} /></>}
+                </button>
+              </div>
 
-              <p className="text-center text-xs text-slate-500">
+              <p className="text-center text-xs text-slate-500 anim-fade-up" style={{ animationDelay: "500ms" }}>
                 Already registered?{" "}
                 <button
                   type="button"
