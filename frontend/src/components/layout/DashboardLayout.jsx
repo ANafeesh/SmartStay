@@ -124,6 +124,7 @@ const navigationGroups = [
 
 function DashboardLayout() {
   const { user } = useAuth();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = useState(() =>
     getUnreadNotificationCount(user)
@@ -144,10 +145,9 @@ function DashboardLayout() {
       window.removeEventListener("smartstay-food-orders-updated", handleSync);
       window.removeEventListener("storage", handleSync);
     };
-  }, [user]);
+  }, [user, location.pathname]);
 
   const sidebarCollapsed = false;
-  const location = useLocation();
 
   const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
 
@@ -175,7 +175,10 @@ function DashboardLayout() {
   const currentPage = navigationGroups
     .flatMap((group) => group.items)
     .find((item) => item.href === location.pathname);
-  const pageTitle = currentPage?.name ?? "Workspace";
+  const pageTitle =
+    location.pathname === "/maintenance/submit-complaint"
+      ? "Submit Complaint"
+      : currentPage?.name ?? "Dashboard";
   const sidebarWidth = sidebarCollapsed ? "lg:w-20" : "lg:w-72";
 
   return (
