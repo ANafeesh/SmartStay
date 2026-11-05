@@ -161,3 +161,4 @@ test("verifyAndRecordMovement: denies access if pass is revoked", async () => {
     VendorPass.findOne = origFindOne;
   }
 });
+
