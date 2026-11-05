@@ -3,20 +3,25 @@ const mongoose = require("mongoose");
 const billSchema = new mongoose.Schema(
   {
     studentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.Mixed,
       required: true,
+      index: true,
+    },
+
+    billCode: {
+      type: String,
+      trim: true,
+    },
+
+    title: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
     billType: {
       type: String,
-      enum: [
-        "Monthly Fee",
-        "Semester Fee",
-        "Utility Charge",
-        "Damage Charge",
-        "Late Fee",
-      ],
-      required: true,
+      default: "Room Fee",
     },
 
     amount: {
@@ -26,13 +31,13 @@ const billSchema = new mongoose.Schema(
     },
 
     dueDate: {
-      type: Date,
+      type: mongoose.Schema.Types.Mixed,
       required: true,
     },
 
     billingPeriod: {
       type: String,
-      required: true,
+      default: "",
     },
 
     lateFee: {
@@ -45,6 +50,7 @@ const billSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Paid", "Overdue", "Cancelled"],
       default: "Pending",
+      index: true,
     },
 
     description: {

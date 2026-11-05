@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
+import { apiFetch } from "../../services/apiClient";
 import { addRealNotification } from "../../services/notificationService";
 // Module3TestSuite retired from user view
 
@@ -38,8 +39,10 @@ const initialBills = [
     dueDate: "05 Oct 2026",
     amount: 15000,
     lateFee: 0,
-    status: "Pending",
+    status: "Paid",
     type: "Room Fee",
+    paidAt: "05 Nov 2026",
+    receiptNo: "RCT-32030",
   },
   {
     id: "BIL-2026-08U",
@@ -48,8 +51,10 @@ const initialBills = [
     dueDate: "20 Sep 2026",
     amount: 2800,
     lateFee: 250,
-    status: "Overdue",
+    status: "Paid",
     type: "Utilities",
+    paidAt: "05 Nov 2026",
+    receiptNo: "RCT-29272",
   },
   {
     id: "BIL-2026-09W",
@@ -58,8 +63,10 @@ const initialBills = [
     dueDate: "15 Oct 2026",
     amount: 1200,
     lateFee: 0,
-    status: "Pending",
+    status: "Paid",
     type: "Maintenance",
+    paidAt: "05 Nov 2026",
+    receiptNo: "RCT-1793847094212-18475D",
   },
 ];
 
@@ -165,64 +172,112 @@ export default function Payments() {
   const userKey = user?._id || user?.id || user?.email || "guest";
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [invoicesFilter, setInvoicesFilter] = useState("all");
   const [bills, setBills] = useState(() => {
-    if (isDemo) return initialBills;
     try {
       const saved = localStorage.getItem(`smartstay_bills_${userKey}`);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return initialBills;
   });
   const [history, setHistory] = useState(() => {
-    if (isDemo) return initialPaymentHistory;
     try {
       const saved = localStorage.getItem(`smartstay_payments_${userKey}`);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [];
+    return initialPaymentHistory;
   });
   const [notifications, setNotifications] = useState(() => {
-    if (isDemo) return initialNotifications;
     try {
       const saved = localStorage.getItem(`smartstay_paynotifs_${userKey}`);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return [
-      {
-        id: "NOTIF-WELCOME",
-        title: "Billing Account Initialized",
-        message: `Welcome to SmartStay bursary billing, ${user?.name || "Student"}. All current semester dues are clear.`,
-        date: "Today",
-        type: "info",
-        amount: 0,
-        read: true,
-      },
-    ];
+    return initialNotifications;
   });
 
   useEffect(() => {
-    if (!isDemo && userKey) {
+    if (userKey) {
       try {
         localStorage.setItem(`smartstay_bills_${userKey}`, JSON.stringify(bills));
       } catch {}
     }
-  }, [bills, isDemo, userKey]);
+  }, [bills, userKey]);
 
   useEffect(() => {
-    if (!isDemo && userKey) {
+    if (userKey) {
       try {
         localStorage.setItem(`smartstay_payments_${userKey}`, JSON.stringify(history));
       } catch {}
     }
-  }, [history, isDemo, userKey]);
+  }, [history, userKey]);
 
   useEffect(() => {
-    if (!isDemo && userKey) {
+    if (userKey) {
       try {
         localStorage.setItem(`smartstay_paynotifs_${userKey}`, JSON.stringify(notifications));
       } catch {}
     }
-  }, [notifications, isDemo, userKey]);
+  }, [notifications, userKey]);
+
+  // Live Database Sync: Ensure paid bills in MongoDB reflect immediately in student UI
+  useEffect(() => {
+    let isMounted = true;
+    async function syncBillsWithBackend() {
+      try {
+        const [billsRes, paymentsRes] = await Promise.allSettled([
+          apiFetch("/bills"),
+          apiFetch("/payments"),
+        ]);
+        if (!isMounted) return;
+
+        const dbBills = billsRes.status === "fulfilled" && billsRes.value?.success && Array.isArray(billsRes.value.data)
+          ? billsRes.value.data : [];
+        const dbPayments = paymentsRes.status === "fulfilled" && paymentsRes.value?.success && Array.isArray(paymentsRes.value.data)
+          ? paymentsRes.value.data : [];
+
+        setBills((prevBills) => {
+          return prevBills.map((b) => {
+            const matchedDb = dbBills.find(
+              (db) =>
+                (db.billCode && (db.billCode === b.id || db.billCode === b.code)) ||
+                (db._id && (String(db._id) === String(b.id) || String(db._id) === String(b._id))) ||
+                (db.title && b.title && db.title.toLowerCase().trim() === b.title.toLowerCase().trim())
+            );
+
+            const matchedPayment = dbPayments.find(
+              (p) =>
+                (p.billId && (String(p.billId) === String(b.id) || (matchedDb && String(p.billId) === String(matchedDb._id)))) ||
+                (p.billTitle && b.title && p.billTitle.toLowerCase().trim() === b.title.toLowerCase().trim())
+            );
+
+            if (matchedDb?.status === "Paid" || matchedPayment?.status === "Success" || matchedPayment?.status === "successful") {
+              return {
+                ...b,
+                status: "Paid",
+                receiptNo: matchedPayment?.receiptNo || b.receiptNo || "RCT-VERIFIED",
+                paidAt: matchedPayment?.paymentDate || matchedPayment?.createdAt || b.paidAt || "Paid",
+              };
+            }
+            return b;
+          });
+        });
+      } catch (err) {
+        console.warn("Notice: could not sync bills with server:", err.message);
+      }
+    }
+    syncBillsWithBackend();
+    return () => { isMounted = false; };
+  }, [userKey]);
+
   const [selectedBillForPayment, setSelectedBillForPayment] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [latestAlert, setLatestAlert] = useState(null);
@@ -242,7 +297,9 @@ export default function Payments() {
     lateFee: "0",
   });
 
-  const totalOutstanding = bills.reduce(
+  const unpaidBills = bills.filter((b) => b.status !== "Paid");
+  const displayedBills = invoicesFilter === "unpaid" ? unpaidBills : bills;
+  const totalOutstanding = unpaidBills.reduce(
     (sum, b) => sum + b.amount + (b.lateFee || 0),
     0,
   );
@@ -259,8 +316,14 @@ export default function Payments() {
     setHistory((prev) => [paymentRecord, ...prev]);
 
     if (isSuccess) {
-      // Clear bill from outstanding list
-      setBills((prev) => prev.filter((b) => b.id !== paymentRecord.billId));
+      // Mark bill as Paid with receipt details
+      setBills((prev) =>
+        prev.map((b) =>
+          (b.id === paymentRecord.billId || b.id === paymentRecord.billCode || b.title === paymentRecord.title)
+            ? { ...b, status: "Paid", paidAt: paymentRecord.date, receiptNo: paymentRecord.receiptNo }
+            : b
+        )
+      );
 
       const newNotif = {
         id: `NOTIF-${Date.now()}`,
@@ -641,9 +704,9 @@ export default function Payments() {
           >
             <CreditCard size={15} />
             <span>Billing Dashboard</span>
-            {bills.length > 0 ? (
+            {unpaidBills.length > 0 ? (
               <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-extrabold text-blue-800">
-                {bills.length} Due
+                {unpaidBills.length} Due
               </span>
             ) : (
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
@@ -736,7 +799,7 @@ export default function Payments() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-rose-100/70 border border-rose-200/60 px-2 py-0.5 text-[11px] font-bold text-rose-700">
-                    {bills.some((b) => b.status === "Overdue") ? (
+                    {unpaidBills.some((b) => b.status === "Overdue") ? (
                       <>
                         <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
                         Overdue Notice Active
@@ -832,13 +895,35 @@ export default function Payments() {
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">
                 
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                  <button
+                    onClick={() => setInvoicesFilter("all")}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                      invoicesFilter === "all"
+                        ? "bg-white text-slate-900 shadow-2xs"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    All Invoices ({bills.length})
+                  </button>
+                  <button
+                    onClick={() => setInvoicesFilter("unpaid")}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                      invoicesFilter === "unpaid"
+                        ? "bg-white text-slate-900 shadow-2xs"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Unpaid Only ({unpaidBills.length})
+                  </button>
+                </div>
                 <span className="rounded-xl bg-slate-100 border border-slate-200/90 px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs">
-                  {bills.length} Open Invoices
+                  {unpaidBills.length} Due
                 </span>
               </div>
             </div>
 
-            {bills.length === 0 ? (
+            {displayedBills.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 mb-3 shadow-xs">
                   <CheckCircle2 size={28} />
@@ -859,7 +944,7 @@ export default function Payments() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {bills.map((bill) => (
+                {displayedBills.map((bill) => (
                   <div
                     key={bill.id}
                     className="p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5 transition hover:bg-slate-50/50"
@@ -879,12 +964,15 @@ export default function Payments() {
                             {bill.title}
                           </h3>
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                              bill.status === "Overdue"
-                                ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold flex items-center gap-1 ${
+                              bill.status === "Paid"
+                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : bill.status === "Overdue"
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200"
                             }`}
                           >
+                            {bill.status === "Paid" && <Check size={11} />}
                             {bill.status}
                           </span>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
@@ -936,14 +1024,43 @@ export default function Payments() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => setSelectedBillForPayment(bill)}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition cursor-pointer"
-                      >
-                        <CreditCard size={15} />
-                        <span>Pay Now</span>
-                        <ArrowRight size={13} />
-                      </button>
+                      {bill.status === "Paid" ? (
+                        <button
+                          onClick={() => {
+                            const found = history.find((h) => h.billId === bill.id && h.receiptNo);
+                            if (found) {
+                              setSelectedReceipt(found);
+                            } else {
+                              setSelectedReceipt({
+                                receiptNo: bill.receiptNo || "RCT-90421",
+                                billId: bill.id,
+                                title: bill.title,
+                                amount: bill.amount,
+                                date: bill.paidAt || "Paid",
+                                method: "SmartStay PayGate 256-Bit SSL",
+                                refNo: "TXN-VERIFIED",
+                                status: "Success",
+                                studentName: user?.name || "Student User",
+                                studentRegNo: user?.studentId || user?.registrationNumber || "STD-2026-89",
+                                hostelRoom: user?.room ? `Block ${user.building || "A"}, Room ${user.room}` : "Block B - Room 204",
+                              });
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/90 px-4 py-2.5 text-xs font-bold transition cursor-pointer shadow-2xs"
+                        >
+                          <CheckCircle2 size={15} className="text-emerald-600" />
+                          <span>Paid &bull; View Receipt</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setSelectedBillForPayment(bill)}
+                          className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/30 transition cursor-pointer"
+                        >
+                          <CreditCard size={15} />
+                          <span>Pay Now</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -149,3 +149,6 @@ vite.config.ts.timestamp-*
 
 # Agent generated files
 .agents/
+
+# Scratch scripts
+scratch/
