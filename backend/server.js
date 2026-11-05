@@ -47,6 +47,14 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
+// Serverless resilient DB connection middleware
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (err) {}
+  next();
+});
+
 // Authentication APIs
 app.use(["/api/auth", "/auth"], authRoutes);
 
