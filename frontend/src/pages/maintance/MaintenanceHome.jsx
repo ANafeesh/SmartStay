@@ -415,7 +415,7 @@ function MaintenanceHome() {
             <span>{refreshing ? "Refreshing..." : "Refresh Data"}</span>
           </button>
 
-          {!isWarden && !isAdmin && (
+          {!isWarden && !isAdmin && !isMaintenance && (
             <Link
               to="/maintenance/submit-complaint"
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-700 active:scale-95"
@@ -783,14 +783,36 @@ function MaintenanceHome() {
                       {/* Actions */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openActionModal(item)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-blue-700 active:scale-95 cursor-pointer"
-                          >
-                            <CheckSquare size={13} />
-                            <span>Take Action</span>
-                          </button>
+                          {statusNorm === "resolved" ? (
+                            <button
+                              type="button"
+                              onClick={() => openActionModal(item)}
+                              title="Complaint resolved. Click to view resolution details or re-open."
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-2xs transition hover:bg-emerald-100 hover:border-emerald-300 active:scale-95 cursor-pointer"
+                            >
+                              <CheckCircle2 size={13} className="text-emerald-600" />
+                              <span>Completed</span>
+                            </button>
+                          ) : statusNorm === "rejected" ? (
+                            <button
+                              type="button"
+                              onClick={() => openActionModal(item)}
+                              title="Complaint closed/rejected. Click to view remarks."
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 shadow-2xs transition hover:bg-slate-100 active:scale-95 cursor-pointer"
+                            >
+                              <X size={13} className="text-slate-500" />
+                              <span>Closed</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => openActionModal(item)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-2xs transition hover:bg-blue-700 active:scale-95 cursor-pointer"
+                            >
+                              <CheckSquare size={13} />
+                              <span>Take Action</span>
+                            </button>
+                          )}
 
                           {statusNorm === "pending" && (
                             <button
@@ -912,6 +934,10 @@ function MaintenanceHome() {
                         src={img.url}
                         alt={`Evidence ${idx + 1}`}
                         className="h-28 w-full object-cover transition group-hover:scale-105"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80";
+                        }}
                       />
                       <span className="absolute bottom-1 right-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] text-white">
                         View Photo

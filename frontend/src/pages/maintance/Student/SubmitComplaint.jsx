@@ -197,14 +197,25 @@ export default function SubmitComplaint() {
       setImages((prev) => [...prev, ...mappedPhotos]);
     } catch (err) {
       console.warn("Upload fallback to local preview:", err.message);
-      // Fallback: create local object URLs if network is blocked
-      const localPreviews = toProcess.map((f) => ({
-        id: "local-" + Math.random().toString(36).slice(2),
-        name: f.name,
-        size: (f.size / 1024).toFixed(0) + " KB",
-        url: URL.createObjectURL(f),
-      }));
-      setImages((prev) => [...prev, ...localPreviews]);
+      // Fallback: convert to persistent base64 Data URLs so images render without expiring blob references
+      const base64Photos = await Promise.all(
+        toProcess.map((f) => {
+          return new Promise((res) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              res({
+                id: "local-" + Math.random().toString(36).slice(2),
+                name: f.name,
+                size: (f.size / 1024).toFixed(0) + " KB",
+                url: e.target.result,
+              });
+            };
+            reader.onerror = () => res(null);
+            reader.readAsDataURL(f);
+          });
+        })
+      );
+      setImages((prev) => [...prev, ...base64Photos.filter(Boolean)]);
     } finally {
       setIsUploading(false);
     }
@@ -300,8 +311,8 @@ export default function SubmitComplaint() {
     }
   };
 
-  // Warden view guard
-  if (user?.role === "warden") {
+  // Staff view guard
+  if (user?.role === "warden" || user?.role === "maintenance" || user?.role === "admin") {
     return (
       <div className="mx-auto max-w-4xl space-y-6 pb-12 antialiased">
         <div className="flex items-center justify-between">
@@ -321,7 +332,7 @@ export default function SubmitComplaint() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm text-slate-600">
-            You are logged in as <strong>{studentName} (Hostel Warden)</strong>. Room issues are submitted by students and handled through the Student Complaints Hub.
+            You are logged in as <strong>{studentName} ({user?.role === "maintenance" ? "Technical Staff" : user?.role === "warden" ? "Hostel Warden" : "Administrator"})</strong>. Room maintenance requests are submitted by students and handled through the Student Complaints Hub.
           </p>
           <div className="mt-4">
             <Link

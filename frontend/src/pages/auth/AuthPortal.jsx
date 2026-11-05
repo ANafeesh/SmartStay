@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
 import {
@@ -11,11 +11,6 @@ import {
   CheckCircle2,
   Building,
   User,
-  ChevronDown,
-  Store,
-  Wrench,
-  BarChart3,
-  GraduationCap,
   ShieldCheck,
   LogIn,
   UserPlus,
@@ -105,10 +100,7 @@ export default function AuthPortal({ initialTab = "login" }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [showDemoMenu, setShowDemoMenu] = useState(false);
   const [footerNotice, setFooterNotice] = useState(null);
-  const [mounted, setMounted] = useState(false);
-  const [tabKey, setTabKey] = useState(0); // bumped on tab change to re-trigger stagger
 
   useEffect(() => {
     setActiveTab(initialTab);
@@ -117,11 +109,6 @@ export default function AuthPortal({ initialTab = "login" }) {
     setFooterNotice(null);
   }, [initialTab]);
 
-  useEffect(() => {
-    // small delay so CSS transition triggers after paint
-    const t = setTimeout(() => setMounted(true), 40);
-    return () => clearTimeout(t);
-  }, []);
 
   /* ── routing helpers ── */
   const checkRoleCanAccessPath = (roleKey, path) => {
@@ -233,21 +220,7 @@ export default function AuthPortal({ initialTab = "login" }) {
     }
   };
 
-  const fillDemo = (email, pass = "password123") => {
-    setIdentifier(email);
-    setPassword(pass);
-    setErrorMessage("");
-    setShowDemoMenu(false);
-  };
 
-  /* ── demo list ── */
-  const demos = [
-    { label: "Student",     email: "izni@gmail.com",              pass: "123456",      icon: GraduationCap },
-    { label: "Warden",      email: "warden@smartstay.com",        pass: "password123", icon: Building },
-    { label: "Vendor",      email: "vendor@smartstay.com",        pass: "password123", icon: Store },
-    { label: "Maintenance", email: "maintenance@smartstay.com",   pass: "password123", icon: Wrench },
-    { label: "Executive",   email: "executive@smartstay.com",     pass: "password123", icon: BarChart3 },
-  ];
 
   /* ── input base style ── */
   const inp =
@@ -469,33 +442,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                 </button>
               </div>
 
-              {/* Demo accounts */}
-              <div className="text-center pt-1 anim-fade-up" style={{ animationDelay: "430ms" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowDemoMenu(!showDemoMenu)}
-                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                >
-                  Demo accounts
-                  <ChevronDown size={12} className={`transition-transform duration-200 ${showDemoMenu ? "rotate-180" : ""}`} />
-                </button>
 
-                {showDemoMenu && (
-                  <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2 grid grid-cols-2 gap-1.5 text-left anim-fade-up">
-                    {demos.map(({ label, email, pass, icon: DIcon }) => (
-                      <button
-                        key={email}
-                        type="button"
-                        onClick={() => fillDemo(email, pass)}
-                        className={`demo-btn flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs text-slate-700 cursor-pointer ${label === "Executive" ? "col-span-2 justify-center" : ""}`}
-                      >
-                        <DIcon size={13} className="text-slate-400 shrink-0" />
-                        <span className="truncate">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </form>
           )}
 
@@ -550,7 +497,7 @@ export default function AuthPortal({ initialTab = "login" }) {
                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 transition inp-field"
                   >
                     <option value="student">Student</option>
-                    <option value="admin">Hostel Admin</option>
+                    <option value="admin">Administrator / Warden</option>
                     <option value="warden">Warden</option>
                     <option value="maintenance">Maintenance</option>
                     <option value="vendor">Vendor</option>

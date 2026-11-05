@@ -28,7 +28,7 @@ import {
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
 import { apiFetch } from "../../services/apiClient";
-import { addRealNotification } from "../../services/notificationService";
+import { addRealNotification, markNotificationAsRead, markAllNotificationsAsRead } from "../../services/notificationService";
 // Module3TestSuite retired from user view
 
 const initialBills = [
@@ -485,14 +485,25 @@ export default function Payments() {
     });
   };
 
-  const handleToggleRead = (id) => {
+  const handleToggleRead = async (id) => {
+    let wasRead = false;
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
+      prev.map((n) => {
+        if (n.id === id) {
+          wasRead = n.read;
+          return { ...n, read: !n.read };
+        }
+        return n;
+      }),
     );
+    if (!wasRead) {
+      await markNotificationAsRead(id, user);
+    }
   };
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await markAllNotificationsAsRead(notifications, user);
   };
 
   const filteredHistory = history.filter((item) => {
