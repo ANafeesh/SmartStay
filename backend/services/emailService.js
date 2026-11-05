@@ -428,8 +428,112 @@ async function sendStudentPaymentReceipt({ toEmail, student, bill, payment, rece
   }
 }
 
+
+/**
+ * Dispatch Student Complaint Notification to Warden & Administration
+ * Dynamic delivery to all active warden/admin emails
+ */
+async function sendWardenComplaintAlert({ wardenEmails = [], student = {}, complaint = {} }) {
+  const mailTransporter = getTransporter();
+  if (!mailTransporter) {
+    console.warn("[Email Service] Skipping warden complaint notification (no transport available).");
+    return { success: false, reason: "No transporter" };
+  }
+
+  const rawFromUser = (process.env.SMTP_USER || process.env.EMAIL_USER || "ahamednafeesh2003@gmail.com").trim();
+  const from = `"SmartStay Hostel Maintenance" <${rawFromUser}>`;
+
+  const recipients = Array.isArray(wardenEmails) ? wardenEmails.filter(Boolean) : [wardenEmails].filter(Boolean);
+  if (recipients.length === 0) {
+    console.warn("[Email Service] No warden recipient emails provided.");
+    return { success: false, reason: "No recipients" };
+  }
+
+  const priorityColor =
+    complaint.priority === "Critical"
+      ? "#ef4444"
+      : complaint.priority === "High"
+      ? "#f97316"
+      : complaint.priority === "Low"
+      ? "#10b981"
+      : "#2563eb";
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>SmartStay New Maintenance Complaint</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 24px; }
+        .box { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .hdr { background: #0f172a; color: #ffffff; padding: 24px 28px; }
+        .hdr h1 { margin: 0; font-size: 18px; font-weight: 800; }
+        .hdr p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; }
+        .cnt { padding: 28px; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; color: #ffffff; background: ${priorityColor}; margin-bottom: 16px; }
+        .tbl { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        .tbl td { padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .lbl { color: #64748b; width: 140px; font-weight: 600; }
+        .val { font-weight: 700; color: #0f172a; }
+        .desc-box { background: #f8fafc; border-left: 3px solid ${priorityColor}; padding: 12px 16px; margin: 18px 0; border-radius: 0 8px 8px 0; font-size: 13px; line-height: 1.6; color: #334155; }
+        .ftr { background: #f8fafc; padding: 16px 28px; font-size: 11px; color: #94a3b8; text-align: center; border-top: 1px solid #f1f5f9; }
+      </style>
+    </head>
+    <body>
+      <div class="box">
+        <div class="hdr">
+          <h1>SmartStay &bull; Student Maintenance Complaint</h1>
+          <p>Hostel Warden & Maintenance Dispatch Alert</p>
+        </div>
+        <div class="cnt">
+          <div class="badge">${complaint.priority || "Medium"} Priority &bull; ${complaint.category || "General"}</div>
+          <h2 style="margin: 0 0 10px; font-size: 17px; font-weight: 800; color: #0f172a;">${complaint.title}</h2>
+          
+          <div class="desc-box">
+            <strong>Student's Report:</strong><br/>
+            ${complaint.description}
+          </div>
+
+          <table class="tbl">
+            <tr><td class="lbl">Ticket Reference:</td><td class="val">${complaint.complaintId}</td></tr>
+            <tr><td class="lbl">Student Name:</td><td class="val">${student.name || "Resident"}</td></tr>
+            <tr><td class="lbl">Registration ID:</td><td class="val">${student.regNo || student.studentId || "N/A"}</td></tr>
+            <tr><td class="lbl">Hostel Block:</td><td class="val">${complaint.building}</td></tr>
+            <tr><td class="lbl">Floor & Room:</td><td class="val">${complaint.floor}, Room ${complaint.room}</td></tr>
+            <tr><td class="lbl">Status:</td><td class="val" style="color: #f59e0b;">Pending Review</td></tr>
+          </table>
+        </div>
+        <div class="ftr">
+          SmartStay University Hostel Management OS &bull; Automated Warden Dispatch
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from,
+    to: recipients.join(", "),
+    subject: `⚠️ [${complaint.priority || "Medium"}] New Complaint #${complaint.complaintId}: ${complaint.title}`,
+    text: `New maintenance complaint #${complaint.complaintId} logged by ${student.name} in ${complaint.building}, Room ${complaint.room}. Priority: ${complaint.priority}. Description: ${complaint.description}`,
+    html,
+  };
+
+  try {
+    const info = await mailTransporter.sendMail(mailOptions);
+    console.log(`[Email Service] Complaint alert sent to wardens (${recipients.join(", ")}): ${complaint.complaintId}`);
+    return { success: true, messageId: info?.messageId };
+  } catch (error) {
+    console.error("[Email Service] Failed to send complaint alert to wardens:", error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
-  sendOtpEmail,
+sendOtpEmail,
   sendWardenPaymentNotification,
   sendStudentPaymentReceipt,
+  sendWardenComplaintAlert,
 };
+
