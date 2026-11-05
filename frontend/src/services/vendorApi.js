@@ -79,7 +79,67 @@ const DEFAULT_MENU_ITEMS = [
   },
 ];
 
-const MENU_STORAGE_KEY = "smartstay_vendor_menu_items";
+export const MENU_STORAGE_KEY = "smartstay_vendor_menu_items";
+
+export function saveMenuItemsLocal(items) {
+  try {
+    localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(items));
+    window.dispatchEvent(new CustomEvent("smartstay-menu-updated", { detail: items }));
+    window.dispatchEvent(new Event("storage"));
+  } catch (e) {
+    console.error("Failed to save menu items locally:", e);
+  }
+}
+
+function resolveItemImage(item) {
+  if (item.image && typeof item.image === "string" && item.image.trim()) {
+    return item.image;
+  }
+  const name = String(item.name || "").toLowerCase();
+  const category = String(item.category || "");
+
+  if (name.includes("biriyani") || name.includes("biryani")) {
+    return "/food/biriyani.jpg";
+  }
+  if (name.includes("fried rice") || name.includes("rice")) {
+    return "/food/fried_rice.jpg";
+  }
+  if (name.includes("kottu")) {
+    return "/food/kottu.jpg";
+  }
+  if (name.includes("noodle")) {
+    return "/food/noodles.jpg";
+  }
+  if (name.includes("burger")) {
+    return "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=600";
+  }
+  if (name.includes("coffee") || name.includes("macchiato") || name.includes("latte") || name.includes("tea")) {
+    return "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=600";
+  }
+  if (name.includes("parotta") || name.includes("roti")) {
+    return "/food/parotta.jpg";
+  }
+  if (name.includes("thosai") || name.includes("dosa")) {
+    return "/food/masal_thosse.jpg";
+  }
+  if (name.includes("idli") || name.includes("itli")) {
+    return "/food/itli.jpg";
+  }
+  if (name.includes("string hopper") || name.includes("hopper")) {
+    return "/food/string_hoppers.jpg";
+  }
+
+  if (category === "Fast Food") {
+    return "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=600";
+  }
+  if (category === "Beverages") {
+    return "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=600";
+  }
+  if (category === "Snacks") {
+    return "/food/parotta.jpg";
+  }
+  return "/food/rice_and_curry.jpg";
+}
 
 // ---------------------------------------------------------------------------
 // Menu Items Management
@@ -92,9 +152,11 @@ export async function fetchMenuItems() {
       const normalized = res.data.map((m) => ({
         id: m._id || m.itemId,
         itemId: m.itemId || m._id,
+        vendorId: m.vendorId || "VND-2026-09",
+        vendor: m.vendor || "Campus Diner & Cafe",
         name: m.name,
         category: m.category,
-        price: m.price,
+        price: Number(m.price),
         available: Boolean(m.available),
         prepTime: m.prepTime || "15 mins",
         calories: m.calories || "450 kcal",
@@ -102,7 +164,7 @@ export async function fetchMenuItems() {
         isVeg: Boolean(m.isVeg),
         isSpicy: Boolean(m.isSpicy),
         description: m.description || "",
-        image: m.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400",
+        image: resolveItemImage(m),
         ordersToday: Math.floor(Math.random() * 15) + 5,
       }));
       try {
@@ -123,21 +185,25 @@ export async function fetchMenuItems() {
 }
 
 export async function createMenuItem(itemData) {
+  const chosenImage = resolveItemImage(itemData);
   const payload = {
-    itemId: `ITEM-${Date.now().toString().slice(-4)}`,
-    vendorId: "VND-2026-09",
+    itemId: itemData.itemId || `ITEM-${Date.now().toString().slice(-4)}`,
+    vendorId: itemData.vendorId || "VND-2026-09",
+    vendor: itemData.vendor || "Campus Diner & Cafe",
     name: itemData.name,
-    category: itemData.category,
+    category: itemData.category || "Main Dishes",
     price: Number(itemData.price),
-    available: true,
+    available: itemData.available !== undefined ? Boolean(itemData.available) : true,
     prepTime: itemData.prepTime || "15 mins",
     calories: itemData.calories || "450 kcal",
     isHalal: Boolean(itemData.isHalal),
     isVeg: Boolean(itemData.isVeg),
     isSpicy: Boolean(itemData.isSpicy),
     description: itemData.description || "",
-    image: itemData.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=400",
+    image: chosenImage,
   };
+
+  let created = null;
 
   try {
     const res = await apiFetch("/menus", {
@@ -145,48 +211,87 @@ export async function createMenuItem(itemData) {
       body: payload,
     });
     if (res?.data) {
-      const created = {
+      created = {
         ...payload,
         id: res.data._id || payload.itemId,
+        _id: res.data._id,
+        ordersToday: 0,
       };
-      return { success: true, data: created };
     }
   } catch (err) {
     console.warn("Remote menu create failed, saving locally:", err.message);
   }
 
-  // Fallback locally
-  const localItem = {
-    ...payload,
-    id: `ITEM-${Math.floor(100 + Math.random() * 900)}`,
-  };
-  return { success: true, data: localItem };
+  if (!created) {
+    created = {
+      ...payload,
+      id: payload.itemId,
+      ordersToday: 0,
+    };
+  }
+
+  // Synchronize local storage cache and notify real-time listeners across app
+  try {
+    const cached = localStorage.getItem(MENU_STORAGE_KEY);
+    const existing = cached ? JSON.parse(cached) : [...DEFAULT_MENU_ITEMS];
+    const updated = [created, ...existing.filter((x) => x.id !== created.id && x.itemId !== created.itemId)];
+    saveMenuItemsLocal(updated);
+  } catch (e) {
+    console.warn("Failed to sync created menu item:", e);
+  }
+
+  return { success: true, data: created };
 }
 
 export async function updateMenuItem(id, updates) {
+  let updatedData = null;
   try {
     const res = await apiFetch(`/menus/${id}`, {
       method: "PUT",
       body: updates,
     });
     if (res?.data) {
-      return { success: true, data: res.data };
+      updatedData = res.data;
     }
   } catch (err) {
     console.warn("Remote menu update failed, saving locally:", err.message);
   }
 
-  return { success: true, data: { id, ...updates } };
+  // Synchronize local storage cache and notify real-time listeners across app
+  try {
+    const cached = localStorage.getItem(MENU_STORAGE_KEY);
+    const existing = cached ? JSON.parse(cached) : [...DEFAULT_MENU_ITEMS];
+    const updated = existing.map((item) =>
+      item.id === id || item.itemId === id ? { ...item, ...updates } : item
+    );
+    saveMenuItemsLocal(updated);
+  } catch (e) {
+    console.warn("Failed to sync updated menu item:", e);
+  }
+
+  return { success: true, data: updatedData || { id, ...updates } };
 }
 
 export async function deleteMenuItem(id) {
   try {
     await apiFetch(`/menus/${id}`, { method: "DELETE" });
-    return { success: true };
   } catch (err) {
     console.warn("Remote menu delete failed:", err.message);
-    return { success: true };
   }
+
+  // Synchronize local storage cache and notify real-time listeners across app
+  try {
+    const cached = localStorage.getItem(MENU_STORAGE_KEY);
+    if (cached) {
+      const existing = JSON.parse(cached);
+      const updated = existing.filter((item) => item.id !== id && item.itemId !== id);
+      saveMenuItemsLocal(updated);
+    }
+  } catch (e) {
+    console.warn("Failed to sync deleted menu item:", e);
+  }
+
+  return { success: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -327,3 +432,4 @@ export async function requestPayoutDisbursement(amount, method) {
   };
   return { success: true, data: newPayout, message: "Payout request submitted for processing." };
 }
+

@@ -59,9 +59,11 @@ export default function VendorDashboard() {
     };
 
     window.addEventListener("smartstay-food-orders-updated", handleSync);
+    window.addEventListener("smartstay-menu-updated", loadDashboardData);
     window.addEventListener("storage", handleSync);
     return () => {
       window.removeEventListener("smartstay-food-orders-updated", handleSync);
+      window.removeEventListener("smartstay-menu-updated", loadDashboardData);
       window.removeEventListener("storage", handleSync);
     };
   }, []);

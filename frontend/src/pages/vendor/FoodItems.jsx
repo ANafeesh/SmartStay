@@ -33,6 +33,7 @@ export default function FoodItems() {
     prepTime: "15 mins",
     calories: "450 kcal",
     description: "",
+    image: "",
     isHalal: true,
     isVeg: false,
     isSpicy: false,
@@ -57,6 +58,13 @@ export default function FoodItems() {
 
   useEffect(() => {
     loadItems();
+    const handleSync = () => loadItems();
+    window.addEventListener("smartstay-menu-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("smartstay-menu-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
   }, []);
 
   const showNotification = (msg) => {
@@ -92,6 +100,7 @@ export default function FoodItems() {
       prepTime: "15 mins",
       calories: "450 kcal",
       description: "",
+      image: "",
       isHalal: true,
       isVeg: false,
       isSpicy: false,
@@ -108,6 +117,7 @@ export default function FoodItems() {
       prepTime: item.prepTime,
       calories: item.calories,
       description: item.description,
+      image: item.image || "",
       isHalal: item.isHalal,
       isVeg: item.isVeg,
       isSpicy: item.isSpicy,
@@ -158,6 +168,7 @@ export default function FoodItems() {
         prepTime: form.prepTime,
         calories: form.calories,
         description: form.description,
+        image: form.image,
         isHalal: form.isHalal,
         isVeg: form.isVeg,
         isSpicy: form.isSpicy,
@@ -471,6 +482,19 @@ export default function FoodItems() {
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Describe taste, ingredients, and portion size..."
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                  Food Photo URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={form.image}
+                  onChange={(e) => setForm({ ...form, image: e.target.value })}
+                  placeholder="https://... or leave empty for smart category dish photo"
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-800 focus:border-blue-600 focus:outline-none"
                 />
               </div>

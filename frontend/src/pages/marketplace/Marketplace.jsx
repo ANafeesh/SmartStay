@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 import { addRealNotification } from "../../services/notificationService";
+import { fetchMenuItems } from "../../services/vendorApi";
+import { apiFetch } from "../../services/apiClient";
 
 function createOrderId() {
   return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -327,7 +329,69 @@ export default function Marketplace() {
   const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
   const studentRegId = user?.studentId || user?.registrationNumber || "";
   const studentDisplayName = user?.name || "Student";
-  const [items] = useState(initialFoodItems);
+  const [items, setItems] = useState(initialFoodItems);
+
+  const loadMarketplaceItems = async () => {
+    try {
+      const liveItems = await fetchMenuItems();
+      if (Array.isArray(liveItems) && liveItems.length > 0) {
+        const normalizedLive = liveItems.map((m) => {
+          const isDiner =
+            !m.vendorId ||
+            m.vendorId === "VND-2026-09" ||
+            m.vendorId === "VND-01" ||
+            m.vendorId === "VND-2026-01" ||
+            /campus diner/i.test(m.vendor || "");
+
+          return {
+            id: m.id || m.itemId || m._id,
+            itemId: m.itemId || m.id,
+            name: m.name,
+            vendor: isDiner ? "Campus Diner & Cafe" : (m.vendor || "Campus Diner & Cafe"),
+            vendorId: isDiner ? "VND-01" : (m.vendorId || "VND-01"),
+            price: Number(m.price) || 0,
+            category: m.category || "Main Dishes",
+            image: m.image || "/food/rice_and_curry.jpg",
+            available: m.available !== false,
+            rating: m.rating || 4.8,
+            isHalal: m.isHalal !== undefined ? Boolean(m.isHalal) : true,
+            isSpicy: m.isSpicy !== undefined ? Boolean(m.isSpicy) : false,
+            isVeg: m.isVeg !== undefined ? Boolean(m.isVeg) : false,
+            prepTime: m.prepTime || "15 mins",
+            calories: m.calories || "",
+            description: m.description || "",
+          };
+        });
+
+        const liveNames = new Set(normalizedLive.map((x) => x.name.trim().toLowerCase()));
+        const otherVendors = initialFoodItems.filter(
+          (init) => !liveNames.has(init.name.trim().toLowerCase()) && init.vendorId !== "VND-01"
+        );
+
+        setItems([...normalizedLive, ...otherVendors]);
+      }
+    } catch (err) {
+      console.warn("Could not load dynamic menu items in marketplace:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadMarketplaceItems();
+
+    const handleMenuSync = () => {
+      loadMarketplaceItems();
+    };
+
+    window.addEventListener("smartstay-menu-updated", handleMenuSync);
+    window.addEventListener("storage", handleMenuSync);
+    const syncInterval = setInterval(loadMarketplaceItems, 8000);
+
+    return () => {
+      window.removeEventListener("smartstay-menu-updated", handleMenuSync);
+      window.removeEventListener("storage", handleMenuSync);
+      clearInterval(syncInterval);
+    };
+  }, []);
   const [myOrders, setMyOrders] = useState(() =>
     studentRegId ? readFoodOrders().filter((order) => order.studentId === studentRegId) : []
   );
@@ -369,10 +433,15 @@ export default function Marketplace() {
       );
     };
     window.addEventListener("storage", refreshOrders);
-    return () => window.removeEventListener("storage", refreshOrders);
+    window.addEventListener("smartstay-food-orders-updated", refreshOrders);
+    return () => {
+      window.removeEventListener("storage", refreshOrders);
+      window.removeEventListener("smartstay-food-orders-updated", refreshOrders);
+    };
   }, [studentRegId]);
 
   const addToCart = (item) => {
+    if (item.available === false) return;
     if (cart.length > 0 && cart[0].vendorId !== item.vendorId) {
       setCartConflictModal({
         existingVendor: cart[0].vendor,
@@ -473,6 +542,26 @@ export default function Marketplace() {
       );
       try {
         saveFoodOrders(updatedOrders);
+        apiFetch("/food-orders", {
+          method: "POST",
+          body: {
+            orderNo: newOrder.id,
+            studentId: newOrder.studentId || "STD-2026-101",
+            studentName: newOrder.studentName,
+            regNo: newOrder.regNo,
+            vendorId: newOrder.vendorId === "VND-01" ? "VND-2026-09" : newOrder.vendorId,
+            vendor: newOrder.vendor,
+            deliverySlotId: null,
+            timeSlot: newOrder.timeSlot,
+            deliveryLocation: newOrder.deliveryLocation,
+            paymentMethod: newOrder.paymentMethod,
+            subtotal: newOrder.subtotal,
+            deliveryFee: newOrder.deliveryFee,
+            convenienceFee: hostelConvenience,
+            totalAmount: newOrder.totalAmount,
+            items: newOrder.items,
+          },
+        }).catch(() => {});
         addRealNotification({
           id: `order-placed-${newOrder.id}`,
           title: "Food Order Placed",
@@ -933,10 +1022,15 @@ export default function Marketplace() {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="h-full w-full object-cover"
+                      className={`h-full w-full object-cover transition duration-300 ${!item.available ? "opacity-50 grayscale-[40%]" : ""}`}
                     />
 
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      {!item.available && (
+                        <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                          Sold Out
+                        </span>
+                      )}
                       <span className="inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-0.5 text-[11px] font-medium text-slate-800 shadow-xs border border-slate-200/70">
                         <Star size={10} className="text-amber-500 fill-amber-500" />
                         <span>{item.rating}</span>
@@ -987,7 +1081,11 @@ export default function Marketplace() {
                       </div>
 
                       {/* Quantity Stepper */}
-                      {qty === 0 ? (
+                      {!item.available ? (
+                        <span className="inline-flex items-center rounded-lg bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 select-none">
+                          Sold Out
+                        </span>
+                      ) : qty === 0 ? (
                         <button
                           onClick={() => addToCart(item)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition-colors cursor-pointer"
