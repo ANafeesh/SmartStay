@@ -45,7 +45,10 @@ export default function VendorOrders() {
   useEffect(() => {
     loadOrders();
 
-    const handleSync = () => {
+    const handleSync = (e) => {
+      if (Array.isArray(e?.detail)) {
+        setOrders(e.detail);
+      }
       fetchVendorOrders().then((data) => {
         if (Array.isArray(data)) setOrders(data);
       });

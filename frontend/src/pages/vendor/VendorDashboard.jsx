@@ -52,7 +52,10 @@ export default function VendorDashboard() {
   useEffect(() => {
     loadDashboardData();
 
-    const handleSync = () => {
+    const handleSync = (e) => {
+      if (Array.isArray(e?.detail)) {
+        setLiveOrders(e.detail);
+      }
       fetchVendorOrders().then((ords) => {
         if (Array.isArray(ords)) setLiveOrders(ords);
       });

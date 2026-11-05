@@ -299,10 +299,11 @@ export async function deleteMenuItem(id) {
 // ---------------------------------------------------------------------------
 
 export async function fetchVendorOrders() {
+  const localOrders = readFoodOrders();
   try {
     const res = await apiFetch("/food-orders", { method: "GET" });
     if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-      const normalized = res.data.map((o) => ({
+      const remoteNormalized = res.data.map((o) => ({
         id: o.orderNo || o._id,
         _id: o._id,
         orderNo: o.orderNo,
@@ -314,7 +315,9 @@ export async function fetchVendorOrders() {
         totalAmount: o.totalAmount || o.subtotal || 1200,
         status: o.status || "Placed",
         createdAt: o.createdAt
-          ? new Date(o.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          ? (typeof o.createdAt === "string" && o.createdAt.includes(":") && !o.createdAt.includes("T")
+              ? o.createdAt
+              : new Date(o.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
           : "Recent",
         paymentMethod: o.paymentMethod || "Charged to Room Bill",
         paymentStatus: o.paymentStatus || "Pending",
@@ -323,15 +326,19 @@ export async function fetchVendorOrders() {
           : [{ name: "Food Order Combo", qty: 1, price: o.totalAmount || 1200 }],
       }));
 
-      // Sync with localStorage
-      saveFoodOrders(normalized);
-      return normalized;
+      // Preserve any pending local order not yet in the remote response
+      const remoteKeys = new Set(remoteNormalized.map((r) => r.id || r.orderNo));
+      const pendingLocals = localOrders.filter((l) => !remoteKeys.has(l.id) && !remoteKeys.has(l.orderNo));
+      const combined = [...pendingLocals, ...remoteNormalized];
+
+      saveFoodOrders(combined);
+      return combined;
     }
   } catch (err) {
     console.warn("Failed to fetch remote food orders, reading local cache:", err.message);
   }
 
-  return readFoodOrders();
+  return localOrders;
 }
 
 export async function updateOrderStatusApi(orderId, newStatus) {
