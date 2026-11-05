@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 
 const transferSchema = new mongoose.Schema(
@@ -42,6 +41,36 @@ const transferSchema = new mongoose.Schema(
     reason: {
       type: String,
       required: true,
+      trim: true,
+    },
+
+    reasonCategory: {
+      type: String,
+      default: "General Request",
+      trim: true,
+    },
+
+    urgency: {
+      type: String,
+      enum: ["Normal", "High", "Critical"],
+      default: "Normal",
+    },
+
+    contactPhone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    additionalNotes: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    wardenNotes: {
+      type: String,
+      default: "",
       trim: true,
     },
 

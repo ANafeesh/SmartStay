@@ -198,6 +198,30 @@ const createAllocation = async (req, res) => {
     bed.status = "Occupied";
     await bed.save();
 
+    // Sync student user profile in database
+    try {
+      const User = require("../models/User");
+      const Building = require("../models/Building");
+      const bld = await Building.findById(room.buildingId);
+      const bldName = bld?.name || bld?.code || "Hostel";
+      await User.updateMany(
+        {
+          $or: [
+            { studentId: registrationId.trim() },
+            { registrationNumber: registrationId.trim() },
+          ],
+        },
+        {
+          $set: {
+            room: room.roomNumber,
+            building: bldName,
+          },
+        }
+      );
+    } catch (uErr) {
+      console.warn("Could not sync user profile in createAllocation:", uErr.message);
+    }
+
     const result = await Allocation.findById(allocation._id)
       .populate({
         path: "roomId",
@@ -424,6 +448,30 @@ const updateAllocation = async (req, res) => {
       }
     }
 
+    // Sync student user profile in database
+    try {
+      const User = require("../models/User");
+      const Building = require("../models/Building");
+      const bld = await Building.findById(room.buildingId);
+      const bldName = bld?.name || bld?.code || "Hostel";
+      await User.updateMany(
+        {
+          $or: [
+            { studentId: registrationId.trim() },
+            { registrationNumber: registrationId.trim() },
+          ],
+        },
+        {
+          $set: {
+            room: room.roomNumber,
+            building: bldName,
+          },
+        }
+      );
+    } catch (uErr) {
+      console.warn("Could not sync user profile in updateAllocation:", uErr.message);
+    }
+
     const result = await Allocation.findById(id)
       .populate({
         path: "roomId",
@@ -521,9 +569,70 @@ const checkoutAllocation = async (req, res) => {
   }
 };
 
+// GET: Get logged in student's active allocation
+const getMyAllocation = async (req, res) => {
+  try {
+    const studentRegId =
+      req.query.studentRegistrationId ||
+      req.query.studentId ||
+      req.user?.studentId ||
+      req.user?.registrationNumber;
+
+    if (!studentRegId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student registration ID could not be identified from authentication session.",
+      });
+    }
+
+    const allocation = await Allocation.findOne({
+      studentRegistrationId: studentRegId,
+      status: "Active",
+    })
+      .populate({
+        path: "roomId",
+        populate: { path: "buildingId" },
+      })
+      .populate("bedId");
+
+    if (!allocation) {
+      return res.status(404).json({
+        success: false,
+        message: "No active room allocation found for this student.",
+      });
+    }
+
+    // Find roommates in the same room
+    const roommates = await Allocation.find({
+      roomId: allocation.roomId._id,
+      _id: { $ne: allocation._id },
+      status: "Active",
+    }).select("studentName studentRegistrationId");
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        allocation,
+        room: allocation.roomId,
+        building: allocation.roomId.buildingId,
+        bed: allocation.bedId,
+        roommates,
+      },
+    });
+  } catch (error) {
+    console.error("Get my allocation error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve student allocation",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllocations,
   getAllocationById,
+  getMyAllocation,
   createAllocation,
   updateAllocation,
   checkoutAllocation,

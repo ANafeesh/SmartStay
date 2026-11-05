@@ -104,11 +104,14 @@ function getBedLabel(bed, rooms) {
   const room = rooms.find((item) => getId(item) === roomId);
   const roomNumber = room ? getRoomLabel(room) : "";
 
-  const bedNumber = bed.bedNumber ?? bed.name ?? bed._id ?? "Unknown bed";
+  const rawBed = bed.bedNumber ?? bed.name ?? bed._id ?? "Unknown bed";
+  const bedNumber = String(rawBed).toLowerCase().startsWith("bed")
+    ? rawBed
+    : `Bed ${rawBed}`;
 
   return roomNumber
-    ? `${roomNumber} / Bed ${bedNumber}`
-    : `Bed ${bedNumber}`;
+    ? `${roomNumber} / ${bedNumber}`
+    : bedNumber;
 }
 
 function getStudentLabel(transfer) {
@@ -324,6 +327,30 @@ function HostelDashboard() {
     [transfers]
   );
 
+  const blockBreakdown = useMemo(() => {
+    return buildings.map((b) => {
+      const bId = getId(b);
+      const bRooms = rooms.filter((r) => getId(r.buildingId) === bId);
+      const bRoomIds = new Set(bRooms.map((r) => getId(r)));
+      const bBeds = beds.filter((bed) => bRoomIds.has(getId(bed.roomId)));
+      const occupied = bBeds.filter((bed) => getBedCategory(bed) === "occupied").length;
+      const total = bBeds.length || (b.totalBeds ?? 64);
+      const rate = total > 0 ? Math.round((occupied / total) * 100) : 0;
+
+      return {
+        id: bId,
+        name: b.name,
+        code: b.code || "BLOCK",
+        floors: b.floors || 4,
+        roomCount: bRooms.length || (b.totalRooms ?? 24),
+        bedCount: total,
+        occupiedBeds: occupied,
+        availableBeds: Math.max(0, total - occupied),
+        occupancyRate: rate,
+      };
+    });
+  }, [buildings, rooms, beds]);
+
   const stats = [
     {
       ...statStyles[0],
@@ -417,6 +444,88 @@ function HostelDashboard() {
         })}
       </div>
 
+      {/* Campus Hostel Blocks Overview */}
+      <div className="mt-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-smart-primary flex items-center gap-2">
+              <Building2 size={22} className="text-blue-600" />
+              <span>Campus Hostel Blocks Overview</span>
+            </h2>
+            <p className="mt-0.5 text-xs text-smart-secondary">
+              Fixed university residence blocks: 4 Blocks • 16 Floors • 96 Rooms • 256 Beds
+            </p>
+          </div>
+          <Link
+            to="/hostel/buildings"
+            className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1 self-start sm:self-auto"
+          >
+            <span>View All Buildings</span>
+            <ArrowUpRight size={14} />
+          </Link>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {blockBreakdown.map((block) => (
+            <Card key={block.id} padding="p-4" className="hover:border-blue-400/80 transition-all shadow-xs">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="font-mono text-[10px] font-extrabold uppercase bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md">
+                    {block.code}
+                  </span>
+                  <h3 className="mt-1.5 text-sm font-bold text-slate-900 truncate">
+                    {block.name}
+                  </h3>
+                </div>
+                <Badge variant={block.occupancyRate > 70 ? "warning" : "success"}>
+                  {block.occupancyRate}%
+                </Badge>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 border-t border-b border-slate-100 py-2.5">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Floors</p>
+                  <p className="font-bold text-slate-800">{block.floors} Floors</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Rooms</p>
+                  <p className="font-bold text-slate-800">{block.roomCount} Rooms</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Total Beds</p>
+                  <p className="font-bold text-slate-800">{block.bedCount} Beds</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Occupancy</p>
+                  <p className="font-bold text-amber-600">{block.occupiedBeds} / {block.bedCount}</p>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="flex justify-between text-[11px] font-medium text-slate-500 mb-1">
+                  <span>Occupancy rate</span>
+                  <span className="font-bold text-slate-700">{block.occupancyRate}%</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-blue-600 transition-all"
+                    style={{ width: `${block.occupancyRate}%` }}
+                  />
+                </div>
+              </div>
+
+              <Link
+                to="/hostel/rooms"
+                className="mt-3 pt-2.5 border-t border-slate-50 flex items-center justify-between text-[11px] font-bold text-blue-600 hover:text-blue-800 transition"
+              >
+                <span>Explore Rooms & Beds</span>
+                <ArrowUpRight size={13} />
+              </Link>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
 
@@ -437,7 +546,7 @@ function HostelDashboard() {
               </p>
             </div>
             <Link
-              to="/complaints"
+              to="/maintenance"
               className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
             >
               <span>View All</span>

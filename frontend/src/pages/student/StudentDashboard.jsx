@@ -22,6 +22,7 @@ import {
 import { useAuth, isDemoUser } from "../../context/AuthContext";
 import QRCodeLib from "qrcode";
 import Modal from "../../components/ui/Modal";
+import { getMyAllocation } from "../../services/transferService";
 import QRCode from "../../utils/qrCode";
 import {
   getStudentPassDetails,
@@ -32,7 +33,6 @@ import {
 function StudentDashboard() {
   const { user } = useAuth();
   const [showPassModal, setShowPassModal] = useState(false);
-  const [scanResult, setScanResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
   const isDemo = isDemoUser(user) || user?.isDemo;
@@ -43,7 +43,7 @@ function StudentDashboard() {
   const bedName = user?.bed || "Assigned Bed";
   const roomType = user?.roomType || "Standard Resident";
 
-  const dynamicStats = [
+  const baseStats = [
     {
       title: "Outstanding balance",
       value: isDemo ? "LKR 12,500" : "LKR 0",
@@ -81,6 +81,33 @@ function StudentDashboard() {
   const passDetails = getStudentPassDetails(user);
   const [gateState, setGateState] = useState(() =>
     getGateMovementState(studentRegId)
+  );
+  const [scanResult, setScanResult] = useState(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [allocationData, setAllocationData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    getMyAllocation(studentRegId)
+      .then((res) => {
+        if (mounted && res) {
+          setAllocationData(res);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, [studentRegId]);
+
+  const displayRoom = allocationData?.room?.roomNumber || roomNumber;
+  const displayBed = allocationData?.bed?.bedNumber ? (`Bed ${allocationData.bed.bedNumber}`) : "Bed 02";
+  const displayBuilding = allocationData?.building?.name || allocationData?.building?.code || "Hostel Block B";
+
+  const dynamicStats = baseStats.map((stat) =>
+    stat.title.toLowerCase().includes("room")
+      ? { ...stat, value: displayRoom }
+      : stat
   );
 
   // Real backend digital pass state
@@ -251,7 +278,7 @@ function StudentDashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {dynamicStats.map((stat) => {
           const Icon = stat.icon;
 
@@ -341,12 +368,12 @@ function StudentDashboard() {
             </div>
 
             <div className="py-4">
-              <p className="text-xs text-slate-400">Assigned hostel room</p>
-              <h3 className="text-2xl font-semibold tracking-tight text-slate-900 mt-1 font-mono">
-                {roomNumber}
+              <p className="text-xs text-slate-400 font-medium">Assigned hostel room</p>
+              <h3 className="text-2xl font-black text-slate-900 mt-0.5">
+                Room {displayRoom}
               </h3>
               <p className="text-xs text-slate-600 mt-1">
-                {buildingName} · {bedName}
+                {displayBuilding} • {displayBed}
               </p>
             </div>
 

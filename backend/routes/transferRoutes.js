@@ -7,6 +7,7 @@ const {
   createTransfer,
   approveTransfer,
   rejectTransfer,
+  cancelTransfer,
 } = require("../controllers/transferController");
 
 const router = express.Router();
@@ -17,6 +18,9 @@ router.get("/:id", protect, getTransferById);
 
 // Students can apply for transfers
 router.post("/", protect, authorizeRole("student", "admin"), createTransfer);
+
+// Students can cancel their own pending transfer
+router.delete("/:id", protect, cancelTransfer);
 
 // Wardens and Admins approve or reject transfers
 router.patch("/:id/approve", protect, authorizeRole("admin", "warden"), approveTransfer);
