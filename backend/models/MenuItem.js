@@ -13,9 +13,19 @@ const menuItemSchema = new mongoose.Schema(
     isHalal: { type: Boolean, default: false },
     isSpicy: { type: Boolean, default: false },
     isVeg: { type: Boolean, default: false },
-    prepTime: { type: String, trim: true, default: "" },
+    prepTime: { type: String, trim: true, default: "15 mins" },
+    calories: { type: String, trim: true, default: "" },
   },
   { timestamps: true },
 );
+
+menuItemSchema.pre("validate", function () {
+  if (!this.itemId) {
+    this.itemId = `FD-${Math.floor(100 + Math.random() * 900)}`;
+  }
+  if (!this.vendorId) {
+    this.vendorId = "VND-2026-09";
+  }
+});
 
 module.exports = mongoose.model("MenuItem", menuItemSchema);

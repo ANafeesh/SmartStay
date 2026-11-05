@@ -23,5 +23,11 @@ router.patch(
   authorizeRole("vendor", "delivery", "admin"),
   updateOrderStatus
 );
+router.put(
+  "/:id/status",
+  protect,
+  authorizeRole("vendor", "delivery", "admin"),
+  updateOrderStatus
+);
 
 module.exports = router;
