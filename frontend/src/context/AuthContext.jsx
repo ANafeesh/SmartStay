@@ -249,22 +249,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem("smartstay_user", JSON.stringify(response.user));
       return enriched;
     } catch (err) {
-      // Offline fallback for demo personas
-      const ident = (credentials.identifier || "").toLowerCase().trim();
-      const demoMatch = DEMO_ACCOUNTS.find(
-        (acc) =>
-          acc.email.toLowerCase() === ident ||
-          (acc.username && acc.username.toLowerCase() === ident)
-      );
-      if (demoMatch && credentials.password === "password123") {
-        console.warn("Using offline demo fallback for:", ident, err.message);
-        const enriched = enrichUser({ ...demoMatch, isDemo: true }, true);
-        setUser(enriched);
-        setIsLoggedIn(true);
-        setAuthToken("demo-token-" + demoMatch.roleKey);
-        localStorage.setItem("smartstay_user", JSON.stringify(enriched));
-        return enriched;
-      }
+      // Strict: Always throw error from backend so invalid / old passwords fail properly!
       throw err;
     }
   };

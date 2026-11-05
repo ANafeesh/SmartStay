@@ -86,7 +86,7 @@ exports.login = async (req, res) => {
       console.warn("DB query timed out or unreachable:", dbErr.message);
     }
 
-    // Auto-bootstrap standard evaluation accounts
+    // Auto-bootstrap standard evaluation accounts if not yet in database
     const demoRoles = {
       "student@smartstay.com": { role: "student", name: "Ahamed Nafeesh", studentId: "STD-2026-101", room: "Room 101", building: "Block A" },
       "warden@smartstay.com": { role: "warden", name: "Dr. K. Perera", building: "Administrative Complex" },
@@ -96,39 +96,38 @@ exports.login = async (req, res) => {
       "admin@smartstay.com": { role: "warden", name: "Dr. K. Perera", building: "Administrative Complex" },
     };
 
-    const demoConfig = password === "password123" ? demoRoles[normalizedLower] : null;
-
-    if (!user && demoConfig) {
-      try {
-        user = await User.create({
-          email: normalizedLower,
-          passwordHash: await bcrypt.hash(password, 10),
-          name: demoConfig.name,
-          role: demoConfig.role,
-          accountStatus: "active",
-          studentId: demoConfig.studentId || "",
-          registrationNumber: demoConfig.studentId || "",
-          room: demoConfig.room || "",
-          building: demoConfig.building || "",
-        });
-      } catch (seedErr) {
-        console.warn("Demo user offline fallback object:", seedErr.message);
-        user = {
-          _id: "6aafe35dc5e56a9f84d1ca40",
-          email: normalizedLower,
-          name: demoConfig.name,
-          role: demoConfig.role,
-          accountStatus: "active",
-          studentId: demoConfig.studentId || "",
-          registrationNumber: demoConfig.studentId || "",
-          room: demoConfig.room || "",
-          building: demoConfig.building || "",
-          matchPassword: async () => true,
-        };
+    // If user does not exist in DB yet, create the initial demo account
+    if (!user) {
+      const demoRole = demoRoles[normalizedLower];
+      if (demoRole && password === "password123") {
+        try {
+          user = await User.create({
+            email: normalizedLower,
+            passwordHash: await bcrypt.hash(password, 10),
+            name: demoRole.name,
+            role: demoRole.role,
+            accountStatus: "active",
+            studentId: demoRole.studentId || "",
+            registrationNumber: demoRole.studentId || "",
+            room: demoRole.room || "",
+            building: demoRole.building || "",
+          });
+        } catch (seedErr) {
+          console.warn("Demo user fallback:", seedErr.message);
+          user = {
+            _id: "6aafe35dc5e56a9f84d1ca40",
+            email: normalizedLower,
+            name: demoRole.name,
+            role: demoRole.role,
+            accountStatus: "active",
+            studentId: demoRole.studentId || "",
+            registrationNumber: demoRole.studentId || "",
+            room: demoRole.room || "",
+            building: demoRole.building || "",
+            matchPassword: async (pwd) => pwd === "password123",
+          };
+        }
       }
-    } else if (user && demoConfig) {
-      user.name = demoConfig.name;
-      user.role = demoConfig.role;
     }
 
     if (!user) {
@@ -138,7 +137,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    const isMatch = demoConfig ? true : await user.matchPassword(password);
+    // STRICT: Only the user's current valid password hash in database is accepted!
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -276,38 +276,9 @@ exports.getMe = async (req, res) => {
       });
     }
 
-    const userData = formatUserResponse(req.user);
-
-    // If student, enrich with active allocation's room and building
-    if (req.user.role === "student") {
-      try {
-        const Allocation = require("../models/Allocation");
-        const studentReg = req.user.studentId || req.user.registrationNumber;
-        if (studentReg) {
-          const alloc = await Allocation.findOne({
-            studentRegistrationId: studentReg,
-            status: "Active",
-          }).populate({
-            path: "roomId",
-            populate: { path: "buildingId" },
-          });
-
-          if (alloc?.roomId) {
-            userData.room = alloc.roomId.roomNumber || userData.room;
-            const bld = alloc.roomId.buildingId;
-            if (bld) {
-              userData.building = bld.name || bld.code || userData.building;
-            }
-          }
-        }
-      } catch (allocErr) {
-        console.warn("Could not enrich getMe with allocation:", allocErr.message);
-      }
-    }
-
     return res.status(200).json({
       success: true,
-      user: userData,
+      user: formatUserResponse(req.user),
     });
   } catch (error) {
     return res.status(500).json({
@@ -370,6 +341,73 @@ exports.updateProfile = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update profile.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Change Authenticated User Password
+ * PUT /api/auth/change-password
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authenticated.",
+      });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 6 characters long.",
+      });
+    }
+
+    // Retrieve user with passwordHash
+    const user = await User.findById(req.user._id).select("+passwordHash");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User account not found.",
+      });
+    }
+
+    // Verify current password if user has one stored
+    if (user.passwordHash) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: "Please provide your current password.",
+        });
+      }
+      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Current password does not match.",
+        });
+      }
+    }
+
+    // Hash and store new password
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully! You can now log in with your new password.",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update password.",
       error: error.message,
     });
   }
