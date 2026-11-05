@@ -117,7 +117,7 @@ function StudentDashboard() {
     const routePrefix = (import.meta.env.BASE_URL || "/").replace(/\/$/, "");
     return `${origin}${routePrefix}/gate/verify?token=${encodeURIComponent(
       passDetails.passToken
-    )}&studentId=${encodeURIComponent(studentRegId)}&studentId=&passNumber=;
+    )}&studentId=${encodeURIComponent(studentRegId)}&passNumber=${encodeURIComponent(
       passDetails.passNumber
     )}`;
   };
