@@ -6,12 +6,9 @@ import {
   BedDouble,
   Building2,
   CheckCircle2,
-  CircleDollarSign,
   Download,
   Filter,
-  MessageSquareWarning,
   RotateCcw,
-  TrendingUp,
   Wallet,
   Droplets,
   Zap,
@@ -32,7 +29,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
 
 import Card from "../../components/ui/Card";
@@ -45,13 +41,14 @@ import {
   getComplaintAnalytics,
 } from "../../services/analyticsApi";
 
-const COLORS = [
+// Restrained palette for categories: calm slate & indigo tints instead of a saturated rainbow
+const CATEGORY_COLORS = [
   "#2563eb",
-  "#0d9488",
-  "#d97706",
-  "#e11d48",
-  "#7c3aed",
+  "#475569",
   "#0284c7",
+  "#64748b",
+  "#94a3b8",
+  "#cbd5e1",
 ];
 
 const BLOCKS = ["All", "Block A", "Block B", "Block C"];
@@ -82,120 +79,100 @@ const formatShortCurrency = (value) => {
 const getPercentage = (value, total) =>
   total > 0 ? (value / total) * 100 : 0;
 
-function CurrencyTooltip({ active, payload, label }) {
+function ChartTooltipWrapper({ active, payload, label, isCurrency = false }) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-md">
-      <p className="mb-2 text-xs font-semibold text-slate-800">{label}</p>
-
-      {payload.map((entry) => (
-        <div
-          key={entry.dataKey}
-          className="flex items-center justify-between gap-4 py-0.5 text-xs font-mono"
-        >
-          <span className="font-sans text-slate-500">{entry.name}:</span>
-          <span className="font-medium text-slate-900">
-            {formatCurrency(entry.value)}
-          </span>
-        </div>
-      ))}
+    <div className="rounded-lg border border-slate-200/90 bg-white px-3 py-2 text-xs shadow-sm">
+      <p className="font-medium text-slate-800">{label}</p>
+      <div className="mt-1 space-y-1">
+        {payload.map((entry) => (
+          <div
+            key={entry.dataKey || entry.name}
+            className="flex items-center justify-between gap-4 text-slate-600"
+          >
+            <span className="flex items-center gap-1.5">
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: entry.color || entry.fill }}
+              />
+              <span>{entry.name}</span>
+            </span>
+            <span className="font-mono tabular-nums text-slate-900 font-medium">
+              {isCurrency ? formatCurrency(entry.value) : Number(entry.value).toLocaleString()}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function MetricCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  iconStyle,
-  trend,
-  trendLabel,
-}) {
+function StatCard({ title, value, subtitle, trend, trendLabel, icon: Icon }) {
   return (
-    <Card>
-      <div className="flex h-full items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-slate-500">{title}</p>
-
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight font-mono tabular-nums text-slate-900 sm:text-3xl">
-            {value}
-          </h2>
-
-          <p className="mt-1.5 text-xs text-slate-500">{subtitle}</p>
-
-          {trend !== undefined && (
-            <div
-              className={`mt-2.5 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border ${
-                trend >= 0
-                  ? "bg-emerald-50 text-emerald-800 border-emerald-200/80"
-                  : "bg-rose-50 text-rose-800 border-rose-200/80"
-              }`}
-            >
-              {trend >= 0 ? (
-                <ArrowUpRight size={13} />
-              ) : (
-                <ArrowDownRight size={13} />
-              )}
-              <span className="font-mono tabular-nums">{trend.toFixed(1)}%</span>
-              <span className="font-sans">{trendLabel || "collection rate"}</span>
-            </div>
-          )}
-        </div>
-
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconStyle}`}
-        >
-          <Icon size={18} />
-        </div>
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-xs font-medium text-slate-500">{title}</p>
+        {Icon && (
+          <span className="text-slate-400">
+            <Icon size={16} strokeWidth={1.75} />
+          </span>
+        )}
       </div>
-    </Card>
+
+      <div className="mt-2 flex items-baseline gap-2">
+        <p className="text-2xl font-semibold tracking-tight font-mono tabular-nums text-slate-900">
+          {value}
+        </p>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span className="text-slate-500">{subtitle}</span>
+
+        {trend !== undefined && (
+          <div
+            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-medium ${
+              trend >= 0
+                ? "bg-slate-100 text-slate-800"
+                : "bg-rose-50 text-rose-700"
+            }`}
+          >
+            {trend >= 0 ? (
+              <ArrowUpRight size={13} strokeWidth={2} />
+            ) : (
+              <ArrowDownRight size={13} strokeWidth={2} />
+            )}
+            <span className="font-mono tabular-nums">{trend.toFixed(1)}%</span>
+            {trendLabel && <span className="text-[11px] text-slate-500 ml-1">{trendLabel}</span>}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-function EmptyState({
-  message = "No data available for the selected filters.",
-}) {
+function EmptyState({ message = "No data available for the selected filters." }) {
   return (
     <div className="flex h-full min-h-48 flex-col items-center justify-center text-center">
-      <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
-        <Activity size={18} />
+      <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+        <Activity size={16} />
       </div>
-
-      <p className="text-xs font-semibold text-slate-700">
-        No records available
-      </p>
-
+      <p className="text-xs font-medium text-slate-700">No records available</p>
       <p className="mt-0.5 text-xs text-slate-500">{message}</p>
     </div>
   );
 }
 
-function FinancialRow({
-  label,
-  value,
-  highlight,
-  positive = true,
-}) {
+function FinancialRow({ label, value, highlight, positive = true }) {
   return (
     <div
-      className={`flex items-center justify-between gap-4 py-1 ${
-        highlight ? "border-t border-slate-100 pt-3" : ""
+      className={`flex items-center justify-between gap-4 py-2 text-xs ${
+        highlight ? "border-t border-slate-100 pt-2.5 font-medium text-slate-900" : "text-slate-600"
       }`}
     >
+      <span>{label}</span>
       <span
-        className={`text-xs ${
-          highlight
-            ? "font-medium text-slate-900"
-            : "text-slate-500"
-        }`}
-      >
-        {label}
-      </span>
-
-      <span
-        className={`text-right text-xs font-medium font-mono tabular-nums ${
+        className={`font-mono tabular-nums ${
           highlight
             ? positive
               ? "text-emerald-700 font-semibold"
@@ -314,7 +291,7 @@ function AnalyticsDashboard() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `campus_analytics_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `hostel_analytics_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -322,116 +299,75 @@ function AnalyticsDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-12">
-      {/* Executive Command Banner */}
-      <section className="rounded-xl border border-slate-800 bg-slate-900 p-6 text-white sm:p-7">
-        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-md bg-slate-800 border border-slate-700/80 px-2.5 py-1 text-xs font-medium text-slate-300 mb-2.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span>Campus Operational Telemetry</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
-              Smart Analytics
-            </h1>
-
-            <p className="mt-1 text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Consolidated intelligence: room occupancy capacity, fee collections, utility consumption, and maintenance resolutions.
-            </p>
+      {/* Header Bar */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end border-b border-slate-200/80 pb-5">
+        <div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-mono mb-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+            <span>Hostel Administration Console</span>
           </div>
-
-          <div className="flex flex-wrap gap-2.5">
-            <button
-              onClick={resetFilters}
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
-            >
-              <RotateCcw size={14} />
-              <span>Reset</span>
-            </button>
-
-            <button
-              onClick={exportCSV}
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-3.5 py-2 text-xs font-medium text-slate-900 transition-colors hover:bg-slate-100 disabled:opacity-50 cursor-pointer"
-            >
-              <Download size={14} />
-              <span>Export CSV</span>
-            </button>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Hostel Analytics
+          </h1>
+          <p className="mt-1 text-xs text-slate-500">
+            Real-time occupancy capacity, collections, utilities, and maintenance resolution.
+          </p>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-800 pt-4 text-xs text-slate-400 font-mono">
-          <span className="inline-flex items-center gap-1.5">
-            <Building2 size={13} className="text-slate-500" />
-            {selectedBlock === "All" ? "All campus blocks" : selectedBlock}
-          </span>
-          <span className="text-slate-700">·</span>
-          <span className="inline-flex items-center gap-1.5">
-            <CheckCircle2 size={13} className="text-slate-500" />
-            Live database records
-          </span>
-          <span className="text-slate-700">·</span>
-          <span className="inline-flex items-center gap-1.5">
-            <Activity size={13} className="text-slate-500" />
-            Telemetry verified
-          </span>
-        </div>
-      </section>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={resetFilters}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+          >
+            <RotateCcw size={13} />
+            <span>Reset</span>
+          </button>
 
-      {/* Global Error Alert */}
+          <button
+            onClick={exportCSV}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+          >
+            <Download size={13} />
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Global Error Notice */}
       {error && (
-        <Card>
-          <div className="flex items-start gap-3 text-rose-800">
-            <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-600" />
-            <div>
-              <h3 className="text-xs font-semibold text-rose-900">Connection notice</h3>
-              <p className="text-xs text-rose-700 mt-0.5">{error}</p>
+        <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4 text-xs text-rose-800">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={16} className="shrink-0 text-rose-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-rose-900">Connection notice</p>
+              <p className="mt-0.5 text-rose-700">{error}</p>
               <button
                 onClick={loadDashboardData}
-                className="mt-2 inline-flex items-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-800 hover:bg-rose-100 transition-colors"
+                className="mt-2 inline-flex items-center gap-1 rounded border border-rose-200 bg-white px-2 py-1 text-xs font-medium text-rose-800 hover:bg-rose-50 cursor-pointer"
               >
-                <RefreshCw size={12} /> Retry Connection
+                <RefreshCw size={12} /> Retry
               </button>
             </div>
           </div>
-        </Card>
+        </div>
       )}
 
-      {/* Filters and Controls */}
-      <Card>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-              <Filter size={15} />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-slate-900">Dashboard filters</h2>
-              <p className="text-xs text-slate-500">
-                Filter analytics by period or hostel building
-              </p>
-            </div>
+      {/* Filters Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200/80 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
+            <Filter size={14} className="text-slate-400" />
+            <span>Filters</span>
           </div>
 
-          <button
-            onClick={loadDashboardData}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-            <span>Refresh</span>
-          </button>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-slate-700">
-              Reporting scope
-            </span>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500">Period:</label>
             <select
               value={reportingPeriod}
               onChange={(e) => setReportingPeriod(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
             >
               {PERIODS.map((period) => (
                 <option key={period.value} value={period.value}>
@@ -439,41 +375,39 @@ function AnalyticsDashboard() {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-slate-700">
-              Hostel block
-            </span>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-500">Block:</label>
             <select
               value={selectedBlock}
               onChange={(e) => setSelectedBlock(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-800 focus:border-slate-900 focus:outline-none"
             >
               {BLOCKS.map((block) => (
                 <option key={block} value={block}>
-                  {block === "All" ? "All hostel blocks" : block}
+                  {block === "All" ? "All Blocks" : block}
                 </option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
-      </Card>
 
-      {/* Performance Overview Cards */}
+        <button
+          onClick={loadDashboardData}
+          disabled={loading}
+          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+        >
+          <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+          <span>Sync data</span>
+        </button>
+      </div>
+
+      {/* Primary KPI Row */}
       <section>
-        <div className="mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Performance overview
-          </h2>
-          <p className="text-xs text-slate-500">
-            Aggregated indicators from live campus database records
-          </p>
-        </div>
-
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            title="Total Registered Rooms"
+          <StatCard
+            title="Registered Rooms"
             value={
               loading
                 ? "..."
@@ -485,11 +419,10 @@ function AnalyticsDashboard() {
                 : "No rooms registered"
             }
             icon={Building2}
-            iconStyle="bg-slate-100 text-slate-700"
           />
 
-          <MetricCard
-            title="Hostel Occupancy Rate"
+          <StatCard
+            title="Occupancy Rate"
             value={
               loading
                 ? "..."
@@ -501,11 +434,10 @@ function AnalyticsDashboard() {
                 : "Awaiting bed allocation records"
             }
             icon={BedDouble}
-            iconStyle="bg-blue-50 text-blue-700 border border-blue-200/50"
           />
 
-          <MetricCard
-            title="Total Collected Revenue"
+          <StatCard
+            title="Fee Collections"
             value={
               loading
                 ? "..."
@@ -513,17 +445,16 @@ function AnalyticsDashboard() {
             }
             subtitle={
               financialData?.outstandingBalance
-                ? `Outstanding: ${formatShortCurrency(financialData.outstandingBalance)}`
-                : "Zero outstanding balance"
+                ? `Due: ${formatShortCurrency(financialData.outstandingBalance)}`
+                : "Zero outstanding"
             }
             icon={Wallet}
-            iconStyle="bg-emerald-50 text-emerald-700 border border-emerald-200/50"
             trend={financialData?.collectionRate}
             trendLabel="collection rate"
           />
 
-          <MetricCard
-            title="Open Maintenance Complaints"
+          <StatCard
+            title="Open Complaints"
             value={
               loading
                 ? "..."
@@ -531,333 +462,182 @@ function AnalyticsDashboard() {
             }
             subtitle={
               complaintData?.resolvedComplaints !== undefined
-                ? `${complaintData.resolvedComplaints} tickets resolved`
+                ? `${complaintData.resolvedComplaints} resolved tickets`
                 : "Maintenance issues"
             }
-            icon={MessageSquareWarning}
-            iconStyle="bg-amber-50 text-amber-700 border border-amber-200/50"
+            icon={CheckCircle2}
           />
         </div>
       </section>
 
-      {/* Utility Telemetry */}
-      <section>
-        <div className="mb-3">
-          <h2 className="text-sm font-semibold text-slate-900">
-            Live utility telemetry
-          </h2>
-          <p className="text-xs text-slate-500">
-            Today's recorded consumption against daily campus limits
-          </p>
-        </div>
-
-        {loading ? (
-          <Card>
-            <div className="flex items-center gap-2 py-3 text-xs text-slate-500">
-              <RefreshCw size={14} className="animate-spin text-slate-600" />
-              Loading live utility telemetry...
-            </div>
-          </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {["Water", "Electricity"].map((type) => {
-              const item = monitoringSummary.find(
-                (reading) => reading.utilityType === type
-              );
-
-              const value = Number(item?.total ?? 0);
-              const unit = item?.unit ?? (type === "Water" ? "L" : "kWh");
-              const percentage = Number(item?.percentage ?? 0);
-              const status = item?.status ?? "Normal";
-
-              const statusBadgeStyle =
-                status === "Exceeded"
-                  ? "bg-rose-50 text-rose-800 border-rose-200"
-                  : status === "Warning"
-                  ? "bg-amber-50 text-amber-800 border-amber-200"
-                  : "bg-emerald-50 text-emerald-800 border-emerald-200";
-
-              const progressFill =
-                status === "Exceeded"
-                  ? "bg-rose-600"
-                  : status === "Warning"
-                  ? "bg-amber-500"
-                  : type === "Water"
-                  ? "bg-cyan-600"
-                  : "bg-amber-600";
-
-              return (
-                <Card key={type}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-lg ${
-                          type === "Water"
-                            ? "bg-cyan-50 text-cyan-700 border border-cyan-200/50"
-                            : "bg-amber-50 text-amber-700 border border-amber-200/50"
-                        }`}
-                      >
-                        {type === "Water" ? (
-                          <Droplets size={18} />
-                        ) : (
-                          <Zap size={18} />
-                        )}
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-slate-500">
-                          {type} consumption today
-                        </p>
-                        <p className="mt-0.5 text-2xl font-semibold font-mono tabular-nums text-slate-900">
-                          {value.toLocaleString()}{" "}
-                          <span className="text-xs font-normal text-slate-500 font-sans">{unit}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <span
-                      className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${statusBadgeStyle}`}
-                    >
-                      {status}
-                    </span>
-                  </div>
-
-                  <p className="mt-3 text-xs text-slate-500 font-mono">
-                    {item?.dailyLimit != null
-                      ? `Daily threshold: ${Number(item.dailyLimit).toLocaleString()} ${unit}`
-                      : "Standard threshold active"}
-                  </p>
-
-                  <div className="mt-3">
-                    <div className="mb-1.5 flex justify-between text-xs text-slate-500 font-mono">
-                      <span className="font-sans">Limit progress</span>
-                      <span>{percentage.toFixed(1)}%</span>
-                    </div>
-
-                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className={`h-full rounded-full transition-colors ${progressFill}`}
-                        style={{
-                          width: `${Math.min(Math.max(percentage, 0), 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <p className="mt-2.5 text-[11px] text-slate-400 font-mono">
-                    {item?.readingCount ?? 0} meter readings recorded today
-                  </p>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Utility Summary by Block */}
-      <section>
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                <Building2 size={16} />
-              </div>
-
+      {/* Hero Chart & Financial Summary Split (Varied Grid Rhythm) */}
+      <section className="grid gap-5 xl:grid-cols-3">
+        {/* Main Anchor: Bed Occupancy by Block (Takes 2/3) */}
+        <div className="xl:col-span-2">
+          <Card padding="p-5">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">
-                  Utility summary by block
+                  Bed Occupancy by Block
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Recorded water and electricity metrics by campus location
+                  Distribution of occupied versus vacant capacity across residential buildings
                 </p>
               </div>
+
+              <span className="font-mono text-xs text-slate-500">
+                {occupancyData?.totalBeds || 0} total beds
+              </span>
             </div>
 
-            <span className="text-[11px] font-mono text-slate-400">BLK-LOG · 24H</span>
-          </div>
+            <div className="h-[280px] w-full">
+              {occupancyChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={occupancyChartData}
+                    barGap={6}
+                    margin={{ top: 12, right: 6, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      stroke="#f1f5f9"
+                      strokeDasharray="2 2"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#64748b", fontSize: 11 }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fill: "#64748b", fontSize: 11 }}
+                    />
+                    <Tooltip content={<ChartTooltipWrapper />} />
+                    <Bar
+                      dataKey="occupied"
+                      name="Occupied beds"
+                      fill="#1e293b"
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={32}
+                    />
+                    <Bar
+                      dataKey="available"
+                      name="Available beds"
+                      fill="#cbd5e1"
+                      radius={[3, 3, 0, 0]}
+                      maxBarSize={32}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyState message="No bed allocation records found." />
+              )}
+            </div>
 
-          {blockSummary.length === 0 ? (
-            <div className="rounded-lg bg-slate-50 px-4 py-8 text-center border border-slate-100">
-              <Building2 size={24} className="mx-auto text-slate-400 mb-1" />
-              <p className="text-xs font-semibold text-slate-700">
-                No block readings recorded today
+            <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+              <div className="flex items-center gap-4">
+                <span className="inline-flex items-center gap-1.5 text-slate-600">
+                  <span className="h-2 w-2 rounded-sm bg-slate-900" />
+                  Occupied: <strong className="font-mono text-slate-900">{occupancyData?.occupiedBeds || 0}</strong>
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-slate-600">
+                  <span className="h-2 w-2 rounded-sm bg-slate-300" />
+                  Vacant: <strong className="font-mono text-slate-900">{occupancyData?.availableBeds || 0}</strong>
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400">
+                {selectedBlock === "All" ? "Campus wide" : selectedBlock}
+              </span>
+            </div>
+          </Card>
+        </div>
+
+        {/* Financial Ledger (Takes 1/3) */}
+        <div>
+          <Card padding="p-5">
+            <div className="mb-4">
+              <h2 className="text-sm font-semibold text-slate-900">
+                Financial Summary
+              </h2>
+              <p className="text-xs text-slate-500">
+                Current invoicing and collection efficiency
               </p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Readings logged in Smart Monitoring appear here in real time.
-              </p>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[500px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500 font-medium">
-                    <th className="px-3 py-2.5">Hostel Block</th>
-                    <th className="px-3 py-2.5">Water (L)</th>
-                    <th className="px-3 py-2.5">Electricity (kWh)</th>
-                    <th className="px-3 py-2.5">Status</th>
-                  </tr>
-                </thead>
 
-                <tbody className="divide-y divide-slate-100">
-                  {blockSummary.map((block, index) => (
-                    <tr
-                      key={block.blockName || index}
-                      className="hover:bg-slate-50/50 transition-colors"
-                    >
-                      <td className="px-3 py-2.5 font-medium text-slate-800">
-                        {block.blockName || "Unassigned"}
-                      </td>
-
-                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
-                        {Number(block.water || 0).toLocaleString()}
-                      </td>
-
-                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
-                        {Number(block.electricity || 0).toLocaleString()}
-                      </td>
-
-                      <td className="px-3 py-2.5">
-                        <span
-                          className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
-                            block.status === "Warning"
-                              ? "bg-amber-50 text-amber-800 border-amber-200"
-                              : "bg-emerald-50 text-emerald-800 border-emerald-200"
-                          }`}
-                        >
-                          {block.status || "Normal"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-1">
+              <FinancialRow
+                label="Total Invoiced"
+                value={formatCurrency(financialData?.totalBilledAmount || 0)}
+              />
+              <FinancialRow
+                label="Collected to Date"
+                value={formatCurrency(financialData?.totalCollectedPayments || 0)}
+              />
+              <FinancialRow
+                label="Outstanding Balance"
+                value={formatCurrency(financialData?.outstandingBalance || 0)}
+                highlight
+                positive={(financialData?.outstandingBalance || 0) === 0}
+              />
+              <FinancialRow
+                label="Collection Efficiency"
+                value={`${(financialData?.collectionRate || 0).toFixed(1)}%`}
+              />
+              <FinancialRow
+                label="Settled Receipts"
+                value={`${financialData?.paymentsSummary?.successfulCount || 0} verified`}
+              />
             </div>
-          )}
-        </Card>
+
+            <div className="mt-6 rounded-lg bg-slate-50 p-3 text-xs border border-slate-100">
+              <div className="flex justify-between text-slate-600 mb-1.5">
+                <span>Collection rate</span>
+                <span className="font-mono font-medium text-slate-900">
+                  {financialData?.collectionRate ?? 0}%
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-slate-200/80">
+                <div
+                  className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                  style={{
+                    width: `${Math.min(Math.max(financialData?.collectionRate || 0, 0), 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
       </section>
 
-      {/* Occupancy and Revenue Charts */}
-      <section className="grid gap-5 xl:grid-cols-2">
-        {/* Occupancy Chart */}
-        <Card>
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      {/* Revenue Trends Line Chart */}
+      <section>
+        <Card padding="p-5">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700 border border-blue-200/50">
-                  <BedDouble size={16} />
-                </div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Occupancy breakdown
-                </h2>
-              </div>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Occupied and available bed capacity across blocks
+              <h2 className="text-sm font-semibold text-slate-900">
+                Monthly Invoicing & Collections
+              </h2>
+              <p className="text-xs text-slate-500">
+                Sequential billing comparisons over recent monthly cycles
               </p>
             </div>
-
-            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-mono text-slate-700">
-              {occupancyData?.totalBeds || 0} Total Beds
+            <span className="font-mono text-xs text-slate-500">
+              Amounts in LKR
             </span>
           </div>
 
-          <div className="h-[280px] w-full">
-            {occupancyChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={occupancyChartData}
-                  barGap={4}
-                  margin={{ top: 10, right: 4, left: -20, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    stroke="#f1f5f9"
-                    strokeDasharray="3 3"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 11 }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 11 }}
-                  />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    dataKey="occupied"
-                    name="Occupied beds"
-                    fill="#2563eb"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={30}
-                  />
-                  <Bar
-                    dataKey="available"
-                    name="Available beds"
-                    fill="#93c5fd"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={30}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState message="No room or bed allocation records found." />
-            )}
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-            <div className="rounded-lg bg-slate-50 p-2.5">
-              <p className="text-[11px] text-slate-500">Total occupied beds</p>
-              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-slate-900">
-                {Number(occupancyData?.occupiedBeds || 0).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-slate-50 p-2.5">
-              <p className="text-[11px] text-slate-500">Total vacant beds</p>
-              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-slate-900">
-                {Number(occupancyData?.availableBeds || 0).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        {/* Revenue & Collections Chart */}
-        <Card>
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/50">
-                  <TrendingUp size={16} />
-                </div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Fee collections and billing
-                </h2>
-              </div>
-
-              <p className="mt-1 text-xs text-slate-500">
-                Monthly collected payments and invoiced amounts (LKR)
-              </p>
-            </div>
-
-            <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-mono text-emerald-800">
-              {financialData?.collectionRate ?? 0}% Collected
-            </span>
-          </div>
-
-          <div className="h-[280px] w-full">
+          <div className="h-[250px] w-full">
             {revenueChartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={revenueChartData}
-                  margin={{ top: 10, right: 8, left: 8, bottom: 0 }}
+                  margin={{ top: 10, right: 12, left: 10, bottom: 0 }}
                 >
                   <CartesianGrid
                     stroke="#f1f5f9"
-                    strokeDasharray="3 3"
+                    strokeDasharray="2 2"
                     vertical={false}
                   />
                   <XAxis
@@ -869,200 +649,256 @@ function AnalyticsDashboard() {
                   <YAxis
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#64748b", fontSize: 10 }}
+                    tick={{ fill: "#64748b", fontSize: 11 }}
                     tickFormatter={(val) => formatShortCurrency(val).replace("LKR ", "")}
                   />
-                  <Tooltip content={<CurrencyTooltip />} />
-                  <Legend />
+                  <Tooltip content={<ChartTooltipWrapper isCurrency />} />
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    name="Collected payments"
-                    stroke="#059669"
-                    strokeWidth={2.5}
-                    dot={{ r: 3.5, fill: "#059669" }}
+                    name="Collected"
+                    stroke="#0f172a"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: "#0f172a" }}
                     activeDot={{ r: 5 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="billed"
-                    name="Invoiced fees"
-                    stroke="#d97706"
-                    strokeWidth={2.5}
-                    dot={{ r: 3.5, fill: "#d97706" }}
+                    name="Billed"
+                    stroke="#94a3b8"
+                    strokeWidth={2}
+                    strokeDasharray="3 3"
+                    dot={{ r: 3, fill: "#94a3b8" }}
                     activeDot={{ r: 5 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState message="No payment transactions recorded yet." />
+              <EmptyState message="No payment transaction history recorded." />
             )}
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
-            <div className="rounded-lg bg-emerald-50/70 p-2.5 border border-emerald-100">
-              <p className="text-[11px] text-emerald-800">Collected amount</p>
-              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-emerald-950">
-                {formatShortCurrency(financialData?.totalCollectedPayments || 0)}
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-amber-50/70 p-2.5 border border-amber-100">
-              <p className="text-[11px] text-amber-800">Outstanding balance</p>
-              <p className="mt-0.5 text-lg font-semibold font-mono tabular-nums text-amber-950">
-                {formatShortCurrency(financialData?.outstandingBalance || 0)}
-              </p>
-            </div>
           </div>
         </Card>
       </section>
 
-      {/* Complaint Analysis & Financial Summary */}
-      <section className="grid gap-5 xl:grid-cols-5">
-        {/* Complaint Category Breakdown */}
-        <div className="xl:col-span-3">
-          <Card>
-            <div className="mb-4">
-              <h2 className="text-sm font-semibold text-slate-900">
-                Complaint analysis
-              </h2>
-              <p className="text-xs text-slate-500">
-                Maintenance tickets categorized by facility type
-              </p>
+      {/* Utility Consumption & Maintenance Categories */}
+      <section className="grid gap-5 xl:grid-cols-2">
+        {/* Utility Usage */}
+        <Card padding="p-5">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Daily Utility Consumption
+            </h2>
+            <p className="text-xs text-slate-500">
+              Today's recorded campus meter telemetry against daily allowances
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center gap-2 py-6 text-xs text-slate-500">
+              <RefreshCw size={13} className="animate-spin text-slate-600" />
+              Loading telemetry...
             </div>
+          ) : (
+            <div className="space-y-4">
+              {["Water", "Electricity"].map((type) => {
+                const item = monitoringSummary.find(
+                  (reading) => reading.utilityType === type
+                );
 
-            {complaintCategoryTotal > 0 ? (
-              <div className="grid items-center gap-4 md:grid-cols-2">
-                <div className="h-[250px] min-w-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={complaintChartData}
-                        dataKey="count"
-                        nameKey="category"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={3}
+                const value = Number(item?.total ?? 0);
+                const unit = item?.unit ?? (type === "Water" ? "L" : "kWh");
+                const percentage = Number(item?.percentage ?? 0);
+                const status = item?.status ?? "Normal";
+
+                const isWarning = status === "Warning" || status === "Exceeded";
+
+                return (
+                  <div
+                    key={type}
+                    className="rounded-lg border border-slate-100 bg-slate-50/70 p-3.5"
+                  >
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <div className="flex items-center gap-2">
+                        {type === "Water" ? (
+                          <Droplets size={14} className="text-slate-600" />
+                        ) : (
+                          <Zap size={14} className="text-slate-600" />
+                        )}
+                        <span className="font-medium text-slate-800">{type}</span>
+                      </div>
+
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                          isWarning
+                            ? "bg-rose-50 text-rose-700"
+                            : "bg-slate-200/80 text-slate-700"
+                        }`}
                       >
-                        {complaintChartData.map((entry, index) => (
-                          <Cell
-                            key={entry.category}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                        {status}
+                      </span>
+                    </div>
 
-                <div className="space-y-3">
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs text-slate-500">
-                      Total logged tickets
-                    </p>
-                    <p className="mt-0.5 text-2xl font-semibold font-mono tabular-nums text-slate-900">
-                      {complaintCategoryTotal.toLocaleString()}
-                    </p>
+                    <div className="flex items-baseline justify-between text-xs mb-2">
+                      <span className="text-lg font-semibold font-mono tabular-nums text-slate-900">
+                        {value.toLocaleString()}{" "}
+                        <span className="text-xs font-normal text-slate-500">{unit}</span>
+                      </span>
+                      <span className="font-mono text-slate-500">
+                        {percentage.toFixed(1)}% of allowance
+                      </span>
+                    </div>
+
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          isWarning ? "bg-rose-600" : "bg-slate-800"
+                        }`}
+                        style={{
+                          width: `${Math.min(Math.max(percentage, 0), 100)}%`,
+                        }}
+                      />
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
 
-                  {complaintChartData.map((item, index) => {
-                    const percentage = getPercentage(
-                      item.count,
-                      complaintCategoryTotal
-                    );
+        {/* Maintenance Categories */}
+        <Card padding="p-5">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Maintenance Tickets by Category
+            </h2>
+            <p className="text-xs text-slate-500">
+              Distribution of logged hostel facility complaints
+            </p>
+          </div>
 
-                    return (
-                      <div key={item.category}>
-                        <div className="mb-1 flex items-center justify-between gap-3 text-xs">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{
-                                backgroundColor: COLORS[index % COLORS.length],
-                              }}
-                            />
-                            <span className="text-slate-700">
-                              {item.category}
-                            </span>
-                          </div>
+          {complaintCategoryTotal > 0 ? (
+            <div className="grid items-center gap-6 sm:grid-cols-2">
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={complaintChartData}
+                      dataKey="count"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={52}
+                      outerRadius={78}
+                      paddingAngle={2}
+                    >
+                      {complaintChartData.map((entry, index) => (
+                        <Cell
+                          key={entry.category}
+                          fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<ChartTooltipWrapper />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-                          <span className="font-mono tabular-nums text-slate-900 font-medium">
-                            {item.count} ({percentage.toFixed(0)}%)
-                          </span>
-                        </div>
+              <div className="space-y-2">
+                {complaintChartData.map((item, index) => {
+                  const percentage = getPercentage(
+                    item.count,
+                    complaintCategoryTotal
+                  );
 
-                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                          <div
-                            className="h-full rounded-full transition-colors"
+                  return (
+                    <div key={item.category} className="text-xs">
+                      <div className="flex items-center justify-between text-slate-600 mb-1">
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className="h-2 w-2 rounded-full"
                             style={{
-                              width: `${percentage}%`,
-                              backgroundColor: COLORS[index % COLORS.length],
+                              backgroundColor:
+                                CATEGORY_COLORS[index % CATEGORY_COLORS.length],
                             }}
                           />
-                        </div>
+                          <span>{item.category}</span>
+                        </span>
+                        <span className="font-mono tabular-nums text-slate-900 font-medium">
+                          {item.count} ({percentage.toFixed(0)}%)
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <EmptyState message="No maintenance complaints logged in database." />
-            )}
-          </Card>
-        </div>
-
-        {/* Financial Details Summary */}
-        <div className="xl:col-span-2">
-          <Card>
-            <div className="mb-4 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/50">
-                <CircleDollarSign size={16} />
-              </div>
-
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">
-                  Financial summary
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Verified hostel billing records
-                </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-
-            <div className="space-y-3">
-              <FinancialRow
-                label="Total Invoiced"
-                value={formatCurrency(financialData?.totalBilledAmount || 0)}
-              />
-              <FinancialRow
-                label="Total Collected"
-                value={formatCurrency(financialData?.totalCollectedPayments || 0)}
-              />
-              <FinancialRow
-                label="Outstanding Dues"
-                value={formatCurrency(financialData?.outstandingBalance || 0)}
-                highlight
-                positive={(financialData?.outstandingBalance || 0) === 0}
-              />
-              <FinancialRow
-                label="Collection Efficiency"
-                value={`${(financialData?.collectionRate || 0).toFixed(1)}%`}
-              />
-              <FinancialRow
-                label="Settled Transactions"
-                value={`${financialData?.paymentsSummary?.successfulCount || 0} receipts`}
-              />
-            </div>
-          </Card>
-        </div>
+          ) : (
+            <EmptyState message="No maintenance complaints logged." />
+          )}
+        </Card>
       </section>
 
-      <p className="text-center text-[11px] font-mono text-slate-400">
-        SmartStay Operations &amp; Executive Telemetry Console
-      </p>
+      {/* Block Utility Table */}
+      {blockSummary.length > 0 && (
+        <section>
+          <Card padding="p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">
+                  Block Utility Breakdown
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Sub-metered water and electricity consumption across campus blocks
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-slate-400">24-hour log</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500 font-medium">
+                    <th className="px-3 py-2">Hostel Block</th>
+                    <th className="px-3 py-2">Water (L)</th>
+                    <th className="px-3 py-2">Electricity (kWh)</th>
+                    <th className="px-3 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {blockSummary.map((block, index) => (
+                    <tr
+                      key={block.blockName || index}
+                      className="hover:bg-slate-50/60 transition-colors"
+                    >
+                      <td className="px-3 py-2.5 font-medium text-slate-800">
+                        {block.blockName || "Unassigned"}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                        {Number(block.water || 0).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                        {Number(block.electricity || 0).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span
+                          className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${
+                            block.status === "Warning"
+                              ? "bg-rose-50 text-rose-700"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {block.status || "Normal"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </section>
+      )}
     </div>
   );
 }

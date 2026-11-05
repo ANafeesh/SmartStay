@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth, isDemoUser } from "../../context/AuthContext";
+import { changeUserPassword } from "../../services/authApi";
+import studentLogo from "../../assets/smartstay-mark.png";
+import Modal from "../../components/ui/Modal";
 import {
   User,
   Mail,
@@ -115,6 +118,66 @@ function Profile() {
   const [formData, setFormData] = useState(() => getInitialProfile(user));
   const [savedSuccessMsg, setSavedSuccessMsg] = useState(false);
 
+  // Real Password Change Modal State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState({ type: "", message: "" });
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordStatus({ type: "", message: "" });
+
+    if (!passwordForm.newPassword) {
+      setPasswordStatus({ type: "error", message: "Please enter a new password." });
+      return;
+    }
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordStatus({ type: "error", message: "Password must be at least 6 characters long." });
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordStatus({ type: "error", message: "New password and confirmation do not match." });
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const res = await changeUserPassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      if (res && res.success) {
+        setPasswordStatus({
+          type: "success",
+          message: res.message || "Password updated successfully!",
+        });
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        setTimeout(() => {
+          setShowPasswordModal(false);
+          setPasswordStatus({ type: "", message: "" });
+        }, 2000);
+      } else {
+        setPasswordStatus({
+          type: "error",
+          message: res?.message || "Failed to update password. Please check your current password.",
+        });
+      }
+    } catch (err) {
+      setPasswordStatus({
+        type: "error",
+        message: err?.message || "An error occurred while connecting to the server.",
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       const p = getInitialProfile(user);
@@ -207,8 +270,15 @@ function Profile() {
       {/* Profile Header */}
       <Card>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-smart-primary text-3xl font-bold text-white shadow-md">
-            {initials}
+          <div className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-sm overflow-hidden group">
+            <img
+              src={studentLogo}
+              alt="Student Portal Logo"
+              className="h-full w-full object-contain select-none transition-transform duration-300 group-hover:scale-105"
+            />
+            <span className="absolute bottom-1 right-1 rounded-md bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white shadow-2xs font-mono">
+              {initials}
+            </span>
           </div>
 
           <div className="flex-1">
@@ -376,17 +446,111 @@ function Profile() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  alert(
-                    "Password change will be connected to the backend later.",
-                  )
-                }
+                onClick={() => {
+                  setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+                  setPasswordStatus({ type: "", message: "" });
+                  setShowPasswordModal(true);
+                }}
               >
                 Change Password
               </Button>
             </div>
           </Card>
         </>
+      )}
+
+      {/* Real Connected Password Change Modal */}
+      {showPasswordModal && (
+        <Modal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+          title="Change Account Password"
+          subtitle="Update your password securely in the database"
+          size="md"
+        >
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            {passwordStatus.message && (
+              <div
+                className={`rounded-lg p-3 text-xs font-medium border ${
+                  passwordStatus.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                    : "bg-rose-50 text-rose-800 border-rose-200"
+                }`}
+              >
+                {passwordStatus.message}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Current Password
+              </label>
+              <input
+                type="password"
+                required
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
+                }
+                placeholder="Enter your current password"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                New Password
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+                }
+                placeholder="Minimum 6 characters"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+                }
+                placeholder="Re-enter your new password"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPasswordModal(false)}
+                disabled={passwordLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={passwordLoading}
+              >
+                {passwordLoading ? "Updating..." : "Update Password"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

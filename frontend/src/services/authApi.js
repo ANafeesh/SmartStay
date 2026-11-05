@@ -65,3 +65,13 @@ export async function logoutUser() {
     setAuthToken(null);
   }
 }
+
+/**
+ * Change authenticated user password via /api/auth/change-password
+ */
+export async function changeUserPassword(passwords) {
+  return await apiFetch("/auth/change-password", {
+    method: "PUT",
+    body: passwords,
+  });
+}
