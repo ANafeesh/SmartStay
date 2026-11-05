@@ -56,6 +56,10 @@ export const isDemoUser = (user) => {
   const username = (user.username || "").toLowerCase().trim();
   return (
     email === "student@smartstay.com" ||
+    email === "warden@smartstay.com" ||
+    email === "vendor@smartstay.com" ||
+    email === "maintenance@smartstay.com" ||
+    email === "executive@smartstay.com" ||
     email === "warden@campus.edu" ||
     email === "maintenance@campus.edu" ||
     email === "vendor@campusbites.edu" ||
@@ -233,16 +237,36 @@ export function AuthProvider({ children }) {
     }
 
     // Real credentials { identifier, password }
-    const response = await loginUser(credentials);
-    if (!response?.success) {
-      throw new Error(response?.message || "Login failed");
-    }
+    try {
+      const response = await loginUser(credentials);
+      if (!response?.success) {
+        throw new Error(response?.message || "Login failed");
+      }
 
-    const enriched = enrichUser(response.user);
-    setUser(enriched);
-    setIsLoggedIn(true);
-    localStorage.setItem("smartstay_user", JSON.stringify(response.user));
-    return enriched;
+      const enriched = enrichUser(response.user);
+      setUser(enriched);
+      setIsLoggedIn(true);
+      localStorage.setItem("smartstay_user", JSON.stringify(response.user));
+      return enriched;
+    } catch (err) {
+      // Offline fallback for demo personas
+      const ident = (credentials.identifier || "").toLowerCase().trim();
+      const demoMatch = DEMO_ACCOUNTS.find(
+        (acc) =>
+          acc.email.toLowerCase() === ident ||
+          (acc.username && acc.username.toLowerCase() === ident)
+      );
+      if (demoMatch && credentials.password === "password123") {
+        console.warn("Using offline demo fallback for:", ident, err.message);
+        const enriched = enrichUser({ ...demoMatch, isDemo: true }, true);
+        setUser(enriched);
+        setIsLoggedIn(true);
+        setAuthToken("demo-token-" + demoMatch.roleKey);
+        localStorage.setItem("smartstay_user", JSON.stringify(enriched));
+        return enriched;
+      }
+      throw err;
+    }
   };
 
   /**
