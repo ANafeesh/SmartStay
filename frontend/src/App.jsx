@@ -110,7 +110,7 @@ function App() {
               {/* Module 2 & 3: Student Portal */}
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={["student", "admin", "warden", "finance", "vendor"]} />
+                  <ProtectedRoute allowedRoles={["student", "admin", "warden", "finance", "executive", "vendor"]} />
                 }
               >
                 <Route path="/dashboard" element={<StudentDashboard />} />
