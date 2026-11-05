@@ -5,74 +5,52 @@ import {
   MapPin,
   Printer,
   X,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Truck,
+  ChefHat,
+  ShoppingBag,
 } from "lucide-react";
-import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
-
-const initialOrders = [
-  {
-    id: "ORD-9041",
-    studentName: "Student Resident",
-    regNo: "STD-2026-101",
-    phone: "+94 77 123 4567",
-    timeSlot: "12:30 PM - 01:00 PM (Lunch)",
-    deliveryLocation: "Hostel Block B - Room 204",
-    totalAmount: 1500,
-    status: "Placed",
-    createdAt: "12:10 PM",
-    paymentMethod: "Hostel Room Bill",
-    items: [
-      { name: "Chicken Kottu Roti (Full Portion)", qty: 1, price: 850 },
-      { name: "Special Egg Fried Rice & Chili Paste", qty: 1, price: 650 },
-    ],
-  },
-  {
-    id: "ORD-9038",
-    studentName: "M.I.M Izni",
-    regNo: "STD-2026-112",
-    phone: "+94 71 456 7890",
-    timeSlot: "12:30 PM - 01:00 PM (Lunch)",
-    deliveryLocation: "Hostel Block A - Foyer",
-    totalAmount: 950,
-    status: "Preparing",
-    createdAt: "11:55 AM",
-    paymentMethod: "Cash on Delivery",
-    items: [{ name: "Crispy Chicken Burger & Fries", qty: 1, price: 950 }],
-  },
-  {
-    id: "ORD-9025",
-    studentName: "A. Kanesalingam",
-    regNo: "STD-2026-069",
-    phone: "+94 75 998 1234",
-    timeSlot: "01:00 PM - 01:30 PM (Lunch)",
-    deliveryLocation: "Hostel Block B - Room 102",
-    totalAmount: 450,
-    status: "Out for Delivery",
-    createdAt: "11:40 AM",
-    paymentMethod: "Hostel Room Bill",
-    items: [{ name: "Iced Caramel Macchiato (500ml)", qty: 1, price: 450 }],
-  },
-  {
-    id: "ORD-9011",
-    studentName: "M.H.U Hafrath",
-    regNo: "STD-2026-102",
-    phone: "+94 76 332 5544",
-    timeSlot: "11:30 AM - 12:00 PM",
-    deliveryLocation: "Campus Gate 01 Hub",
-    totalAmount: 850,
-    status: "Delivered",
-    createdAt: "11:15 AM",
-    paymentMethod: "SmartStay Campus Wallet",
-    items: [{ name: "Chicken Kottu Roti (Full Portion)", qty: 1, price: 850 }],
-  },
-];
+import {
+  fetchVendorOrders,
+  updateOrderStatusApi,
+} from "../../services/vendorApi";
+import { saveFoodOrders } from "../../data/foodOrders";
 
 const statusSteps = ["Placed", "Preparing", "Out for Delivery", "Delivered"];
 
 export default function VendorOrders() {
-  const [orders, setOrders] = useState(() => readFoodOrders(initialOrders));
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedSlotFilter, setSelectedSlotFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOrderForKOT, setSelectedOrderForKOT] = useState(null);
+
+  const loadOrders = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchVendorOrders();
+      if (Array.isArray(data)) {
+        setOrders(data);
+      }
+    } catch (err) {
+      console.error("Failed to load orders:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const handleSync = () => setOrders(readFoodOrders(initialOrders));
+    loadOrders();
+
+    const handleSync = () => {
+      fetchVendorOrders().then((data) => {
+        if (Array.isArray(data)) setOrders(data);
+      });
+    };
+
     window.addEventListener("smartstay-food-orders-updated", handleSync);
     window.addEventListener("storage", handleSync);
     return () => {
@@ -80,20 +58,21 @@ export default function VendorOrders() {
       window.removeEventListener("storage", handleSync);
     };
   }, []);
-  const [selectedStatus, setSelectedStatus] = useState("All");
-  const [selectedSlotFilter, setSelectedSlotFilter] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedOrderForKOT, setSelectedOrderForKOT] = useState(null);
 
-  const handleUpdateStatus = (orderId, newStatus) => {
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    // Optimistic UI update
     const updatedOrders = orders.map((order) =>
-      order.id === orderId ? { ...order, status: newStatus } : order,
+      order.id === orderId || order._id === orderId || order.orderNo === orderId
+        ? { ...order, status: newStatus }
+        : order,
     );
     setOrders(updatedOrders);
+    saveFoodOrders(updatedOrders);
+
     try {
-      saveFoodOrders(updatedOrders);
+      await updateOrderStatusApi(orderId, newStatus);
     } catch (error) {
-      console.error("Unable to save food order status.", error);
+      console.error("Unable to update food order status on server:", error);
     }
   };
 
@@ -103,9 +82,10 @@ export default function VendorOrders() {
     const matchesSlot =
       selectedSlotFilter === "All" || (o.timeSlot && o.timeSlot.includes(selectedSlotFilter));
     const matchesSearch =
-      o.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.regNo?.toLowerCase().includes(searchTerm.toLowerCase());
+      (o.id || o.orderNo || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (o.studentName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (o.regNo || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (o.deliveryLocation || "").toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSlot && matchesSearch;
   });
 
@@ -128,8 +108,17 @@ export default function VendorOrders() {
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> &middot; Order Tracking &amp; Delivery Management</p>
+            Outlet: <strong className="text-slate-800">Campus Diner & Cafe</strong> &middot; Order Tracking &amp; Delivery Management
+          </p>
         </div>
+
+        <button
+          onClick={loadOrders}
+          className="inline-flex items-center gap-2 rounded-2xl bg-white border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
+          <span>Refresh Queue</span>
+        </button>
       </div>
 
       {/* Metrics Row */}
@@ -147,9 +136,9 @@ export default function VendorOrders() {
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
-          <span className="text-xs font-semibold text-slate-500">Out for Gate Delivery</span>
+          <span className="text-xs font-semibold text-slate-500">Out for Delivery</span>
           <p className="text-2xl font-black text-purple-600 mt-1">{countOut}</p>
-          <span className="text-[11px] text-slate-400">Rider Dispatched</span>
+          <span className="text-[11px] text-slate-400">Courier Dispatched</span>
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-2xs">
@@ -199,9 +188,9 @@ export default function VendorOrders() {
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                 selectedStatus === st
-                  ? "bg-blue-600 text-white shadow-xs"
+                  ? "bg-blue-600 text-white shadow-2xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -211,193 +200,164 @@ export default function VendorOrders() {
         </div>
       </div>
 
-      {/* Orders Queue Cards */}
-      <div className="space-y-4">
-        {filteredOrders.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-12 text-center shadow-2xs">
-            <p className="text-xs text-slate-400">No orders found matching the filter criteria.</p>
-          </div>
-        ) : (
-          filteredOrders.map((order) => (
-            <div
-              key={order.id}
-              className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs space-y-4 hover:border-slate-300 transition"
-            >
-              {/* Order Top Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-4">
+      {/* Orders List */}
+      {isLoading ? (
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center text-slate-400 flex items-center justify-center gap-2">
+          <RefreshCw size={18} className="animate-spin" />
+          <span className="text-sm font-medium">Fetching real-time orders from database...</span>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center text-slate-400">
+          <ShoppingBag size={36} className="mx-auto mb-2 text-slate-300" />
+          <p className="text-sm font-semibold text-slate-600">No orders found in queue.</p>
+          <p className="text-xs text-slate-400 mt-1">Orders placed by hostel residents will appear here automatically.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {filteredOrders.map((order) => {
+            const currentStepIdx = statusSteps.indexOf(order.status);
+
+            return (
+              <div
+                key={order.id || order.orderNo}
+                className="flex flex-col justify-between rounded-3xl border border-slate-200/80 bg-white p-5 shadow-2xs hover:border-slate-300 transition"
+              >
                 <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-sm font-bold text-blue-600">
-                      {order.id}
+                  {/* Order Top Bar */}
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-black text-slate-900">
+                          {order.id || order.orderNo}
+                        </span>
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 font-mono">
+                          {order.createdAt || "Just now"}
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-800 mt-0.5">
+                        {order.studentName} ({order.regNo})
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => setSelectedOrderForKOT(order)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
+                      title="Print KOT Slip"
+                    >
+                      <Printer size={13} />
+                      <span>KOT</span>
+                    </button>
+                  </div>
+
+                  {/* Delivery Info */}
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                    <span className="flex items-center gap-1 font-semibold text-blue-600">
+                      <Clock size={13} />
+                      {order.timeSlot}
                     </span>
-                    <span className="text-slate-300">•</span>
-                    <h3 className="text-sm font-bold text-slate-900">
-                      {order.studentName}
-                    </h3>
-                    <span className="font-mono text-xs text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded-lg">
-                      {order.regNo}
+                    <span className="flex items-center gap-1 font-semibold text-slate-700">
+                      <MapPin size={13} />
+                      {order.deliveryLocation}
                     </span>
                   </div>
 
-                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                    <Clock size={13} className="text-blue-600" />
-                    <span>Slot: <strong>{order.timeSlot}</strong></span>
-                    <span>•</span>
-                    <span>Received: {order.createdAt}</span>
-                  </p>
-
-                  <p className="text-xs text-slate-600 mt-0.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-rose-500" />
-                    <span>Drop-off: <strong>{order.deliveryLocation || "Hostel Block B Room 204"}</strong></span>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-start">
-                  <button
-                    onClick={() => setSelectedOrderForKOT(order)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
-                  >
-                    <Printer size={13} />
-                    <span>Print KOT Slip</span>
-                  </button>
-
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold border ${
-                      order.status === "Delivered"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                        : order.status === "Out for Delivery"
-                          ? "bg-purple-50 text-purple-700 border-purple-200"
-                          : order.status === "Preparing"
-                            ? "bg-blue-50 text-blue-700 border-blue-200"
-                            : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Items List */}
-              <div className="grid sm:grid-cols-2 gap-4 text-xs">
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Order Items Breakdown
-                  </span>
-                  <div className="space-y-1">
-                    {order.items?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-slate-800 font-medium">
-                        <span>{item.qty}x {item.name}</span>
-                        <span className="font-mono">LKR {(item.price * item.qty).toLocaleString()}</span>
+                  {/* Order Items List */}
+                  <div className="mt-3 rounded-2xl bg-slate-50/70 p-3 text-xs space-y-1.5">
+                    {order.items?.map((it, idx) => (
+                      <div key={idx} className="flex items-center justify-between">
+                        <span className="text-slate-800 font-medium">
+                          <strong>{it.qty}x</strong> {it.name}
+                        </span>
+                        <span className="text-slate-600 font-mono">
+                          LKR {Number(it.price * it.qty).toLocaleString()}
+                        </span>
                       </div>
                     ))}
+                    <div className="border-t border-slate-200/60 pt-1.5 flex items-center justify-between font-bold text-slate-900">
+                      <span>Total Amount ({order.paymentMethod})</span>
+                      <span className="text-sm font-black">
+                        LKR {Number(order.totalAmount).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="sm:border-l sm:border-slate-100 sm:pl-4 space-y-1">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Settlement & Total
-                  </span>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Payment Method:</span>
-                    <span className="font-semibold text-slate-800">{order.paymentMethod || "Room Bill"}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-900 font-bold text-sm pt-1 border-t border-slate-100">
-                    <span>Grand Total:</span>
-                    <span className="text-blue-600 font-black">LKR {(order.totalAmount || 0).toLocaleString()}</span>
+                {/* Status Progression Controls */}
+                <div className="mt-4 pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between gap-1">
+                    {statusSteps.map((step, idx) => {
+                      const isCompleted = idx <= currentStepIdx;
+                      const isCurrent = idx === currentStepIdx;
+
+                      return (
+                        <button
+                          key={step}
+                          onClick={() => handleUpdateStatus(order.id || order.orderNo, step)}
+                          className={`flex-1 rounded-xl py-2 px-1 text-[11px] font-bold text-center transition cursor-pointer ${
+                            isCurrent
+                              ? "bg-blue-600 text-white shadow-xs"
+                              : isCompleted
+                              ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                          }`}
+                        >
+                          {step}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Status Update Stepper Buttons */}
-              <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                  Transition Order Status:
-                </span>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {statusSteps.map((step) => (
-                    <button
-                      key={step}
-                      onClick={() => handleUpdateStatus(order.id, step)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
-                        order.status === step
-                          ? "bg-slate-900 text-white shadow-xs"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
-                    >
-                      {step}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Kitchen Order Ticket (KOT) Modal */}
+      {/* KOT (Kitchen Order Ticket) Modal Slip */}
       {selectedOrderForKOT && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between border-b border-dashed border-slate-300 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 font-mono text-xs text-slate-900 space-y-3">
+            <div className="flex items-center justify-between border-b-2 border-dashed border-slate-300 pb-3">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Campus Diner & Cafe</h3>
-                <p className="text-xs text-slate-500 font-mono">Kitchen Order Ticket (KOT)</p>
+                <h3 className="font-bold text-sm">CAMPUS DINER & CAFE</h3>
+                <p className="text-[10px] text-slate-500">Kitchen Order Ticket (KOT)</p>
               </div>
               <button
                 onClick={() => setSelectedOrderForKOT(null)}
-                className="rounded-xl p-1 text-slate-400 hover:bg-slate-100"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="text-xs space-y-1 font-mono text-slate-700">
-              <div className="flex justify-between">
-                <span>Order No:</span>
-                <span className="font-bold">{selectedOrderForKOT.id}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Student:</span>
-                <span className="font-bold">{selectedOrderForKOT.studentName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Reg No:</span>
-                <span>{selectedOrderForKOT.regNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Delivery Slot:</span>
-                <span className="font-bold">{selectedOrderForKOT.timeSlot}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Drop-off:</span>
-                <span>{selectedOrderForKOT.deliveryLocation}</span>
-              </div>
+            <div className="space-y-1 text-[11px]">
+              <p>Order: <strong>{selectedOrderForKOT.id || selectedOrderForKOT.orderNo}</strong></p>
+              <p>Time Slot: {selectedOrderForKOT.timeSlot}</p>
+              <p>Student: {selectedOrderForKOT.studentName} ({selectedOrderForKOT.regNo})</p>
+              <p>Drop Zone: {selectedOrderForKOT.deliveryLocation}</p>
             </div>
 
-            <div className="border-t border-b border-dashed border-slate-300 py-3 space-y-2 text-xs">
-              {selectedOrderForKOT.items?.map((item, idx) => (
+            <div className="border-t-2 border-dashed border-slate-300 pt-2 space-y-1">
+              <span className="font-bold text-[10px] block uppercase">Items to Prepare:</span>
+              {selectedOrderForKOT.items?.map((it, idx) => (
                 <div key={idx} className="flex justify-between font-bold">
-                  <span>{item.qty}x {item.name}</span>
-                  <span>LKR {item.price * item.qty}</span>
+                  <span>{it.qty}x {it.name}</span>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-between text-sm font-bold">
+            <div className="border-t-2 border-dashed border-slate-300 pt-2 flex justify-between font-bold text-sm">
               <span>Total:</span>
-              <span>LKR {selectedOrderForKOT.totalAmount?.toLocaleString()}</span>
+              <span>LKR {Number(selectedOrderForKOT.totalAmount).toLocaleString()}</span>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white hover:bg-blue-500 cursor-pointer shadow-xs"
-              >
-                <Printer size={14} />
-                <span>Print Kitchen Slip</span>
-              </button>
-            </div>
+            <button
+              onClick={() => window.print()}
+              className="w-full mt-2 rounded-2xl bg-blue-600 py-2.5 text-xs font-bold text-white hover:bg-blue-500 transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Printer size={15} />
+              <span>Print KOT Slip</span>
+            </button>
           </div>
         </div>
       )}
