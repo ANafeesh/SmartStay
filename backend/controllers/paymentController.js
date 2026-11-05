@@ -185,10 +185,10 @@ const verifyOtpAndCompletePayment = async (req, res) => {
     otpRecord.used = true;
     await otpRecord.save();
 
-    // Prepare transaction reference and receipt number
+    // Prepare transaction reference and receipt number with guaranteed unique timestamps
     const totalAmount = Number(otpRecord.amount || bill.amount || 0) + Number(bill.lateFee || 0);
-    const txnRef = `TXN-LK${Math.floor(1000000 + Math.random() * 9000000)}`;
-    const receiptNo = `RCT-${Math.floor(10000 + Math.random() * 90000)}`;
+    const txnRef = `TXN-LK${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+    const receiptNo = `RCT-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
     const studentIdVal = student.id || student._id || req.user?._id || "STD-STUDENT";
     const studentRegNo = student.studentId || student.regNo || student.registrationNumber || req.user?.studentId || "STD-2026-89";
@@ -227,35 +227,71 @@ const verifyOtpAndCompletePayment = async (req, res) => {
       }
     }
 
-    // Record Payment in DB
-    const payment = await Payment.create({
-      billId: dbBill ? dbBill._id : String(billId),
-      studentId: studentIdVal,
-      studentName: studentNameVal,
-      studentRegNo: studentRegNo,
-      studentEmail: studentEmail,
-      hostelRoom: hostelRoomVal,
-      billTitle: bill.title || "Hostel Fee",
-      amount: totalAmount,
-      lateFee: bill.lateFee || 0,
-      method: method || "Credit / Debit Card (Visa)",
-      reference: txnRef,
-      receiptNo: receiptNo,
-      status: "Success",
-    });
+    // Record Payment in DB with unique key collision protection
+    let payment;
+    try {
+      payment = await Payment.create({
+        billId: dbBill ? dbBill._id : String(billId),
+        studentId: studentIdVal,
+        studentName: studentNameVal,
+        studentRegNo: studentRegNo,
+        studentEmail: studentEmail,
+        hostelRoom: hostelRoomVal,
+        billTitle: bill.title || "Hostel Fee",
+        amount: totalAmount,
+        lateFee: bill.lateFee || 0,
+        method: method || "Credit / Debit Card (Visa)",
+        reference: txnRef,
+        receiptNo: receiptNo,
+        status: "Success",
+      });
+    } catch (payErr) {
+      const fallbackTxn = `TXN-LK${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+      payment = await Payment.create({
+        billId: dbBill ? dbBill._id : String(billId),
+        studentId: studentIdVal,
+        studentName: studentNameVal,
+        studentRegNo: studentRegNo,
+        studentEmail: studentEmail,
+        hostelRoom: hostelRoomVal,
+        billTitle: bill.title || "Hostel Fee",
+        amount: totalAmount,
+        lateFee: bill.lateFee || 0,
+        method: method || "Credit / Debit Card (Visa)",
+        reference: fallbackTxn,
+        receiptNo: receiptNo,
+        status: "Success",
+      });
+    }
 
-    // Record Receipt in DB
-    const receipt = await Receipt.create({
-      receiptNo: receiptNo,
-      verificationCode: crypto.randomBytes(24).toString("hex"),
-      paymentId: payment._id,
-      billId: dbBill ? dbBill._id : String(billId),
-      studentId: studentIdVal,
-      studentName: studentNameVal,
-      billTitle: bill.title || "Hostel Fee",
-      amount: totalAmount,
-      method: payment.method,
-    });
+    // Record Receipt in DB with unique receiptNo collision protection
+    let receipt;
+    try {
+      receipt = await Receipt.create({
+        receiptNo: receiptNo,
+        verificationCode: crypto.randomBytes(24).toString("hex"),
+        paymentId: payment._id,
+        billId: dbBill ? dbBill._id : String(billId),
+        studentId: studentIdVal,
+        studentName: studentNameVal,
+        billTitle: bill.title || "Hostel Fee",
+        amount: totalAmount,
+        method: payment.method,
+      });
+    } catch (rcptErr) {
+      const fallbackRcpt = `RCT-${Date.now()}-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+      receipt = await Receipt.create({
+        receiptNo: fallbackRcpt,
+        verificationCode: crypto.randomBytes(24).toString("hex"),
+        paymentId: payment._id,
+        billId: dbBill ? dbBill._id : String(billId),
+        studentId: studentIdVal,
+        studentName: studentNameVal,
+        billTitle: bill.title || "Hostel Fee",
+        amount: totalAmount,
+        method: payment.method,
+      });
+    }
 
     payment.receiptId = receipt._id;
     await payment.save();
