@@ -210,25 +210,34 @@ function AnalyticsDashboard() {
       setLoading(true);
       setError("");
 
-      const [
-        summaryRes,
-        blocksRes,
-        occupancyRes,
-        financialRes,
-        complaintsRes,
-      ] = await Promise.all([
+      // Execute non-dependent queries with individual resolution for faster initial rendering
+      getMonitoringSummary().then((res) => {
+        if (res?.data) setMonitoringSummary(Array.isArray(res.data) ? res.data : []);
+      }).catch(() => {});
+
+      getBlockSummary().then((res) => {
+        if (res?.data) setBlockSummary(Array.isArray(res.data) ? res.data : []);
+      }).catch(() => {});
+
+      getOccupancyAnalytics().then((res) => {
+        if (res?.data) setOccupancyData(res.data);
+      }).catch(() => {});
+
+      getFinancialAnalytics().then((res) => {
+        if (res?.data) setFinancialData(res.data);
+      }).catch(() => {});
+
+      getComplaintAnalytics().then((res) => {
+        if (res?.data) setComplaintData(res.data);
+      }).catch(() => {});
+
+      await Promise.allSettled([
         getMonitoringSummary(),
         getBlockSummary(),
         getOccupancyAnalytics(),
         getFinancialAnalytics(),
         getComplaintAnalytics(),
       ]);
-
-      setMonitoringSummary(Array.isArray(summaryRes?.data) ? summaryRes.data : []);
-      setBlockSummary(Array.isArray(blocksRes?.data) ? blocksRes.data : []);
-      setOccupancyData(occupancyRes?.data || null);
-      setFinancialData(financialRes?.data || null);
-      setComplaintData(complaintsRes?.data || null);
     } catch (err) {
       console.error("Dashboard data load error:", err);
       setError(err?.message || "Failed to load live analytics records.");

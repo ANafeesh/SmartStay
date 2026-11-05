@@ -1,7 +1,7 @@
 /**
  * Centralized API Client for SmartStay
  * Supports environment-aware base URL, automatic JWT Bearer header attachment,
- * and cross-origin cookie credentials.
+ * cross-origin cookie credentials, and configurable fetch timeout.
  */
 
 export const API_BASE_URL =
@@ -34,7 +34,7 @@ export function setAuthToken(token) {
 }
 
 /**
- * Universal fetch wrapper with authentication and error handling
+ * Universal fetch wrapper with authentication, timeout, and error handling
  */
 export async function apiFetch(endpoint, options = {}) {
   const url = endpoint.startsWith("http")
@@ -61,13 +61,30 @@ export async function apiFetch(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+  // Fast AbortController timeout (default 6 seconds) to prevent frozen UI spinning
+  const timeoutMs = options.timeout ?? 6000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   const fetchOptions = {
     ...options,
     headers,
     credentials: options.credentials || "include",
+    signal: options.signal || controller.signal,
   };
 
-  const response = await fetch(url, fetchOptions);
+  let response;
+  try {
+    response = await fetch(url, fetchOptions);
+  } catch (netErr) {
+    clearTimeout(timeoutId);
+    if (netErr.name === "AbortError") {
+      throw new Error(`Request to ${endpoint} timed out after ${timeoutMs}ms.`);
+    }
+    throw netErr;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // Parse JSON response
   let data;

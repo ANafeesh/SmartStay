@@ -67,51 +67,65 @@ function SmartMonitoring() {
   const fetchData = async () => {
     try {
       setError(null);
-      const [sumRes, blkRes, trendRes, altRes] = await Promise.all([
-        getMonitoringSummary().catch(() => ({ data: [] })),
-        getBlockSummary().catch(() => ({ data: [] })),
-        getTelemetryTrend({ period: "24h" }).catch(() => ({
-          data: { timeline: [] },
-        })),
-        getMonitoringAlerts().catch(() => ({ data: [] })),
+
+      getMonitoringSummary()
+        .then((sumRes) => {
+          if (sumRes?.data) setSummaryData(sumRes.data);
+          setLoading(false);
+        })
+        .catch(() => {});
+
+      getBlockSummary()
+        .then((blkRes) => {
+          if (blkRes?.data) setBlocksData(blkRes.data);
+        })
+        .catch(() => {});
+
+      getTelemetryTrend({ period: "24h" })
+        .then((trendRes) => {
+          const rawTimeline = trendRes?.data?.timeline || [];
+          const groupedMap = {};
+          rawTimeline.forEach((item) => {
+            const timeKey = item.time || new Date(item.recordedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+            if (!groupedMap[timeKey]) {
+              groupedMap[timeKey] = { time: timeKey, water: 0, electricity: 0 };
+            }
+            if (item.utilityType === "Water") {
+              groupedMap[timeKey].water += Number(item.value || 0);
+            } else if (item.utilityType === "Electricity") {
+              groupedMap[timeKey].electricity += Number(item.value || 0);
+            }
+          });
+          setTimelineData(Object.values(groupedMap));
+        })
+        .catch(() => {});
+
+      getMonitoringAlerts()
+        .then((altRes) => {
+          let ackList = [];
+          let resList = [];
+          try {
+            ackList = JSON.parse(localStorage.getItem("smartstay_acknowledged_alerts") || "[]");
+            resList = JSON.parse(localStorage.getItem("smartstay_resolved_alerts") || "[]");
+          } catch {}
+          const ackSet = new Set(ackList);
+          const resSet = new Set(resList);
+
+          const loadedAlerts = (altRes.data || []).map((a) => {
+            if (resSet.has(a.id)) return { ...a, status: "Resolved" };
+            if (ackSet.has(a.id)) return { ...a, status: "Acknowledged" };
+            return a;
+          });
+          setAlerts(loadedAlerts);
+        })
+        .catch(() => {});
+
+      await Promise.allSettled([
+        getMonitoringSummary(),
+        getBlockSummary(),
+        getTelemetryTrend({ period: "24h" }),
+        getMonitoringAlerts(),
       ]);
-
-      setSummaryData(sumRes.data || []);
-      setBlocksData(blkRes.data || []);
-
-      let ackList = [];
-      let resList = [];
-      try {
-        ackList = JSON.parse(localStorage.getItem("smartstay_acknowledged_alerts") || "[]");
-        resList = JSON.parse(localStorage.getItem("smartstay_resolved_alerts") || "[]");
-      } catch {
-        // fallback
-      }
-      const ackSet = new Set(ackList);
-      const resSet = new Set(resList);
-
-      const loadedAlerts = (altRes.data || []).map((a) => {
-        if (resSet.has(a.id)) return { ...a, status: "Resolved" };
-        if (ackSet.has(a.id)) return { ...a, status: "Acknowledged" };
-        return a;
-      });
-      setAlerts(loadedAlerts);
-
-      const rawTimeline = trendRes?.data?.timeline || [];
-      const groupedMap = {};
-      rawTimeline.forEach((item) => {
-        const timeKey = item.time || new Date(item.recordedAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-        if (!groupedMap[timeKey]) {
-          groupedMap[timeKey] = { time: timeKey, water: 0, electricity: 0 };
-        }
-        if (item.utilityType === "Water") {
-          groupedMap[timeKey].water += Number(item.value || 0);
-        } else if (item.utilityType === "Electricity") {
-          groupedMap[timeKey].electricity += Number(item.value || 0);
-        }
-      });
-
-      setTimelineData(Object.values(groupedMap));
     } catch (err) {
       console.error("Failed to load smart monitoring data:", err);
       setError(err.message || "Failed to load smart monitoring telemetry.");

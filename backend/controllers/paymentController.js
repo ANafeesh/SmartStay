@@ -795,22 +795,29 @@ const verifyReceipt = async (req, res) => {
 const getNotifications = async (req, res) => {
   try {
     let filter = {};
+    const userRole = (req.user?.role || "").toLowerCase().trim();
+    const identifiers = new Set();
+
     if (req.query.recipientId) {
+      identifiers.add(String(req.query.recipientId).trim());
+    }
+
+    if (req.user && userRole !== "admin") {
+      if (req.user._id) identifiers.add(String(req.user._id));
+      if (req.user.studentId) identifiers.add(String(req.user.studentId).trim());
+      if (req.user.registrationNumber) identifiers.add(String(req.user.registrationNumber).trim());
+      if (req.user.email) identifiers.add(String(req.user.email).toLowerCase().trim());
+      if (req.user.name) identifiers.add(String(req.user.name).trim());
+    }
+
+    if (identifiers.size > 0) {
+      filter.recipientId = { $in: Array.from(identifiers) };
+    } else if (req.query.recipientId) {
       filter.recipientId = req.query.recipientId;
-    } else if (req.user) {
-      const userRole = (req.user.role || "").toLowerCase().trim();
-      if (userRole !== "admin") {
-        const identifiers = [
-          String(req.user._id),
-          req.user.studentId,
-          req.user.registrationNumber,
-          req.user.email,
-        ].filter(Boolean);
-        filter.recipientId = { $in: identifiers };
-      }
-    } else {
+    } else if (!req.user || userRole !== "admin") {
       return res.status(400).json({ success: false, message: "recipientId is required." });
     }
+
     if (req.query.unread === "true") filter.readAt = null;
     const notifications = await PaymentNotification.find(filter).sort({ createdAt: -1 });
     return res.status(200).json({ success: true, count: notifications.length, data: notifications });
@@ -837,13 +844,16 @@ const createNotification = async (req, res) => {
 
 const markNotificationRead = async (req, res) => {
   try {
-    const query = isValidObjectId(req.params.id) ? { _id: req.params.id } : { referenceId: req.params.id };
+    const idParam = req.params.id;
+    const query = isValidObjectId(idParam) ? { _id: idParam } : { referenceId: idParam };
     const notification = await PaymentNotification.findOneAndUpdate(
       query,
       { $set: { readAt: new Date() } },
       { new: true },
     );
-    if (!notification) return res.status(404).json({ success: false, message: "Notification not found." });
+    if (!notification) {
+      return res.status(200).json({ success: true, message: "Notification marked as read." });
+    }
     return res.status(200).json({ success: true, data: notification });
   } catch (error) {
     return handleError(res, error, "Failed to update notification.");
@@ -853,20 +863,24 @@ const markNotificationRead = async (req, res) => {
 const markAllNotificationsRead = async (req, res) => {
   try {
     let filter = { readAt: null };
+    const userRole = (req.user?.role || "").toLowerCase().trim();
+    const identifiers = new Set();
+
     if (req.query.recipientId) {
-      filter.recipientId = req.query.recipientId;
-    } else if (req.user) {
-      const userRole = (req.user.role || "").toLowerCase().trim();
-      if (userRole !== "admin") {
-        const identifiers = [
-          String(req.user._id),
-          req.user.studentId,
-          req.user.registrationNumber,
-          req.user.email,
-        ].filter(Boolean);
-        filter.recipientId = { $in: identifiers };
-      }
+      identifiers.add(String(req.query.recipientId).trim());
     }
+
+    if (req.user && userRole !== "admin") {
+      if (req.user._id) identifiers.add(String(req.user._id));
+      if (req.user.studentId) identifiers.add(String(req.user.studentId).trim());
+      if (req.user.registrationNumber) identifiers.add(String(req.user.registrationNumber).trim());
+      if (req.user.email) identifiers.add(String(req.user.email).toLowerCase().trim());
+    }
+
+    if (identifiers.size > 0) {
+      filter.recipientId = { $in: Array.from(identifiers) };
+    }
+
     await PaymentNotification.updateMany(filter, { $set: { readAt: new Date() } });
     return res.status(200).json({ success: true, message: "All notifications marked as read." });
   } catch (error) {
@@ -876,9 +890,9 @@ const markAllNotificationsRead = async (req, res) => {
 
 const deleteNotification = async (req, res) => {
   try {
-    const query = isValidObjectId(req.params.id) ? { _id: req.params.id } : { referenceId: req.params.id };
-    const notification = await PaymentNotification.findOneAndDelete(query);
-    if (!notification) return res.status(404).json({ success: false, message: "Notification not found." });
+    const idParam = req.params.id;
+    const query = isValidObjectId(idParam) ? { _id: idParam } : { referenceId: idParam };
+    await PaymentNotification.findOneAndDelete(query);
     return res.status(200).json({ success: true, message: "Notification deleted." });
   } catch (error) {
     return handleError(res, error, "Failed to delete notification.");

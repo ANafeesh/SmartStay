@@ -151,7 +151,7 @@ function NotificationsCenter() {
         (n) => n.status === "Unread"
       ).length;
       localStorage.setItem("smartstay_executive_unread_count", String(unreadCount));
-      window.dispatchEvent(new Event("smartstay-notifications-updated"));
+      window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: { unreadCount } }));
     } catch (err) {
       console.error("Failed to load notifications:", err);
       setError(err.message || "Failed to load notifications.");
@@ -217,7 +217,7 @@ function NotificationsCenter() {
       );
       const remainingUnread = updated.filter((item) => item.status === "Unread").length;
       localStorage.setItem("smartstay_executive_unread_count", String(remainingUnread));
-      window.dispatchEvent(new Event("smartstay-notifications-updated"));
+      window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: { unreadCount: remainingUnread, allRead: remainingUnread === 0 } }));
       return updated;
     });
   };

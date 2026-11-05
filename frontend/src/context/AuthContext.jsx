@@ -82,6 +82,7 @@ export const enrichUser = (backendUser, isExplicitDemo = false) => {
   const roleKey = normalizeRole(backendUser.role || backendUser.roleKey);
   const isDemo = isExplicitDemo || backendUser.isDemo || isDemoUser(backendUser);
 
+  // ONLY load demo presets if the user is an explicit demo persona! Fresh registered accounts are 100% clean.
   const demoFallback = isDemo ? getDemoAccount(roleKey) : null;
   const name = backendUser.name || (isDemo ? demoFallback?.name : "User") || "User";
 
@@ -94,10 +95,29 @@ export const enrichUser = (backendUser, isExplicitDemo = false) => {
       .substring(0, 2)
       .toUpperCase() || (isDemo ? "SA" : "U");
 
+  if (!isDemo) {
+    return {
+      ...backendUser,
+      isDemo: false,
+      name,
+      roleKey,
+      role: backendUser.role || roleKey,
+      roleBadge: getRoleBadge(backendUser.role || roleKey),
+      initials,
+      studentId: backendUser.studentId || backendUser.registrationNumber || "",
+      registrationNumber: backendUser.registrationNumber || backendUser.studentId || "",
+      phone: backendUser.phone || "",
+      room: backendUser.room || "",
+      building: backendUser.building || "",
+      faculty: backendUser.faculty || "",
+      department: backendUser.department || "",
+    };
+  }
+
   return {
     ...(demoFallback || {}),
     ...backendUser,
-    isDemo: !!isDemo,
+    isDemo: true,
     name,
     roleKey,
     role: backendUser.role || roleKey,
@@ -106,17 +126,17 @@ export const enrichUser = (backendUser, isExplicitDemo = false) => {
     studentId:
       backendUser.studentId ||
       backendUser.registrationNumber ||
-      (isDemo ? demoFallback?.studentId : "") ||
+      demoFallback?.studentId ||
       "",
     registrationNumber:
       backendUser.registrationNumber ||
       backendUser.studentId ||
       "",
-    phone: backendUser.phone || (isDemo ? demoFallback?.phone : "") || "",
-    room: backendUser.room || (isDemo ? demoFallback?.room : "") || "",
-    building: backendUser.building || (isDemo ? demoFallback?.building : "") || "",
-    faculty: backendUser.faculty || (isDemo ? demoFallback?.faculty : "") || "",
-    department: backendUser.department || (isDemo ? demoFallback?.department : "") || "",
+    phone: backendUser.phone || demoFallback?.phone || "",
+    room: backendUser.room || demoFallback?.room || "",
+    building: backendUser.building || demoFallback?.building || "",
+    faculty: backendUser.faculty || demoFallback?.faculty || "",
+    department: backendUser.department || demoFallback?.department || "",
   };
 };
 
