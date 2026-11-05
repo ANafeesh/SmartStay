@@ -62,7 +62,7 @@ const navigationGroups = [
   {
     title: "Hostel Management",
     role: "warden",
-    allowedRoles: ["warden", "admin"],
+    allowedRoles: ["warden", "admin", "maintenance"],
     items: [
       { name: "Hostel Dashboard", href: "/hostel", icon: Building },
       { name: "Buildings", href: "/hostel/buildings", icon: Building },
@@ -70,21 +70,7 @@ const navigationGroups = [
       { name: "Allocations", href: "/hostel/allocations", icon: Users },
       { name: "Transfers", href: "/hostel/transfers", icon: ArrowLeftRight },
       { name: "Occupancy", href: "/hostel/occupancy", icon: BarChart3 },
-      { name: "Student Complaints", href: "/complaints", icon: AlertTriangle },
-    ],
-  },
-  {
-    title: "Maintenance",
-    role: "maintenance",
-    allowedRoles: ["maintenance", "warden", "admin"],
-    items: [
-      { name: "Student Complaints", href: "/maintenance", icon: ClipboardList },
-      {
-        name: "Submit a Complaint",
-        href: "/maintenance/submit-complaint",
-        icon: Wrench,
-        allowedRoles: ["student"],
-      },
+      { name: "Student Complaints", href: "/maintenance", icon: AlertTriangle },
     ],
   },
   {

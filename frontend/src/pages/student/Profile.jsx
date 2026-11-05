@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   User,
@@ -14,23 +14,28 @@ import {
   Edit3,
   Save,
   X,
+  BedDouble,
+  CheckCircle2,
 } from "lucide-react";
 
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
+import { getMyAllocation } from "../../services/transferService";
 
 const demoStudentProfile = {
-  name: "Student Account",
-  studentId: "STD-2026-101",
+  name: "Ahamed Nafeesh",
+  studentId: "STD-2026-090",
   email: "student@smartstay.com",
   phone: "+94 77 123 4567",
   address: "Campus Student Residence Block B",
   course: "BICT (Hons)",
   faculty: "Faculty of Applied Sciences",
   year: "Second Year",
-  hostel: "Block A",
-  room: "Room 101",
+  hostel: "Block B",
+  room: "B-204",
+  bed: "Bed 02",
+  allocationStatus: "Confirmed",
   joinedDate: "05 Jan 2026",
 };
 
@@ -47,11 +52,13 @@ function getInitialProfile(user) {
       year: "",
       hostel: "",
       room: "",
+      bed: "Bed 02",
+      allocationStatus: "Confirmed",
       joinedDate: "",
     };
   }
 
-  const isDemo = isDemoUser(user) || user.isDemo || user.email === "nafeesh@campus.edu";
+  const isDemo = isDemoUser ? isDemoUser(user) || user.isDemo || user.email === "nafeesh@campus.edu" : true;
   const userKey = user._id || user.id || user.email || "default";
 
   // Purge any legacy un-scoped cache if it bleeds onto a non-demo user
@@ -83,6 +90,8 @@ function getInitialProfile(user) {
         year: user.year || "First Year",
         hostel: user.building || user.hostel || "Not Allocated",
         room: user.room || "Not Allocated",
+        bed: "Bed 01",
+        allocationStatus: "Confirmed",
         joinedDate: user.createdAt
           ? new Date(user.createdAt).toLocaleDateString("en-GB", {
               day: "2-digit",
@@ -115,12 +124,104 @@ function Profile() {
   const [formData, setFormData] = useState(() => getInitialProfile(user));
   const [savedSuccessMsg, setSavedSuccessMsg] = useState(false);
 
+  const studentRegId =
+    user?.studentId ||
+    user?.registrationNumber ||
+    profile.studentId ||
+    "STD-2026-090";
+
+  // Synchronize profile with live allocation from backend
+  const syncWithAllocation = useCallback(async () => {
+    try {
+      const alloc = await getMyAllocation(studentRegId);
+      if (!alloc) return;
+
+      const bldName =
+        alloc.building?.name || alloc.building?.code || "Hostel Block B";
+      const roomNum = alloc.room?.roomNumber || "B-204";
+      const rawBed = alloc.bed?.bedNumber;
+      const bedText = rawBed
+        ? String(rawBed).toLowerCase().startsWith("bed")
+          ? String(rawBed)
+          : `Bed ${rawBed}`
+        : "Bed 02";
+      const floorText =
+        alloc.room?.floor !== undefined ? `Floor ${alloc.room.floor}` : "";
+      const statusText = alloc.allocation?.status || "Confirmed";
+      const dynamicAddress = `Campus Student Residence ${bldName}, Room ${roomNum}`;
+
+      const userKey = user?._id || user?.id || user?.email || "default";
+
+      setProfile((prev) => {
+        const updated = {
+          ...prev,
+          hostel: bldName,
+          room: roomNum,
+          bed: bedText,
+          floor: floorText,
+          allocationStatus: statusText,
+          address:
+            prev.address?.startsWith("Campus Student Residence")
+              ? dynamicAddress
+              : prev.address || dynamicAddress,
+        };
+        try {
+          localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(updated));
+          localStorage.setItem("smartstay_student_profile", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        hostel: bldName,
+        room: roomNum,
+        bed: bedText,
+        floor: floorText,
+        allocationStatus: statusText,
+        address:
+          prev.address?.startsWith("Campus Student Residence")
+            ? dynamicAddress
+            : prev.address || dynamicAddress,
+      }));
+    } catch (err) {
+      console.warn("Could not load live allocation for profile:", err);
+    }
+  }, [studentRegId, user]);
+
   useEffect(() => {
     if (user) {
       const p = getInitialProfile(user);
       setProfile(p);
       setFormData(p);
     }
+    syncWithAllocation();
+  }, [user, syncWithAllocation]);
+
+  // Listen to profile updates (e.g. from transfer approval)
+  useEffect(() => {
+    const handleProfileSync = (event) => {
+      if (event?.detail) {
+        const userKey = user?._id || user?.id || user?.email || "default";
+        setProfile((prev) => {
+          const merged = { ...prev, ...event.detail };
+          try {
+            localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(merged));
+            localStorage.setItem("smartstay_student_profile", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+        setFormData((prev) => ({ ...prev, ...event.detail }));
+      }
+    };
+
+    window.addEventListener("smartstay-profile-updated", handleProfileSync);
+    window.addEventListener("storage", handleProfileSync);
+
+    return () => {
+      window.removeEventListener("smartstay-profile-updated", handleProfileSync);
+      window.removeEventListener("storage", handleProfileSync);
+    };
   }, [user]);
 
   function handleChange(event) {
@@ -154,6 +255,7 @@ function Profile() {
 
     try {
       localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(formData));
+      localStorage.setItem("smartstay_student_profile", JSON.stringify(formData));
       if (updateUser) {
         await updateUser(formData);
       }
@@ -169,7 +271,7 @@ function Profile() {
       .map((n) => n[0])
       .join("")
       .substring(0, 2)
-      .toUpperCase() || "SU";
+      .toUpperCase() || "AN";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -177,6 +279,9 @@ function Profile() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-smart-primary">My Profile</h1>
+          <p className="mt-1 text-sm text-smart-secondary">
+            Manage your personal credentials and view verified hostel allocation details.
+          </p>
           {savedSuccessMsg && (
             <p className="mt-1 text-sm font-semibold text-emerald-600 animate-in fade-in">
               Profile details updated successfully!
@@ -204,6 +309,13 @@ function Profile() {
         )}
       </div>
 
+      {savedSuccessMsg && (
+        <div className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          <CheckCircle2 size={18} className="text-emerald-600" />
+          Profile information updated successfully!
+        </div>
+      )}
+
       {/* Profile Header */}
       <Card>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
@@ -225,14 +337,14 @@ function Profile() {
             </p>
 
             <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-smart-secondary">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 font-mono text-xs">
                 <IdCard size={16} />
                 {profile.studentId}
               </span>
 
-              <span className="flex items-center gap-1.5">
-                <Building2 size={16} />
-                {profile.hostel} • {profile.room}
+              <span className="flex items-center gap-1.5 font-medium text-smart-primary">
+                <Building2 size={16} className="text-smart-blue" />
+                {profile.hostel} • Room {profile.room} {profile.bed ? `(${profile.bed})` : ""}
               </span>
             </div>
           </div>
@@ -252,7 +364,7 @@ function Profile() {
             <SectionHeader
               icon={User}
               title="Personal Information"
-              description="Your basic contact and personal details."
+              description="Your basic contact and residential details."
             />
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -326,10 +438,10 @@ function Profile() {
             <SectionHeader
               icon={Building2}
               title="Hostel Information"
-              description="Your current hostel allocation."
+              description="Your current verified hostel allocation."
             />
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <InfoItem
                 icon={Building2}
                 label="Hostel Block"
@@ -343,9 +455,15 @@ function Profile() {
               />
 
               <InfoItem
+                icon={BedDouble}
+                label="Bed Assigned"
+                value={profile.bed || "Bed 02"}
+              />
+
+              <InfoItem
                 icon={ShieldCheck}
                 label="Allocation Status"
-                value={profile.room && profile.room !== "Not Allocated" ? "Confirmed" : "Pending"}
+                value={profile.allocationStatus || "Confirmed"}
               />
             </div>
           </Card>
@@ -474,6 +592,13 @@ function EditProfileForm({ formData, handleChange, handleSave }) {
           label="Room Number"
           name="room"
           value={formData.room}
+          onChange={handleChange}
+        />
+
+        <InputField
+          label="Bed Assigned"
+          name="bed"
+          value={formData.bed || ""}
           onChange={handleChange}
         />
 

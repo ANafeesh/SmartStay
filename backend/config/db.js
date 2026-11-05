@@ -31,6 +31,14 @@ const connectDB = async () => {
 
     isConnected = true;
     console.log(`MongoDB connected: ${conn.connection.host}`);
+
+    // Automatically ensure all 4 blocks and 96 rooms are seeded
+    try {
+      const { ensureHostelDataSeeded } = require("../scripts/seedHostelData");
+      await ensureHostelDataSeeded();
+    } catch (seedErr) {
+      console.warn("Hostel auto-seed notice:", seedErr.message);
+    }
   } catch (error) {
     console.warn(`MongoDB notice: ${error.message} (system running with resilient fallback data)`);
   }

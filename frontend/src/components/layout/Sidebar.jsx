@@ -48,6 +48,7 @@ const hostelMenuItems = [
   { name: "Student Allocations", path: "/hostel/allocations", icon: UserRoundCheck },
   { name: "Room Transfers", path: "/hostel/transfers", icon: ArrowRightLeft },
   { name: "Campus Occupancy", path: "/hostel/occupancy", icon: BarChart3 },
+  { name: "Student Complaints", path: "/maintenance", icon: ClipboardList },
 ];
 
 const vendorMenuItems = [
@@ -201,7 +202,7 @@ function Sidebar({ isOpen, onClose }) {
             />
           )}
 
-          {showMaintenance && !showStudent && (
+          {showMaintenance && !showStudent && !showHostel && (
             <MenuSection
               title="Maintenance Division"
               items={maintenanceMenuItems}
