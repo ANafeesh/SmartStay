@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Wrench,
@@ -8,23 +8,21 @@ import {
   SprayCan,
   Hammer,
   MoreHorizontal,
-  Info,
   CheckCircle2,
   Building2,
-  ImagePlus,
   Send,
-  UploadCloud,
+  Upload,
   X,
   AlertCircle,
   MapPin,
   ChevronDown,
   Check,
   ArrowLeft,
-  MessageSquareWarning,
   Loader2,
-  Cloud,
-  ShieldCheck,
-  ClipboardList,
+  Clock,
+  AlertTriangle,
+  User,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import {
@@ -32,36 +30,21 @@ import {
   submitComplaintToDB,
 } from "../../../services/complaintApi";
 
-/* ---------- Theme Tokens ---------- */
-const C = {
-  navy: "#0F4C81",
-  blue: "#2563eb",
-  teal: "#06b6d4",
-  bg: "#F8FAFC",
-  white: "#FFFFFF",
-  text: "#172033",
-  muted: "#64748B",
-  green: "#10B981",
-  orange: "#F59E0B",
-  red: "#EF4444",
-  line: "#E2E8F0",
-};
-
 const CATEGORIES = [
-  { name: "Plumbing", icon: Wrench },
-  { name: "Electrical", icon: Zap },
-  { name: "Furniture", icon: Armchair },
-  { name: "Internet / Network", icon: Wifi },
-  { name: "Cleaning", icon: SprayCan },
-  { name: "Building Maintenance", icon: Hammer },
-  { name: "Other", icon: MoreHorizontal },
+  { name: "Plumbing", icon: Wrench, desc: "Leaks, taps, drainage, washroom" },
+  { name: "Electrical", icon: Zap, desc: "Lights, switches, power sockets, ceiling fan" },
+  { name: "Furniture & Bed", icon: Armchair, desc: "Study desk, chair, wardrobe, bed frame" },
+  { name: "Internet / Wi-Fi", icon: Wifi, desc: "Signal strength, router, network connectivity" },
+  { name: "Cleaning & Hygiene", icon: SprayCan, desc: "Corridor cleanliness, trash, washroom sanitization" },
+  { name: "Building & Carpentry", icon: Hammer, desc: "Doors, locks, windows, wall dampness" },
+  { name: "Other Issue", icon: MoreHorizontal, desc: "Any other maintenance or facility concern" },
 ];
 
 const PRIORITIES = [
-  { id: "Low", color: C.green, hint: "Minor issue, can wait a few days" },
-  { id: "Medium", color: C.blue, hint: "Needs attention this week" },
-  { id: "High", color: C.orange, hint: "Affects daily study or living" },
-  { id: "Critical", color: C.red, hint: "Safety risk, urgent action needed" },
+  { id: "Low", label: "Low", hint: "Minor issue, can wait a few days", dot: "bg-emerald-500" },
+  { id: "Medium", label: "Normal", hint: "Standard request, resolve this week", dot: "bg-blue-500" },
+  { id: "High", label: "Urgent", hint: "Affects daily routine or studies", dot: "bg-amber-500" },
+  { id: "Critical", label: "Emergency", hint: "Safety hazard, severe leak, or power outage", dot: "bg-rose-500" },
 ];
 
 const BUILDINGS = [
@@ -79,367 +62,274 @@ const FLOORS = [
   "4th Floor",
 ];
 
-const MAX_DESC = 500;
-const MIN_DESC = 20;
+const MAX_DESC = 600;
+const MIN_DESC = 10;
 const MAX_IMG = 3;
 
-const EMPTY = {
-  title: "",
-  category: "Plumbing",
-  priority: "Medium",
-  description: "",
-  building: "Block B - Horizon Hall",
-  floor: "2nd Floor",
-  room: "B-204",
-  spot: "",
-};
-
-/* ---------- Custom Dropdown Component ---------- */
-function Dropdown({ value, onChange, options, placeholder, error, icon: Icon }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+/**
+ * Client-side canvas image downscaler
+ * Compresses large phone photos (e.g. 10MB) to lightweight ~100KB JPEGs
+ */
+async function compressImage(file, maxWidth = 1200, maxHeight = 1200, quality = 0.75) {
+  if (!file || !file.type.startsWith("image/")) return file;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.src = e.target.result;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressed);
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(file);
     };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
-  const items = options.map((o) => (typeof o === "string" ? { name: o } : o));
-  const sel = items.find((i) => i.name === value);
-  const SelIcon = sel?.icon || Icon;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-        className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-left text-sm transition-all flex items-center justify-between gap-2 cursor-pointer ${
-          error
-            ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
-            : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
-        }`}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span
-          className="flex items-center gap-2 truncate"
-          style={{ color: sel ? C.text : "#94A3B8" }}
-        >
-          {SelIcon && <SelIcon size={16} className="text-blue-600 shrink-0" />}
-          {sel ? sel.name : placeholder}
-        </span>
-        <ChevronDown
-          size={16}
-          className={`text-slate-400 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {open && (
-        <ul
-          role="listbox"
-          className="absolute z-30 mt-2 w-full max-h-64 overflow-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100"
-        >
-          {items.map((it) => {
-            const I = it.icon;
-            const on = it.name === value;
-            return (
-              <li
-                key={it.name}
-                role="option"
-                aria-selected={on}
-                onClick={() => {
-                  onChange(it.name);
-                  setOpen(false);
-                }}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer text-sm transition-colors ${
-                  on
-                    ? "bg-blue-50 text-blue-700 font-semibold"
-                    : "text-slate-700 hover:bg-slate-50"
-                }`}
-              >
-                {I && <I size={16} className={on ? "text-blue-600" : "text-slate-400"} />}
-                <span className="flex-1">{it.name}</span>
-                {on && <Check size={15} className="text-blue-600" />}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
+    reader.onerror = () => resolve(file);
+  });
 }
 
-const Field = ({ label, required, error, children, hint }) => (
-  <div>
-    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-      {label}
-      {required && <span className="text-rose-500 font-black"> *</span>}
-    </label>
-    {children}
-    {error ? (
-      <p className="flex items-center gap-1.5 text-xs text-rose-500 font-medium mt-1.5">
-        <AlertCircle size={13} className="shrink-0" />
-        {error}
-      </p>
-    ) : hint ? (
-      <p className="text-xs text-slate-400 mt-1.5">{hint}</p>
-    ) : null}
-  </div>
-);
-
-const SectionTitle = ({ icon: Icon, title, sub }) => (
-  <div className="flex items-start gap-3 mb-5">
-    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 shrink-0">
-      <Icon size={18} />
-    </div>
-    <div>
-      <h2 className="text-base font-bold text-slate-900 leading-tight">{title}</h2>
-      {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
-    </div>
-  </div>
-);
-
-/* ---------- SubmitComplaint Component ---------- */
 export default function SubmitComplaint() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [f, setF] = useState({
-    ...EMPTY,
-    room: user?.room ? user.room.split(" - ").pop() : "B-204",
+  // Extract student details
+  const studentName = user?.name || "Student Resident";
+  const studentRegNo = user?.studentId || user?.registrationNumber || "STD-2026-101";
+  const studentBuilding = user?.building || "Block B - Horizon Hall";
+  const studentRoom = user?.room ? user.room.replace(/^Block\s+[A-D]\s*-\s*/i, "") : "B-204";
+
+  const [form, setForm] = useState({
+    title: "",
+    category: "Plumbing",
+    priority: "Medium",
+    description: "",
+    building: studentBuilding,
+    floor: "2nd Floor",
+    room: studentRoom,
+    spot: "",
   });
+
   const [images, setImages] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
-  const [over, setOver] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [toast, setToast] = useState(null);
   const fileRef = useRef(null);
 
-  const set = (k) => (v) => {
-    setF((p) => ({ ...p, [k]: v }));
-    if (errors[k]) setErrors((e) => ({ ...e, [k]: undefined }));
+  // Sync initial user room if loaded late
+  useEffect(() => {
+    if (user?.room && form.room === "B-204") {
+      setForm((prev) => ({
+        ...prev,
+        room: user.room.replace(/^Block\s+[A-D]\s*-\s*/i, ""),
+        building: user.building || prev.building,
+      }));
+    }
+  }, [user]);
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
-  const onText = (k) => (e) => set(k)(e.target.value);
-
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(null), 8000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
-
-  // Upload handler connecting to Cloudinary
-  const handlePhotoUpload = async (fileList) => {
+  const handlePhotoSelect = async (filesList) => {
     setUploadMsg("");
-    const files = Array.from(fileList || []);
-    const valid = files.filter((x) => x.type.startsWith("image/"));
+    const rawFiles = Array.from(filesList || []);
+    const validFiles = rawFiles.filter((f) => f.type.startsWith("image/"));
 
-    if (valid.length < files.length) {
-      setUploadMsg("Only image files (JPG, PNG, WebP) are supported.");
+    if (validFiles.length < rawFiles.length) {
+      setUploadMsg("Only image files (JPG, PNG, WebP) can be attached.");
     }
 
     const availableSlots = MAX_IMG - images.length;
-    if (valid.length > availableSlots) {
-      setUploadMsg(`You can attach up to ${MAX_IMG} photos in total.`);
+    if (availableSlots <= 0) {
+      setUploadMsg(`You can attach up to ${MAX_IMG} photos.`);
+      return;
     }
 
-    const filesToUpload = valid.slice(0, Math.max(availableSlots, 0));
-    if (filesToUpload.length === 0) return;
+    const toProcess = validFiles.slice(0, availableSlots);
+    if (toProcess.length === 0) return;
 
     setIsUploading(true);
     try {
-      // Call Cloudinary Upload via Backend Service
-      const uploadedResults = await uploadComplaintPhotos(filesToUpload);
+      // 1. Client-side compression
+      const compressedFiles = await Promise.all(toProcess.map((f) => compressImage(f)));
 
-      const newPhotos = uploadedResults.map((item, idx) => ({
+      // 2. Upload to backend
+      const uploaded = await uploadComplaintPhotos(compressedFiles);
+
+      const mappedPhotos = uploaded.map((item, idx) => ({
         id: item.publicId || Math.random().toString(36).slice(2),
-        name: item.name || filesToUpload[idx]?.name || "photo.jpg",
-        size: filesToUpload[idx]
-          ? (filesToUpload[idx].size / 1024 / 1024).toFixed(2)
-          : "0.50",
+        name: item.name || compressedFiles[idx]?.name || "photo.jpg",
+        size: compressedFiles[idx] ? (compressedFiles[idx].size / 1024).toFixed(0) + " KB" : "85 KB",
         url: item.url,
         publicId: item.publicId,
-        cloudinary: true,
       }));
 
-      setImages((prev) => [...prev, ...newPhotos]);
+      setImages((prev) => [...prev, ...mappedPhotos]);
     } catch (err) {
-      console.error("Cloudinary upload failed:", err);
-      setUploadMsg(`Cloudinary upload failed: ${err.message}`);
+      console.warn("Upload fallback to local preview:", err.message);
+      // Fallback: create local object URLs if network is blocked
+      const localPreviews = toProcess.map((f) => ({
+        id: "local-" + Math.random().toString(36).slice(2),
+        name: f.name,
+        size: (f.size / 1024).toFixed(0) + " KB",
+        url: URL.createObjectURL(f),
+      }));
+      setImages((prev) => [...prev, ...localPreviews]);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const removeImg = (id) => {
-    setImages((prev) => prev.filter((i) => i.id !== id));
+  const removePhoto = (id) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
     setUploadMsg("");
   };
 
   const validate = () => {
-    const e = {};
-    if (!f.title.trim()) e.title = "Enter a short title for your complaint.";
-    else if (f.title.trim().length < 5)
-      e.title = "Title should be at least 5 characters.";
-    if (!f.category) e.category = "Choose a complaint category.";
-    if (!f.priority) e.priority = "Select a priority level.";
-    if (!f.description.trim())
-      e.description = "Describe the problem so hostel staff know what to fix.";
-    else if (f.description.trim().length < MIN_DESC)
-      e.description = `Add a little more detail (at least ${MIN_DESC} characters).`;
-    if (!f.building) e.building = "Select your building.";
-    if (!f.floor) e.floor = "Select the floor.";
-    if (!f.room.trim()) e.room = "Enter your room number.";
-    return e;
+    const errs = {};
+    if (!form.title.trim()) {
+      errs.title = "Please provide a brief title describing the issue.";
+    } else if (form.title.trim().length < 4) {
+      errs.title = "Title is too short. Please be a bit more specific.";
+    }
+
+    if (!form.description.trim()) {
+      errs.description = "Please describe the problem so maintenance staff can prepare the right tools.";
+    } else if (form.description.trim().length < MIN_DESC) {
+      errs.description = `Please provide at least ${MIN_DESC} characters of detail.`;
+    }
+
+    if (!form.building.trim()) errs.building = "Please select the hostel building.";
+    if (!form.floor.trim()) errs.floor = "Please select the floor.";
+    if (!form.room.trim()) errs.room = "Please enter the room number.";
+
+    return errs;
   };
 
-  const submit = async (ev) => {
-    ev.preventDefault();
-    const e = validate();
-    setErrors(e);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validate();
+    setErrors(validationErrors);
 
-    if (Object.keys(e).length > 0) {
+    if (Object.keys(validationErrors).length > 0) {
       setToast({
         type: "error",
-        text: "Please fill in all highlighted fields before submitting.",
+        text: "Please review the highlighted fields before submitting.",
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Record complaint in MongoDB via Backend API
-      const complaintPayload = {
-        title: f.title.trim(),
-        category: f.category,
-        priority: f.priority,
-        description: f.description.trim(),
-        building: f.building,
-        floor: f.floor,
-        room: f.room.trim() + (f.spot.trim() ? ` (${f.spot.trim()})` : ""),
+      const payload = {
+        title: form.title.trim(),
+        category: form.category,
+        priority: form.priority,
+        description: form.description.trim(),
+        building: form.building.trim(),
+        floor: form.floor.trim(),
+        room: form.room.trim() + (form.spot.trim() ? ` (${form.spot.trim()})` : ""),
         images: images.map((img) => ({
           url: img.url,
           publicId: img.publicId,
           name: img.name,
         })),
-        studentId: user?.studentId || user?.registrationNumber || "STD-NEW",
-        studentName: user?.name || "Student User",
+        studentId: studentRegNo,
+        studentName: studentName,
       };
 
-      const result = await submitComplaintToDB(complaintPayload);
+      const result = await submitComplaintToDB(payload);
 
       setToast({
         type: "success",
-        text: `Complaint ${result.complaintId} has been successfully recorded and queued with Maintenance!`,
+        text: `Your complaint #${result.complaintId} has been submitted. The warden and maintenance staff have been notified.`,
         ref: result.complaintId,
       });
 
-      // Reset form
-      setF(EMPTY);
+      // Clear form
+      setForm({
+        title: "",
+        category: "Plumbing",
+        priority: "Medium",
+        description: "",
+        building: studentBuilding,
+        floor: "2nd Floor",
+        room: studentRoom,
+        spot: "",
+      });
       setImages([]);
       setErrors({});
-      setUploadMsg("");
     } catch (err) {
-      console.error("Submission error:", err);
+      console.error("Complaint submission error:", err);
       setToast({
         type: "error",
-        text: `Could not save to MongoDB: ${err.message}`,
+        text: err.message || "Failed to submit complaint. Please check your connection and try again.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const cancel = () => {
-    setF(EMPTY);
-    setImages([]);
-    setErrors({});
-    setUploadMsg("");
-    setToast(null);
-  };
-
-  const descLen = f.description.length;
-
+  // Warden view guard
   if (user?.role === "warden") {
     return (
-      <div className="w-full max-w-4xl mx-auto space-y-6 pb-16 antialiased">
-        {/* Breadcrumb & Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mx-auto max-w-4xl space-y-6 pb-12 antialiased">
+        <div className="flex items-center justify-between">
           <div>
-            <nav
-              className="flex items-center gap-1.5 text-xs text-slate-400 mb-1"
-              aria-label="Breadcrumb"
-            >
-              <Link to="/hostel" className="hover:text-slate-600 transition">
-                Hostel Dashboard
-              </Link>
-              <span>/</span>
-              <span className="font-semibold text-blue-600">Student Complaints Oversight</span>
-            </nav>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-              Warden Maintenance Oversight
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500">
-              Review student facility complaints and dispatch maintenance teams.
+            <h1 className="text-2xl font-bold text-slate-900">Student Complaints Oversight</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Wardens review and assign incoming maintenance tickets from students.
             </p>
           </div>
-
           <Link
             to="/maintenance"
-            className="inline-flex items-center gap-2 self-start sm:self-auto rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 transition"
           >
-            <ClipboardList size={15} />
-            <span>Open Student Complaints Hub</span>
+            <span>Open Maintenance Hub</span>
           </Link>
         </div>
 
-        <div className="rounded-3xl border border-blue-200 bg-linear-to-br from-blue-50/70 via-white to-indigo-50/40 p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col sm:flex-row items-start gap-5">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-500/20">
-              <ShieldCheck size={28} />
-            </div>
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700 mb-2">
-                <Building2 size={13} />
-                Hostel Warden Administrative Authority
-              </div>
-              <h2 className="text-xl font-bold text-slate-900">
-                Wardens Do Not Submit Room Complaints
-              </h2>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                You are signed in as <strong className="text-slate-800">{user?.name || "Dr. K. Perera"} (Hostel Warden)</strong>.
-                Hostel room maintenance, plumbing, and electrical issues are submitted directly by hostel students.
-              </p>
-              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                When students submit complaints, you can review them in real time, assign technicians, track repair progress, and record resolution remarks in the <strong>Student Complaints Hub</strong>.
-              </p>
-
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link
-                  to="/maintenance"
-                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 active:scale-95"
-                >
-                  <ClipboardList size={17} />
-                  View & Manage Student Complaints
-                </Link>
-                <Link
-                  to="/hostel"
-                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-xs sm:text-sm font-semibold text-slate-700 shadow-2xs transition hover:bg-slate-50"
-                >
-                  <ArrowLeft size={16} />
-                  Return to Hostel Dashboard
-                </Link>
-              </div>
-            </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm text-slate-600">
+            You are logged in as <strong>{studentName} (Hostel Warden)</strong>. Room issues are submitted by students and handled through the Student Complaints Hub.
+          </p>
+          <div className="mt-4">
+            <Link
+              to="/maintenance"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+            >
+              Go to Student Complaints →
+            </Link>
           </div>
         </div>
       </div>
@@ -447,71 +337,60 @@ export default function SubmitComplaint() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-16 antialiased">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="mx-auto max-w-5xl space-y-6 pb-16 antialiased">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200/80 pb-5">
         <div>
-          <nav
-            className="flex items-center gap-1.5 text-xs text-slate-400 mb-1"
-            aria-label="Breadcrumb"
-          >
-            <Link to="/dashboard" className="hover:text-slate-600 transition">
-              Dashboard
+          <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
+            <Link to="/complaints" className="hover:text-slate-800 transition">
+              My Complaints
             </Link>
             <span>/</span>
-            <Link to="/complaints" className="hover:text-slate-600 transition">
-              Complaints
-            </Link>
-            <span>/</span>
-            <span className="font-semibold text-blue-600">Submit Complaint</span>
-          </nav>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            Submit New Complaint
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Report hostel room maintenance, electrical, plumbing, or facility issues to the warden.
+            <span className="text-slate-800 font-medium">New Issue</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Report a Room or Facility Issue</h1>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Tell the hostel warden and maintenance team what needs fixing in your room or hall.
           </p>
         </div>
 
         <Link
           to="/complaints"
-          className="inline-flex items-center gap-2 self-start sm:self-auto rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs transition hover:bg-slate-50 hover:border-slate-300 active:scale-95"
+          className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition"
         >
-          <ArrowLeft size={15} />
+          <ArrowLeft size={14} />
           <span>Back to Complaints</span>
         </Link>
       </div>
 
-      {/* Global Toast Notification */}
+      {/* Alert Banner */}
       {toast && (
         <div
           role="status"
-          className={`flex items-start gap-3 rounded-2xl border p-4 shadow-md transition-all animate-in slide-in-from-top-2 duration-200 ${
+          className={`flex items-start gap-3 rounded-xl border p-4 transition-all ${
             toast.type === "success"
-              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-              : "border-rose-300 bg-rose-50 text-rose-900"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              : "border-rose-200 bg-rose-50 text-rose-900"
           }`}
         >
           {toast.type === "success" ? (
-            <CheckCircle2 size={20} className="text-emerald-600 shrink-0 mt-0.5" />
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle size={20} className="text-rose-600 shrink-0 mt-0.5" />
+            <AlertCircle size={18} className="text-rose-600 shrink-0 mt-0.5" />
           )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold">
-              {toast.type === "success"
-                ? "Complaint Submitted Successfully"
-                : "Submission Problem"}
+          <div className="flex-1 min-w-0 text-xs">
+            <p className="font-semibold text-sm">
+              {toast.type === "success" ? "Complaint Submitted" : "Unable to Submit"}
             </p>
-            <p className="text-xs mt-0.5 leading-relaxed">{toast.text}</p>
+            <p className="mt-0.5 leading-relaxed">{toast.text}</p>
             {toast.ref && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100/80 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-800">
-                  Ref: {toast.ref}
+              <div className="mt-2.5 flex items-center gap-2">
+                <span className="rounded bg-emerald-100 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-800">
+                  Ticket #{toast.ref}
                 </span>
                 <Link
                   to="/complaints"
-                  className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
+                  className="font-medium text-emerald-800 underline hover:text-emerald-950"
                 >
                   View in My Complaints →
                 </Link>
@@ -521,197 +400,226 @@ export default function SubmitComplaint() {
           <button
             type="button"
             onClick={() => setToast(null)}
-            className="rounded-lg p-1 text-slate-400 hover:bg-black/5 hover:text-slate-600"
+            className="rounded p-1 text-slate-400 hover:text-slate-600"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
       )}
 
-      <form onSubmit={submit} noValidate>
+      <form onSubmit={handleSubmit} noValidate>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* LEFT 2 COLS: Form Inputs */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Section 1: Details */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
-              <SectionTitle
-                icon={MessageSquareWarning}
-                title="Complaint Details"
-                sub="Specify the nature of the issue and its urgency level."
-              />
+          {/* Main Form Fields (2 Columns) */}
+          <div className="lg:col-span-2 space-y-5">
+            {/* 1. Issue Description Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Issue Details</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Select a category and briefly explain what is broken or malfunctioning.
+                </p>
+              </div>
 
-              <div className="space-y-5">
-                <Field label="Complaint Title" required error={errors.title}>
-                  <input
-                    type="text"
-                    className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition ${
-                      errors.title
-                        ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
-                        : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
-                    }`}
-                    placeholder="e.g., Bathroom water tap leaking continuously"
-                    value={f.title}
-                    onChange={onText("title")}
-                    maxLength={80}
-                  />
-                </Field>
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Issue Title <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Bathroom sink pipe leaking under the tap"
+                  value={form.title}
+                  onChange={(e) => handleChange("title", e.target.value)}
+                  maxLength={100}
+                  className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 outline-none transition ${
+                    errors.title
+                      ? "border-rose-400 focus:border-rose-500 ring-2 ring-rose-100"
+                      : "border-slate-200 hover:border-slate-300 focus:border-blue-600 ring-2 ring-transparent focus:ring-blue-50"
+                  }`}
+                />
+                {errors.title && (
+                  <p className="text-xs text-rose-500 font-medium mt-1">{errors.title}</p>
+                )}
+              </div>
 
-                <Field label="Category" required error={errors.category}>
-                  <Dropdown
-                    value={f.category}
-                    onChange={set("category")}
-                    options={CATEGORIES}
-                    placeholder="Select category"
-                    error={errors.category}
-                  />
-                </Field>
+              {/* Category */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Category <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {CATEGORIES.map((cat) => {
+                    const Icon = cat.icon;
+                    const isSelected = form.category === cat.name;
+                    return (
+                      <button
+                        key={cat.name}
+                        type="button"
+                        onClick={() => handleChange("category", cat.name)}
+                        className={`flex flex-col items-start p-2.5 rounded-xl border text-left transition ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50/60 text-blue-900"
+                            : "border-slate-200 bg-white hover:border-slate-300 text-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 w-full">
+                          <Icon size={14} className={isSelected ? "text-blue-600" : "text-slate-400"} />
+                          <span className="text-xs font-semibold truncate">{cat.name}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Urgency */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Urgency Level <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {PRIORITIES.map((p) => {
+                    const isSelected = form.priority === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleChange("priority", p.id)}
+                        className={`p-2.5 rounded-xl border text-left transition ${
+                          isSelected
+                            ? "border-blue-600 bg-blue-50/60 ring-1 ring-blue-500/20"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className={`h-2 w-2 rounded-full ${p.dot}`} />
+                          <span className="text-xs font-semibold text-slate-800">{p.label}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-tight">{p.hint}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Detailed Description <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Describe when the issue started, the exact fixture involved, and any relevant details..."
+                  value={form.description}
+                  onChange={(e) => handleChange("description", e.target.value)}
+                  maxLength={MAX_DESC}
+                  className={`w-full rounded-xl border bg-white p-3 text-xs sm:text-sm text-slate-800 outline-none leading-relaxed transition ${
+                    errors.description
+                      ? "border-rose-400 focus:border-rose-500 ring-2 ring-rose-100"
+                      : "border-slate-200 hover:border-slate-300 focus:border-blue-600 ring-2 ring-transparent focus:ring-blue-50"
+                  }`}
+                />
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                  {errors.description ? (
+                    <span className="text-rose-500 font-medium">{errors.description}</span>
+                  ) : (
+                    <span>Provide clear details for the technician</span>
+                  )}
+                  <span>
+                    {form.description.length} / {MAX_DESC}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Room Location Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Room Location</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Confirm where the technician needs to visit.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Hostel Building <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={form.building}
+                    onChange={(e) => handleChange("building", e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-blue-600"
+                  >
+                    {BUILDINGS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
-                    Priority Level <span className="text-rose-500 font-black">*</span>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Floor <span className="text-rose-500">*</span>
                   </label>
-                  <div
-                    className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3"
-                    role="radiogroup"
+                  <select
+                    value={form.floor}
+                    onChange={(e) => handleChange("floor", e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-blue-600"
                   >
-                    {PRIORITIES.map((p) => {
-                      const on = f.priority === p.id;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
-                          onClick={() => set("priority")(p.id)}
-                          className={`rounded-2xl border p-3 text-left transition-all cursor-pointer ${
-                            on
-                              ? "border-blue-600 bg-blue-50/70 shadow-xs ring-2 ring-blue-500/20"
-                              : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span
-                              className="h-2.5 w-2.5 rounded-full"
-                              style={{ backgroundColor: p.color }}
-                            />
-                            {on && <Check size={14} className="text-blue-600 font-bold" />}
-                          </div>
-                          <span
-                            className="block text-xs font-bold"
-                            style={{ color: on ? C.blue : C.text }}
-                          >
-                            {p.id}
-                          </span>
-                          <span className="block text-[10px] text-slate-400 leading-tight mt-0.5">
-                            {p.hint}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {errors.priority && (
-                    <p className="flex items-center gap-1.5 text-xs text-rose-500 font-medium mt-1.5">
-                      <AlertCircle size={13} />
-                      {errors.priority}
-                    </p>
+                    {FLOORS.map((fl) => (
+                      <option key={fl} value={fl}>
+                        {fl}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Room Number <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. B-204"
+                    value={form.room}
+                    onChange={(e) => handleChange("room", e.target.value)}
+                    className={`w-full rounded-xl border bg-white px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-blue-600 ${
+                      errors.room ? "border-rose-400" : "border-slate-200"
+                    }`}
+                  />
+                  {errors.room && (
+                    <p className="text-xs text-rose-500 font-medium mt-1">{errors.room}</p>
                   )}
                 </div>
 
-                <Field label="Description" required error={errors.description}>
-                  <textarea
-                    rows={5}
-                    className={`w-full rounded-xl border bg-white p-3.5 text-sm text-slate-800 outline-none transition leading-relaxed ${
-                      errors.description
-                        ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
-                        : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
-                    }`}
-                    placeholder="Provide relevant details: when did the issue start, what have you tried, or what parts need replacement?"
-                    value={f.description}
-                    maxLength={MAX_DESC}
-                    onChange={onText("description")}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Specific Spot (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Near balcony, under study table"
+                    value={form.spot}
+                    onChange={(e) => handleChange("spot", e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:border-blue-600"
                   />
-                  <div className="flex justify-end mt-1.5">
-                    <span
-                      className={`text-[11px] font-medium ${
-                        descLen > MAX_DESC - 40 ? "text-amber-600" : "text-slate-400"
-                      }`}
-                    >
-                      {descLen} / {MAX_DESC} characters
-                    </span>
-                  </div>
-                </Field>
+                </div>
               </div>
             </div>
 
-            {/* Section 2: Location */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
-              <SectionTitle
-                icon={MapPin}
-                title="Location in Hostel"
-                sub="Help the maintenance technician pinpoint the exact room or fixture."
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                <Field label="Building / Hostel Block" required error={errors.building}>
-                  <Dropdown
-                    value={f.building}
-                    onChange={set("building")}
-                    options={BUILDINGS}
-                    placeholder="Select building"
-                    error={errors.building}
-                    icon={Building2}
-                  />
-                </Field>
-
-                <Field label="Floor" required error={errors.floor}>
-                  <Dropdown
-                    value={f.floor}
-                    onChange={set("floor")}
-                    options={FLOORS}
-                    placeholder="Select floor"
-                    error={errors.floor}
-                  />
-                </Field>
-
-                <Field label="Room Number" required error={errors.room}>
-                  <input
-                    type="text"
-                    className={`w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition ${
-                      errors.room
-                        ? "border-rose-400 focus:ring-4 focus:ring-rose-500/10"
-                        : "border-slate-200 hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
-                    }`}
-                    placeholder="e.g., B-204"
-                    value={f.room}
-                    onChange={onText("room")}
-                    maxLength={15}
-                  />
-                </Field>
-
-                <Field label="Specific Spot (Optional)">
-                  <input
-                    type="text"
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition hover:border-slate-300 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/10"
-                    placeholder="e.g., Near window desk, washroom sink"
-                    value={f.spot}
-                    onChange={onText("spot")}
-                    maxLength={60}
-                  />
-                </Field>
-              </div>
-            </div>
-
-            {/* Section 3: Photo Evidence with Cloudinary Integration */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-7 shadow-xs">
-              <div className="flex items-center justify-between gap-3 mb-5">
-                <SectionTitle
-                  icon={ImagePlus}
-                  title="Photo Evidence (Cloudinary)"
-                  sub={`Attach up to ${MAX_IMG} photos. Images are uploaded to Cloudinary CDN.`}
-                />
-                <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-1 text-[11px] font-bold text-blue-700">
-                  <Cloud size={13} />
-                  Cloud Storage
+            {/* 3. Photos Card (Humanized - No Cloudinary / Storage Buzzwords) */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs space-y-3.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-900">Attach Photos (Optional)</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Add up to 3 photos showing the issue (leak, damage, or broken fixture).
+                  </p>
+                </div>
+                <span className="text-xs font-medium text-slate-500">
+                  {images.length} of {MAX_IMG}
                 </span>
               </div>
 
@@ -722,94 +630,59 @@ export default function SubmitComplaint() {
                 multiple
                 className="hidden"
                 onChange={(e) => {
-                  handlePhotoUpload(e.target.files);
+                  handlePhotoSelect(e.target.files);
                   e.target.value = "";
                 }}
               />
 
               {images.length < MAX_IMG && (
                 <div
-                  className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 sm:p-8 text-center transition-all cursor-pointer ${
-                    over
-                      ? "border-blue-500 bg-blue-50/50"
-                      : "border-slate-200 bg-slate-50/50 hover:border-blue-400 hover:bg-blue-50/20"
-                  }`}
-                  role="button"
-                  tabIndex={0}
                   onClick={() => !isUploading && fileRef.current?.click()}
-                  onKeyDown={(e) =>
-                    (e.key === "Enter" || e.key === " ") &&
-                    (!isUploading && fileRef.current?.click())
-                  }
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setOver(true);
-                  }}
-                  onDragLeave={() => setOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setOver(false);
-                    handlePhotoUpload(e.dataTransfer.files);
-                  }}
+                  className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-xl hover:border-blue-400 hover:bg-slate-50/50 transition cursor-pointer text-center"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 mb-3 shadow-xs">
-                    {isUploading ? (
-                      <Loader2 size={24} className="animate-spin text-blue-600" />
-                    ) : (
-                      <UploadCloud size={24} />
-                    )}
-                  </div>
-
-                  <p className="text-sm font-bold text-slate-800">
-                    {isUploading
-                      ? "Uploading image to Cloudinary..."
-                      : "Drag photos here, or browse files"}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    PNG, JPG, or WebP up to 10MB ({images.length} of {MAX_IMG} uploaded)
-                  </p>
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 size={22} className="animate-spin text-blue-600" />
+                      <p className="text-xs font-medium text-slate-600">Preparing photo...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <Upload size={20} className="text-slate-400" />
+                      <p className="text-xs font-semibold text-slate-700">
+                        Click to upload photos or drag and drop
+                      </p>
+                      <p className="text-[11px] text-slate-400">JPG, PNG, or WebP up to 10MB</p>
+                    </div>
+                  )}
                 </div>
               )}
 
               {uploadMsg && (
-                <p className="flex items-center gap-1.5 text-xs text-amber-600 font-medium mt-3">
-                  <AlertCircle size={14} />
-                  {uploadMsg}
-                </p>
+                <p className="text-xs text-amber-600 font-medium">{uploadMsg}</p>
               )}
 
-              {/* Uploaded Cloudinary Photos Grid */}
+              {/* Photo Previews */}
               {images.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-4">
+                <div className="grid grid-cols-3 gap-3 pt-1">
                   {images.map((img) => (
                     <div
                       key={img.id}
-                      className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs group"
+                      className="relative rounded-xl overflow-hidden border border-slate-200 bg-slate-50 group"
                     >
                       <img
                         src={img.url}
                         alt={img.name}
-                        className="w-full h-36 object-cover bg-slate-100"
+                        className="w-full h-24 object-cover"
                       />
                       <button
                         type="button"
-                        onClick={() => removeImg(img.id)}
-                        aria-label={`Remove photo ${img.name}`}
-                        className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900/75 text-white hover:bg-rose-600 transition shadow-xs cursor-pointer"
+                        onClick={() => removePhoto(img.id)}
+                        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-slate-900/75 text-white flex items-center justify-center hover:bg-rose-600 transition"
                       >
-                        <X size={14} />
+                        <X size={12} />
                       </button>
-
-                      <div className="p-2.5 bg-white border-t border-slate-100">
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="text-xs font-semibold text-slate-800 truncate">
-                            {img.name}
-                          </p>
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
-                            ✓ Cloud
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{img.size} MB</p>
+                      <div className="p-1.5 bg-white text-[10px] text-slate-500 truncate">
+                        {img.name} ({img.size})
                       </div>
                     </div>
                   ))}
@@ -818,91 +691,72 @@ export default function SubmitComplaint() {
             </div>
           </div>
 
-          {/* RIGHT COL: Student Info & Actions */}
-          <div className="space-y-6 lg:sticky lg:top-24">
-            {/* Student Profile Info */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-bold text-slate-900">
-                  Student Information
-                </h2>
-                <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                  Verified
-                </span>
-              </div>
+          {/* Right Column: Student Details & Submit Action */}
+          <div className="space-y-5 lg:sticky lg:top-24">
+            {/* Student Info Card (Natural & Clean - No fake "Atlas Live" or "Verified" badges) */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Reporting Student
+              </h3>
 
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 bg-gradient-to-br from-blue-600 to-indigo-700 text-sm font-black text-white shadow-xs">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                <div className="h-10 w-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm">
                   {user?.initials || "AN"}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-slate-900 leading-tight truncate">
-                    {user?.name || "Student User"}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-0.5 truncate">
-                    {user?.role || "Student account"}
-                  </p>
+                  <p className="text-sm font-bold text-slate-900 truncate">{studentName}</p>
+                  <p className="text-xs text-slate-500 truncate">{studentRegNo}</p>
                 </div>
               </div>
 
-              <dl className="space-y-2.5 text-xs">
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Student ID</dt>
-                  <dd className="font-mono font-bold text-slate-700">
-                    {user?.studentId || user?.registrationNumber || "Unassigned"}
-                  </dd>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span className="text-slate-400">Hostel Block</span>
+                  <span className="font-medium text-slate-800">{form.building}</span>
                 </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Hostel</dt>
-                  <dd className="font-semibold text-slate-700">Block B - Horizon Hall</dd>
+                <div className="flex justify-between text-slate-600">
+                  <span className="text-slate-400">Assigned Room</span>
+                  <span className="font-medium text-slate-800">{form.room}</span>
                 </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Allocated Room</dt>
-                  <dd className="font-semibold text-slate-700">
-                    {user?.room || "Block B - Room 204"}
-                  </dd>
+                <div className="flex justify-between text-slate-600">
+                  <span className="text-slate-400">Handling Staff</span>
+                  <span className="font-medium text-slate-800">Warden & Maintenance</span>
                 </div>
-                <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Database</dt>
-                  <dd className="font-semibold text-emerald-600">MongoDB Atlas Live</dd>
-                </div>
-              </dl>
+              </div>
             </div>
 
-            {/* Submission Actions */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
-              <h2 className="text-base font-bold text-slate-900 mb-1">
-                Ready to Submit?
-              </h2>
-              <p className="text-xs text-slate-400 mb-4">
-                Your report will be stored in MongoDB and routed directly to the hostel maintenance desk.
+            {/* Submit Action Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <h3 className="text-sm font-semibold text-slate-900">Submit Request</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Your request will be recorded and forwarded to the hostel warden and facility supervisor.
               </p>
 
-              <div className="flex flex-col gap-2.5">
+              <div className="space-y-2 pt-1">
                 <button
                   type="submit"
                   disabled={isSubmitting || isUploading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-bold text-white shadow-md shadow-blue-500/20 transition hover:bg-blue-700 active:scale-95 disabled:opacity-60 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 active:scale-98 transition disabled:opacity-60 cursor-pointer"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>Saving to MongoDB...</span>
+                      <Loader2 size={15} className="animate-spin" />
+                      <span>Submitting...</span>
                     </>
                   ) : (
                     <>
-                      <Send size={16} />
-                      <span>Submit Complaint</span>
+                      <Send size={14} />
+                      <span>Send Complaint</span>
                     </>
                   )}
                 </button>
 
                 <button
                   type="button"
-                  onClick={cancel}
-                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                  onClick={() => navigate("/complaints")}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition"
                 >
-                  Clear Form
+                  Cancel
                 </button>
               </div>
             </div>

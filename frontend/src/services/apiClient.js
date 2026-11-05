@@ -79,7 +79,15 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   if (!response.ok) {
-    const errorMsg = data?.message || `Request failed with HTTP status ${response.status}`;
+    let errorMsg = data?.message;
+    if (response.status === 413) {
+      errorMsg = "Attachment or photo payload is too large. Please select a smaller photo.";
+    } else if (typeof errorMsg === "string" && errorMsg.includes("<html")) {
+      const match = errorMsg.match(/<pre>([\s\S]*?)<\/pre>/i) || errorMsg.match(/<title>([\s\S]*?)<\/title>/i);
+      errorMsg = match ? match[1].trim() : "Server returned an unexpected response.";
+    } else if (!errorMsg) {
+      errorMsg = `Request failed with HTTP status ${response.status}`;
+    }
     const err = new Error(errorMsg);
     err.status = response.status;
     err.data = data;

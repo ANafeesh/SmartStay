@@ -465,6 +465,23 @@ export async function markNotificationAsRead(id, user, backendId) {
   if (backendId) readSet.add(String(backendId));
   saveReadSet(userKey, readSet);
 
+  // Update cached student notifications in localStorage
+  try {
+    const raw = localStorage.getItem(`smartstay_student_notifications_${userKey}`);
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        const updatedList = list.map((item) =>
+          item.id === id || (backendId && item.backendId === backendId)
+            ? { ...item, read: true }
+            : item
+        );
+        localStorage.setItem(`smartstay_student_notifications_${userKey}`, JSON.stringify(updatedList));
+        localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedList));
+      }
+    }
+  } catch {}
+
   if (backendId || (typeof id === "string" && id.match(/^[0-9a-fA-F]{24}$/))) {
     try {
       await apiFetch(`/payment-notifications/${backendId || id}/read`, {
@@ -494,6 +511,19 @@ export async function markAllNotificationsAsRead(notifications, user) {
   });
   saveReadSet(userKey, readSet);
 
+  // Update cached student notifications in localStorage
+  try {
+    const raw = localStorage.getItem(`smartstay_student_notifications_${userKey}`);
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        const updatedList = list.map((item) => ({ ...item, read: true }));
+        localStorage.setItem(`smartstay_student_notifications_${userKey}`, JSON.stringify(updatedList));
+        localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedList));
+      }
+    }
+  } catch {}
+
   try {
     await apiFetch("/payment-notifications/read-all", { method: "PATCH" });
   } catch {}
@@ -514,6 +544,21 @@ export async function deleteNotificationItem(id, user, backendId) {
   deletedSet.add(String(id));
   if (backendId) deletedSet.add(String(backendId));
   saveDeletedSet(userKey, deletedSet);
+
+  // Update cached student notifications in localStorage
+  try {
+    const raw = localStorage.getItem(`smartstay_student_notifications_${userKey}`);
+    if (raw) {
+      const list = JSON.parse(raw);
+      if (Array.isArray(list)) {
+        const updatedList = list.filter(
+          (item) => item.id !== id && (!backendId || item.backendId !== backendId)
+        );
+        localStorage.setItem(`smartstay_student_notifications_${userKey}`, JSON.stringify(updatedList));
+        localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updatedList));
+      }
+    }
+  } catch {}
 
   if (backendId || (typeof id === "string" && id.match(/^[0-9a-fA-F]{24}$/))) {
     try {
@@ -571,16 +616,29 @@ export function addRealNotification(notif, user) {
 export function getUnreadNotificationCount(user) {
   try {
     const userKey = user?._id || user?.id || user?.email || "guest";
+    const readSet = getReadSet(userKey);
+    const deletedSet = getDeletedSet(userKey);
+
     const raw = localStorage.getItem(`smartstay_student_notifications_${userKey}`);
     if (raw) {
       const list = JSON.parse(raw);
       if (Array.isArray(list)) {
-        return list.filter((n) => !n.read).length;
+        return list.filter((n) => {
+          const isDeleted = deletedSet.has(String(n.id)) || (n.backendId && deletedSet.has(String(n.backendId)));
+          if (isDeleted) return false;
+          const isRead = n.read || readSet.has(String(n.id)) || (n.backendId && readSet.has(String(n.backendId)));
+          return !isRead;
+        }).length;
       }
     }
     // Fallback to local builder
     const local = buildRealLocalNotifications(user);
-    return local.filter((n) => !n.read).length;
+    return local.filter((n) => {
+      const isDeleted = deletedSet.has(String(n.id)) || (n.backendId && deletedSet.has(String(n.backendId)));
+      if (isDeleted) return false;
+      const isRead = n.read || readSet.has(String(n.id)) || (n.backendId && readSet.has(String(n.backendId)));
+      return !isRead;
+    }).length;
   } catch {
     return 0;
   }
