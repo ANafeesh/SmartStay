@@ -22,6 +22,8 @@ import {
   Headphones,
   Shield,
   Store,
+  Wrench,
+  BarChart3,
 } from "lucide-react";
 
 /**
@@ -480,34 +482,47 @@ export default function AuthPortal({ initialTab = "login" }) {
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("student@smartstay.com")}
-                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors text-left"
+                      title="Undergraduate Student - Ahamed Nafeesh"
                     >
-                      <User size={13} className="text-slate-500" />
-                      <span>Student</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => fillDemoAccount("admin@smartstay.com")}
-                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
-                    >
-                      <Shield size={13} className="text-slate-500" />
-                      <span>Admin</span>
+                      <User size={13} className="text-slate-500 shrink-0" />
+                      <span className="truncate">Student</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("warden@smartstay.com")}
-                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors text-left"
+                      title="Hostel Warden / Admin - Dr. K. Perera"
                     >
-                      <Building size={13} className="text-slate-500" />
-                      <span>Warden</span>
+                      <Building size={13} className="text-slate-500 shrink-0" />
+                      <span className="truncate">Warden / Admin</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fillDemoAccount("vendor@smartstay.com")}
-                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 transition-colors text-left"
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors text-left"
+                      title="Canteen Vendor - Campus Canteen Vendor"
                     >
-                      <Store size={13} className="text-slate-500" />
-                      <span>Vendor</span>
+                      <Store size={13} className="text-slate-500 shrink-0" />
+                      <span className="truncate">Vendor</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("maintenance@smartstay.com")}
+                      className="flex items-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors text-left"
+                      title="Maintenance Staff - R. S. Wickramasinghe"
+                    >
+                      <Wrench size={13} className="text-slate-500 shrink-0" />
+                      <span className="truncate">Maintenance</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fillDemoAccount("executive@smartstay.com")}
+                      className="col-span-2 flex items-center justify-center gap-1.5 p-1.5 rounded-md bg-white border border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition-colors text-center"
+                      title="Executive / Administration - Prof. M. H. Razak"
+                    >
+                      <BarChart3 size={13} className="text-slate-500 shrink-0" />
+                      <span>Executive / Admin</span>
                     </button>
                   </div>
                 )}

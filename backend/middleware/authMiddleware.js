@@ -16,6 +16,49 @@ const normalizeRole = (role) => {
 };
 
 /**
+ * Demo personas dictionary
+ */
+const getDemoPersona = (roleKey) => {
+  const norm = normalizeRole(roleKey);
+  const personas = {
+    student: {
+      name: "Ahamed Nafeesh",
+      email: "student@smartstay.com",
+      registrationNumber: "STD-2026-101",
+      studentId: "STD-2026-101",
+      room: "Room 101",
+      building: "Block A",
+    },
+    warden: {
+      name: "Dr. K. Perera",
+      email: "warden@smartstay.com",
+      building: "Administrative Complex",
+    },
+    admin: {
+      name: "Dr. K. Perera",
+      email: "warden@smartstay.com",
+      building: "Administrative Complex",
+    },
+    vendor: {
+      name: "Campus Canteen Vendor",
+      email: "vendor@smartstay.com",
+      building: "Main Cafeteria Complex",
+    },
+    maintenance: {
+      name: "R. S. Wickramasinghe",
+      email: "maintenance@smartstay.com",
+      building: "Hostel Services Block",
+    },
+    executive: {
+      name: "Prof. M. H. Razak",
+      email: "executive@smartstay.com",
+      building: "Senate Building",
+    },
+  };
+  return personas[norm] || personas.student;
+};
+
+/**
  * Protect routes: Authenticate JWT token from Cookie or Authorization header
  */
 const protect = async (req, res, next) => {
@@ -45,45 +88,32 @@ const protect = async (req, res, next) => {
     const rawRole = token.replace("demo-token-", "");
     const roleKey = normalizeRole(rawRole);
     const demoId = "6aafe35dc5e56a9f84d1ca40";
-    const studentProps =
-      roleKey === "student"
-        ? {
-            name: "Student Account",
-            registrationNumber: "STD-2026-101",
-            studentId: "STD-2026-101",
-            room: "Room 101",
-            building: "Block A",
-          }
-        : {
-            name:
-              roleKey === "warden"
-                ? "Dr. K. Perera"
-                : roleKey === "admin"
-                ? "System Administrator"
-                : "Campus Staff",
-          };
+    const persona = getDemoPersona(roleKey);
 
     try {
       let dbUser = await User.findById(demoId);
       if (!dbUser) {
         dbUser = await User.create({
           _id: demoId,
-          email: `${roleKey}@campus.edu`,
+          email: persona.email,
           passwordHash: "$2a$10$demoHashForEvaluationOnly12345678901234567890",
           role: roleKey,
           accountStatus: "active",
-          ...studentProps,
+          ...persona,
         });
+      } else {
+        dbUser.name = persona.name;
+        dbUser.email = persona.email;
+        dbUser.role = roleKey;
       }
       req.user = dbUser;
       return next();
     } catch {
       req.user = {
         _id: demoId,
-        email: `${roleKey}@campus.edu`,
         role: roleKey,
         accountStatus: "active",
-        ...studentProps,
+        ...persona,
       };
       return next();
     }
@@ -141,11 +171,11 @@ const optionalAuth = async (req, res, next) => {
   if (token && token.startsWith("demo-token-")) {
     const rawRole = token.replace("demo-token-", "");
     const roleKey = normalizeRole(rawRole);
+    const persona = getDemoPersona(roleKey);
     req.user = {
       _id: "6aafe35dc5e56a9f84d1ca40",
-      email: `${roleKey}@campus.edu`,
       role: roleKey,
-      name: roleKey === "student" ? "Student Account" : "Staff User",
+      ...persona,
     };
     return next();
   }
