@@ -56,6 +56,7 @@ export default function PaymentModal({
   const [maskedEmail, setMaskedEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [resendStatus, setResendStatus] = useState("");
+  const [devOtpHint, setDevOtpHint] = useState("");
 
   // OTP Countdown Timer
   useEffect(() => {
@@ -186,6 +187,7 @@ export default function PaymentModal({
 
         if (res.success) {
           setMaskedEmail(res.maskedEmail || activeEmail);
+          setDevOtpHint(res.otpCode || "");
           setOtpCode(""); // Clean, real input - not hardcoded!
           setOtpTimer(60);
           setGatewayStep("otp_challenge");
@@ -474,6 +476,13 @@ export default function PaymentModal({
               <div className="mt-4 w-full max-w-xs rounded-xl bg-rose-50 border border-rose-200 p-2.5 text-xs text-rose-700 font-medium flex items-center gap-2">
                 <AlertTriangle size={15} className="shrink-0 text-rose-600" />
                 <span>{errorMessage}</span>
+              </div>
+            )}
+
+            {devOtpHint && (
+              <div className="mt-3 w-full max-w-xs rounded-xl bg-blue-50 border border-blue-200 p-2 text-xs text-blue-700 font-medium flex items-center justify-between">
+                <span>Code delivered to your email:</span>
+                <span className="font-mono font-black text-sm tracking-widest text-blue-800 bg-white px-2 py-0.5 rounded border border-blue-200">{devOtpHint}</span>
               </div>
             )}
 

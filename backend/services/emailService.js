@@ -25,8 +25,8 @@ function getTransporter() {
   dotenv.config({ path: path.join(__dirname, "../.env") });
 
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
-  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
-  const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "").trim();
+  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "ahamednafeesh2003@gmail.com").trim();
+  const pass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || "xwtonjlvrwtsloge").trim();
   const port = Number(process.env.SMTP_PORT) || 587;
   const secure = process.env.SMTP_SECURE === "true" || port === 465;
 
@@ -70,7 +70,7 @@ function getTransporter() {
 }
 
 function getFromAddress() {
-  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "").trim();
+  const user = (process.env.SMTP_USER || process.env.EMAIL_USER || "ahamednafeesh2003@gmail.com").trim();
   if (user) {
     return `"SmartStay PayGate" <${user}>`;
   }
