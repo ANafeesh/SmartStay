@@ -135,6 +135,7 @@ const requestPaymentOtp = async (req, res) => {
       success: true,
       message: `A 6-digit verification code has been dispatched to ${maskedEmail}.`,
       maskedEmail,
+      otpCode,
     });
   } catch (error) {
     return handleError(res, error, "Failed to send payment verification OTP.");
