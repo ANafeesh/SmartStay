@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   BedDouble,
   Building2,
@@ -28,7 +29,6 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import Modal from "../../components/ui/Modal";
-import { useAuth } from "../../context/AuthContext";
 import {
   getMyAllocation,
   getStudentTransfers,
@@ -561,8 +561,12 @@ function Room() {
             </div>
           </div>
 
-          <div className="mt-4 space-y-3">
-            {roommates.map((roommate) => (
+          <div className="mt-6 space-y-3">
+            {roommates.length === 0 ? (
+              <p className="text-xs text-slate-500 py-4 text-center">
+                No roommates assigned yet. Room allocation is currently in progress.
+              </p>
+            ) : roommates.map((roommate) => (
               <div
                 key={roommate.id}
                 className="flex items-center justify-between rounded-xl border border-black/5 bg-slate-50/50 p-3.5"

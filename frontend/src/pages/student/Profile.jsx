@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   User,
   Mail,
@@ -23,7 +23,7 @@ import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import { getMyAllocation } from "../../services/transferService";
 
-const initialProfile = {
+const demoStudentProfile = {
   name: "Ahamed Nafeesh",
   studentId: "STD-2026-090",
   email: "student@smartstay.com",
@@ -40,22 +40,81 @@ const initialProfile = {
 };
 
 function getInitialProfile(user) {
-  try {
-    const cached = localStorage.getItem("smartstay_student_profile");
-    if (cached) return { ...initialProfile, ...JSON.parse(cached) };
-  } catch {}
-  if (user) {
+  if (!user) {
     return {
-      ...initialProfile,
-      name: user.name || initialProfile.name,
-      studentId: user.studentId || user.registrationNumber || initialProfile.studentId,
-      email: user.email || initialProfile.email,
-      phone: user.phone || initialProfile.phone,
-      room: user.room || initialProfile.room,
-      hostel: user.building || initialProfile.hostel,
+      name: "",
+      studentId: "",
+      email: "",
+      phone: "",
+      address: "",
+      course: "",
+      faculty: "",
+      year: "",
+      hostel: "",
+      room: "",
+      bed: "Bed 02",
+      allocationStatus: "Confirmed",
+      joinedDate: "",
     };
   }
-  return initialProfile;
+
+  const isDemo = isDemoUser ? isDemoUser(user) || user.isDemo || user.email === "nafeesh@campus.edu" : true;
+  const userKey = user._id || user.id || user.email || "default";
+
+  // Purge any legacy un-scoped cache if it bleeds onto a non-demo user
+  try {
+    const rawLegacy = localStorage.getItem("smartstay_student_profile");
+    if (rawLegacy && !isDemo) {
+      localStorage.removeItem("smartstay_student_profile");
+    }
+  } catch {}
+
+  const defaultValues = isDemo
+    ? {
+        ...demoStudentProfile,
+        name: user.name || demoStudentProfile.name,
+        email: user.email || demoStudentProfile.email,
+        studentId: user.studentId || user.registrationNumber || demoStudentProfile.studentId,
+        room: user.room || demoStudentProfile.room,
+        hostel: user.building || demoStudentProfile.hostel,
+        phone: user.phone || demoStudentProfile.phone,
+      }
+    : {
+        name: user.name || "Student User",
+        studentId: user.studentId || user.registrationNumber || "Unassigned",
+        email: user.email || "",
+        phone: user.phone || "Not Provided",
+        address: user.address || "Not Provided",
+        course: user.course || "Undergraduate Degree",
+        faculty: user.faculty || "Not Specified",
+        year: user.year || "First Year",
+        hostel: user.building || user.hostel || "Not Allocated",
+        room: user.room || "Not Allocated",
+        bed: "Bed 01",
+        allocationStatus: "Confirmed",
+        joinedDate: user.createdAt
+          ? new Date(user.createdAt).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "Recently Joined",
+      };
+
+  try {
+    const cached = localStorage.getItem(`smartstay_student_profile_${userKey}`);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return {
+        ...defaultValues,
+        ...parsed,
+        name: user.name || parsed.name || defaultValues.name,
+        email: user.email || parsed.email || defaultValues.email,
+      };
+    }
+  } catch {}
+
+  return defaultValues;
 }
 
 function Profile() {
@@ -91,6 +150,8 @@ function Profile() {
       const statusText = alloc.allocation?.status || "Confirmed";
       const dynamicAddress = `Campus Student Residence ${bldName}, Room ${roomNum}`;
 
+      const userKey = user?._id || user?.id || user?.email || "default";
+
       setProfile((prev) => {
         const updated = {
           ...prev,
@@ -105,10 +166,8 @@ function Profile() {
               : prev.address || dynamicAddress,
         };
         try {
-          localStorage.setItem(
-            "smartstay_student_profile",
-            JSON.stringify(updated)
-          );
+          localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(updated));
+          localStorage.setItem("smartstay_student_profile", JSON.stringify(updated));
         } catch {}
         return updated;
       });
@@ -128,7 +187,7 @@ function Profile() {
     } catch (err) {
       console.warn("Could not load live allocation for profile:", err);
     }
-  }, [studentRegId]);
+  }, [studentRegId, user]);
 
   useEffect(() => {
     if (user) {
@@ -143,13 +202,12 @@ function Profile() {
   useEffect(() => {
     const handleProfileSync = (event) => {
       if (event?.detail) {
+        const userKey = user?._id || user?.id || user?.email || "default";
         setProfile((prev) => {
           const merged = { ...prev, ...event.detail };
           try {
-            localStorage.setItem(
-              "smartstay_student_profile",
-              JSON.stringify(merged)
-            );
+            localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(merged));
+            localStorage.setItem("smartstay_student_profile", JSON.stringify(merged));
           } catch {}
           return merged;
         });
@@ -164,7 +222,7 @@ function Profile() {
       window.removeEventListener("smartstay-profile-updated", handleProfileSync);
       window.removeEventListener("storage", handleProfileSync);
     };
-  }, []);
+  }, [user]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -193,7 +251,10 @@ function Profile() {
     setSavedSuccessMsg(true);
     setTimeout(() => setSavedSuccessMsg(false), 3500);
 
+    const userKey = user?._id || user?.id || user?.email || "default";
+
     try {
+      localStorage.setItem(`smartstay_student_profile_${userKey}`, JSON.stringify(formData));
       localStorage.setItem("smartstay_student_profile", JSON.stringify(formData));
       if (updateUser) {
         await updateUser(formData);
@@ -202,6 +263,15 @@ function Profile() {
       console.warn("Unable to save profile:", e);
     }
   }
+
+  const initials =
+    profile.name
+      ?.split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase() || "AN";
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -212,6 +282,11 @@ function Profile() {
           <p className="mt-1 text-sm text-smart-secondary">
             Manage your personal credentials and view verified hostel allocation details.
           </p>
+          {savedSuccessMsg && (
+            <p className="mt-1 text-sm font-semibold text-emerald-600 animate-in fade-in">
+              Profile details updated successfully!
+            </p>
+          )}
         </div>
 
         {!editMode ? (
@@ -244,8 +319,8 @@ function Profile() {
       {/* Profile Header */}
       <Card>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-smart-primary text-3xl font-bold text-white shadow-sm">
-            {profile.name?.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase() || "AN"}
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-3xl bg-smart-primary text-3xl font-bold text-white shadow-md">
+            {initials}
           </div>
 
           <div className="flex-1">
@@ -582,7 +657,7 @@ function InfoItem({ icon: Icon, label, value }) {
         </span>
       </div>
 
-      <p className="mt-2 font-semibold text-smart-primary">{value}</p>
+      <p className="mt-2 font-semibold text-smart-primary">{value || "—"}</p>
     </div>
   );
 }

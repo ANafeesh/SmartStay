@@ -1,5 +1,5 @@
-﻿import { useState } from "react";
-import { useAuth } from "../../context/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import {
   CreditCard,
   CheckCircle2,
@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import ReceiptModal from "../../components/payments/ReceiptModal";
 import PaymentModal from "../../components/payments/PaymentModal";
+import { addRealNotification } from "../../services/notificationService";
 // Module3TestSuite retired from user view
 
 const initialBills = [
@@ -77,8 +78,8 @@ const initialPaymentHistory = [
     receiptNo: "RCT-90421",
     status: "Success",
     studentName: "Student User",
-    studentRegNo: "STD-2026-090",
-    hostelRoom: "Block B - Room 204",
+    studentRegNo: "STD-2026-101",
+    hostelRoom: "Room 101",
   },
   {
     id: "PAY-88210",
@@ -94,8 +95,8 @@ const initialPaymentHistory = [
     receiptNo: "RCT-88210",
     status: "Success",
     studentName: "Student User",
-    studentRegNo: "STD-2026-090",
-    hostelRoom: "Block B - Room 204",
+    studentRegNo: "STD-2026-101",
+    hostelRoom: "Room 101",
   },
   {
     id: "PAY-87502",
@@ -111,8 +112,8 @@ const initialPaymentHistory = [
     receiptNo: "RCT-87502",
     status: "Success",
     studentName: "Student User",
-    studentRegNo: "STD-2026-090",
-    hostelRoom: "Block B - Room 204",
+    studentRegNo: "STD-2026-101",
+    hostelRoom: "Room 101",
   },
 ];
 
@@ -160,10 +161,68 @@ const initialNotifications = [
 
 export default function Payments() {
   const { user } = useAuth();
+  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const userKey = user?._id || user?.id || user?.email || "guest";
+
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [bills, setBills] = useState(initialBills);
-  const [history, setHistory] = useState(initialPaymentHistory);
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [bills, setBills] = useState(() => {
+    if (isDemo) return initialBills;
+    try {
+      const saved = localStorage.getItem(`smartstay_bills_${userKey}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [history, setHistory] = useState(() => {
+    if (isDemo) return initialPaymentHistory;
+    try {
+      const saved = localStorage.getItem(`smartstay_payments_${userKey}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
+  const [notifications, setNotifications] = useState(() => {
+    if (isDemo) return initialNotifications;
+    try {
+      const saved = localStorage.getItem(`smartstay_paynotifs_${userKey}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [
+      {
+        id: "NOTIF-WELCOME",
+        title: "Billing Account Initialized",
+        message: `Welcome to SmartStay bursary billing, ${user?.name || "Student"}. All current semester dues are clear.`,
+        date: "Today",
+        type: "info",
+        amount: 0,
+        read: true,
+      },
+    ];
+  });
+
+  useEffect(() => {
+    if (!isDemo && userKey) {
+      try {
+        localStorage.setItem(`smartstay_bills_${userKey}`, JSON.stringify(bills));
+      } catch {}
+    }
+  }, [bills, isDemo, userKey]);
+
+  useEffect(() => {
+    if (!isDemo && userKey) {
+      try {
+        localStorage.setItem(`smartstay_payments_${userKey}`, JSON.stringify(history));
+      } catch {}
+    }
+  }, [history, isDemo, userKey]);
+
+  useEffect(() => {
+    if (!isDemo && userKey) {
+      try {
+        localStorage.setItem(`smartstay_paynotifs_${userKey}`, JSON.stringify(notifications));
+      } catch {}
+    }
+  }, [notifications, isDemo, userKey]);
   const [selectedBillForPayment, setSelectedBillForPayment] = useState(null);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [latestAlert, setLatestAlert] = useState(null);
@@ -217,6 +276,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "success",
@@ -239,6 +306,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "warning",
@@ -260,6 +335,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "info",
@@ -281,6 +364,14 @@ export default function Payments() {
         read: false,
       };
       setNotifications((prev) => [newNotif, ...prev]);
+      try {
+        addRealNotification({
+          id: newNotif.id,
+          title: newNotif.title,
+          message: newNotif.message,
+          type: "payment",
+        }, user);
+      } catch {}
 
       setLatestAlert({
         type: "danger",
@@ -425,10 +516,10 @@ export default function Payments() {
               </span>
               <span className="text-slate-300">•</span>
               <span className="font-mono font-medium text-blue-600">
-                STD-2026-090
+                {user?.studentId || user?.registrationNumber || "Unassigned"}
               </span>
               <span className="text-slate-300">•</span>
-              <span>Hostel Block B, Room 204</span>
+              <span>{user?.room ? `Hostel ${user.building || "Block"}, Room ${user.room}` : (isDemo ? "Hostel Block B, Room 204" : "Room Allocation Pending")}</span>
               <span className="text-slate-300">•</span>
               <span className="text-slate-400">Academic Year 2026/27</span>
             </div>
@@ -638,16 +729,23 @@ export default function Payments() {
                 </span>
               </div>
               <div className="mt-2.5 flex items-center gap-1.5">
-                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100/70 border border-rose-200/60 px-2 py-0.5 text-[11px] font-bold text-rose-700">
-                  {bills.some((b) => b.status === "Overdue") ? (
-                    <>
-                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
-                      Overdue Notice Active
-                    </>
-                  ) : (
-                    "Due next cycle"
-                  )}
-                </span>
+                {totalOutstanding === 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/70 border border-emerald-200/60 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                    <Check size={12} />
+                    All Dues Cleared
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100/70 border border-rose-200/60 px-2 py-0.5 text-[11px] font-bold text-rose-700">
+                    {bills.some((b) => b.status === "Overdue") ? (
+                      <>
+                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
+                        Overdue Notice Active
+                      </>
+                    ) : (
+                      "Due next cycle"
+                    )}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1054,7 +1152,7 @@ export default function Payments() {
                     <div className="flex justify-between text-slate-500 text-[11px]">
                       <span>Student Reg:</span>
                       <span className="font-mono text-slate-700">
-                        STD-2026-090
+                        {rec.studentRegNo || user?.studentId || user?.registrationNumber || "Unassigned"}
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-500 text-[11px]">

@@ -20,14 +20,12 @@ const ComplaintSchema = new mongoose.Schema(
     studentId: {
       type: String,
       required: true,
-      default: "SEU/IS/22/ICT/090",
-      trim: true,
+            trim: true,
     },
     studentName: {
       type: String,
       required: true,
-      default: "Ahamed Nafeesh",
-      trim: true,
+            trim: true,
     },
     title: {
       type: String,

@@ -8,9 +8,24 @@ try {
   // Use system default if setting servers fails
 }
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected || mongoose.connection.readyState >= 1) {
+    return;
+  }
+
+  if (!process.env.MONGO_URI) {
+    console.warn("MongoDB notice: MONGO_URI is not set in environment (system running with fallback data)");
+    return;
+  }
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+
+    isConnected = true;
     console.log(`MongoDB connected: ${conn.connection.host}`);
 
     // Automatically ensure all 4 blocks and 96 rooms are seeded
@@ -21,8 +36,7 @@ const connectDB = async () => {
       console.warn("Hostel auto-seed notice:", seedErr.message);
     }
   } catch (error) {
-    console.error(`MongoDB connection error: ${error.message}`);
-    process.exit(1);
+    console.warn(`MongoDB notice: ${error.message} (system running with resilient fallback data)`);
   }
 };
 

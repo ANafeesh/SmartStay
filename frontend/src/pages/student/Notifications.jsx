@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "../../context/AuthContext";
 import {
   Bell,
   CheckCheck,
@@ -6,72 +7,20 @@ import {
   ShoppingBag,
   Wrench,
   BedDouble,
+  ShieldCheck,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
-
-const initialNotifications = [
-  {
-    id: 1,
-    title: "Payment Received",
-    message:
-      "Your Utility Charge payment of Rs. 2,500 was received successfully.",
-    date: "20 Sep 2026",
-    time: "10:30 AM",
-    type: "payment",
-    read: true,
-  },
-  {
-    id: 2,
-    title: "Complaint Updated",
-    message:
-      "Your room light complaint has been assigned to the maintenance team.",
-    date: "20 Sep 2026",
-    time: "09:15 AM",
-    type: "maintenance",
-    read: false,
-  },
-  {
-    id: 3,
-    title: "Food Order Ready",
-    message: "Your order #ORD-1023 is ready for collection.",
-    date: "19 Sep 2026",
-    time: "01:20 PM",
-    type: "food",
-    read: false,
-  },
-  {
-    id: 4,
-    title: "Room Allocation Confirmed",
-    message:
-      "Your room B-204 allocation has been confirmed for the 2026 academic year.",
-    date: "05 Jan 2026",
-    time: "08:45 AM",
-    type: "room",
-    read: true,
-  },
-  {
-    id: 5,
-    title: "Maintenance Request Resolved",
-    message: "Your study table repair request has been successfully completed.",
-    date: "18 Sep 2026",
-    time: "04:10 PM",
-    type: "maintenance",
-    read: true,
-  },
-  {
-    id: 6,
-    title: "Payment Reminder",
-    message: "Your September Hostel Fee of Rs. 8,000 is still pending.",
-    date: "17 Sep 2026",
-    time: "09:00 AM",
-    type: "payment",
-    read: false,
-  },
-];
+import {
+  fetchUnifiedNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotificationItem,
+} from "../../services/notificationService";
 
 const notificationConfig = {
   payment: {
@@ -98,84 +47,81 @@ const notificationConfig = {
     color: "text-smart-success",
     label: "Room",
   },
+  security: {
+    icon: ShieldCheck,
+    bg: "bg-purple-100",
+    color: "text-purple-600",
+    label: "Security / Gate",
+  },
 };
 
-const NOTIFICATIONS_STORAGE_KEY = "smartstay_student_notifications";
-
-export function readStoredNotifications() {
-  try {
-    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return initialNotifications;
-}
-
-export function persistNotifications(list) {
-  try {
-    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(list));
-    window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: list }));
-  } catch {}
-}
-
 function Notifications() {
-  const [notifications, setNotifications] = useState(() => readStoredNotifications());
-
-  useEffect(() => {
-    const handleSync = () => setNotifications(readStoredNotifications());
-    window.addEventListener("smartstay-notifications-updated", handleSync);
-    window.addEventListener("storage", handleSync);
-    return () => {
-      window.removeEventListener("smartstay-notifications-updated", handleSync);
-      window.removeEventListener("storage", handleSync);
-    };
-  }, []);
-
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState("All");
 
-  const unreadCount = notifications.filter(
-    (notification) => !notification.read,
-  ).length;
+  const loadNotifications = useCallback(
+    async (isManualRefresh = false) => {
+      if (isManualRefresh) setRefreshing(true);
+      try {
+        const list = await fetchUnifiedNotifications(user);
+        setNotifications(list);
+      } catch (err) {
+        console.warn("Could not load unified notifications:", err);
+      } finally {
+        setLoading(false);
+        if (isManualRefresh) setRefreshing(false);
+      }
+    },
+    [user]
+  );
+
+  useEffect(() => {
+    loadNotifications();
+
+    const handleSync = () => {
+      loadNotifications();
+    };
+
+    window.addEventListener("smartstay-notifications-updated", handleSync);
+    window.addEventListener("smartstay-complaints-updated", handleSync);
+    window.addEventListener("smartstay-food-orders-updated", handleSync);
+    window.addEventListener("storage", handleSync);
+
+    return () => {
+      window.removeEventListener("smartstay-notifications-updated", handleSync);
+      window.removeEventListener("smartstay-complaints-updated", handleSync);
+      window.removeEventListener("smartstay-food-orders-updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, [loadNotifications]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const filteredNotifications = notifications.filter((notification) => {
-    if (filter === "Unread") {
-      return !notification.read;
-    }
-
-    if (filter === "Read") {
-      return notification.read;
-    }
-
+    if (filter === "Unread") return !notification.read;
+    if (filter === "Read") return notification.read;
     return true;
   });
 
-  function markAsRead(id) {
-    setNotifications((previous) => {
-      const updated = previous.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification,
-      );
-      persistNotifications(updated);
-      return updated;
-    });
-  }
+  const handleMarkAsRead = async (id, backendId) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    await markNotificationAsRead(id, user, backendId);
+  };
 
-  function markAllAsRead() {
-    setNotifications((previous) => {
-      const updated = previous.map((notification) => ({
-        ...notification,
-        read: true,
-      }));
-      persistNotifications(updated);
-      return updated;
-    });
-  }
+  const handleMarkAllAsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    await markAllNotificationsAsRead(notifications, user);
+  };
 
-  function deleteNotification(id) {
-    setNotifications((previous) => {
-      const updated = previous.filter((notification) => notification.id !== id);
-      persistNotifications(updated);
-      return updated;
-    });
-  }
+  const handleDelete = async (id, backendId) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await deleteNotificationItem(id, user, backendId);
+  };
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -193,19 +139,36 @@ function Notifications() {
               </span>
             )}
           </div>
-
-          
+          <p className="mt-1 text-sm text-smart-secondary">
+            Live updates on room allocation, complaints, food deliveries, and hostel billing.
+          </p>
         </div>
 
-        {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllAsRead}>
-            <CheckCheck size={17} className="mr-2 inline" />
-            Mark all as read
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => loadNotifications(true)}
+            disabled={refreshing}
+            title="Refresh notifications"
+          >
+            <RefreshCw
+              size={15}
+              className={`mr-1.5 inline ${refreshing ? "animate-spin" : ""}`}
+            />
+            {refreshing ? "Syncing..." : "Refresh"}
           </Button>
-        )}
+
+          {unreadCount > 0 && (
+            <Button variant="outline" size="sm" onClick={handleMarkAllAsRead}>
+              <CheckCheck size={17} className="mr-2 inline" />
+              Mark all as read
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary Cards */}
       <div className="grid gap-5 sm:grid-cols-3">
         <SummaryCard
           title="All Notifications"
@@ -257,7 +220,17 @@ function Notifications() {
 
       {/* Notification List */}
       <Card className="mt-6 p-0 overflow-hidden">
-        {filteredNotifications.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+            <RefreshCw
+              size={28}
+              className="animate-spin text-smart-blue mb-3"
+            />
+            <p className="text-sm font-medium text-smart-secondary">
+              Loading real notifications...
+            </p>
+          </div>
+        ) : filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-smart-blue/10 text-smart-blue">
               <Bell size={28} />
@@ -268,7 +241,11 @@ function Notifications() {
             </h2>
 
             <p className="mt-2 text-sm text-smart-secondary">
-              You're all caught up.
+              {filter === "Unread"
+                ? "You have no unread notifications. You're all caught up!"
+                : filter === "Read"
+                ? "No read notifications found."
+                : "No notifications have been recorded yet."}
             </p>
           </div>
         ) : (
@@ -277,8 +254,8 @@ function Notifications() {
               <NotificationItem
                 key={notification.id}
                 notification={notification}
-                onRead={markAsRead}
-                onDelete={deleteNotification}
+                onRead={handleMarkAsRead}
+                onDelete={handleDelete}
               />
             ))}
           </div>
@@ -331,13 +308,7 @@ function NotificationItem({ notification, onRead, onDelete }) {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3
-                  className={`font-semibold ${
-                    notification.read
-                      ? "text-smart-primary"
-                      : "text-smart-primary"
-                  }`}
-                >
+                <h3 className="font-semibold text-smart-primary">
                   {notification.title}
                 </h3>
 
@@ -365,7 +336,7 @@ function NotificationItem({ notification, onRead, onDelete }) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onRead(notification.id)}
+                onClick={() => onRead(notification.id, notification.backendId)}
               >
                 <CheckCheck size={15} className="mr-1.5 inline" />
                 Mark as read
@@ -374,7 +345,7 @@ function NotificationItem({ notification, onRead, onDelete }) {
 
             <button
               type="button"
-              onClick={() => onDelete(notification.id)}
+              onClick={() => onDelete(notification.id, notification.backendId)}
               className="rounded-xl px-3 py-2 text-xs font-semibold text-smart-danger transition hover:bg-smart-danger/10"
             >
               <Trash2 size={15} className="mr-1.5 inline" />

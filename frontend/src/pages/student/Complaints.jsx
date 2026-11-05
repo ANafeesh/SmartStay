@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth, isDemoUser } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import {
   AlertCircle,
@@ -18,6 +19,7 @@ import {
   getComplaintsFromDB,
   submitComplaintToDB,
 } from "../../services/complaintApi";
+import { addRealNotification } from "../../services/notificationService";
 
 const initialComplaints = [
   {
@@ -73,19 +75,39 @@ export function saveStoredComplaints(list) {
 }
 
 function Complaints() {
+  const { user } = useAuth();
+  const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const userKey = user?._id || user?.id || user?.email || "guest";
+
   const [complaints, setComplaints] = useState(() => {
-    const stored = readStoredComplaints();
-    if (stored && stored.length > 0) {
-      const existingIds = new Set(stored.map((m) => m.id));
-      const remaining = initialComplaints.filter((p) => !existingIds.has(p.id));
-      return [...stored, ...remaining];
+    if (isDemo) {
+      const stored = readStoredComplaints();
+      if (stored && stored.length > 0) {
+        const existingIds = new Set(stored.map((m) => m.id));
+        const remaining = initialComplaints.filter((p) => !existingIds.has(p.id));
+        return [...stored, ...remaining];
+      }
+      return initialComplaints;
     }
-    return initialComplaints;
+    try {
+      const saved = localStorage.getItem(`smartstay_complaints_${userKey}`);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
   });
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    getComplaintsFromDB()
+    if (!isDemo && userKey) {
+      try {
+        localStorage.setItem(`smartstay_complaints_${userKey}`, JSON.stringify(complaints));
+      } catch {}
+    }
+  }, [complaints, isDemo, userKey]);
+
+  useEffect(() => {
+    const filterId = isDemo ? undefined : (user?.studentId || user?.registrationNumber || userKey);
+    getComplaintsFromDB(filterId)
       .then((data) => {
         if (data && data.length > 0) {
           const mapped = data.map((d) => ({
@@ -180,19 +202,12 @@ function Complaints() {
 
       // Add auto-notification for student
       try {
-        const existingNotifs = JSON.parse(localStorage.getItem("smartstay_student_notifications") || "[]");
-        const notif = {
-          id: Date.now(),
+        addRealNotification({
+          id: `cmp-notif-${Date.now()}`,
           title: "Complaint Logged with Warden",
           message: "Complaint #" + newComplaint.id + " (" + newComplaint.title + ") has been received and routed to Hostel Warden Dr. K. Perera.",
-          date: "Today",
-          time: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
           type: "maintenance",
-          read: false,
-        };
-        const updatedNotifs = [notif, ...existingNotifs];
-        localStorage.setItem("smartstay_student_notifications", JSON.stringify(updatedNotifs));
-        window.dispatchEvent(new CustomEvent("smartstay-notifications-updated", { detail: updatedNotifs }));
+        }, user);
       } catch {}
     } catch (e) {
       const newComplaint = {

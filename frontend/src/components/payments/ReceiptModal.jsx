@@ -58,7 +58,7 @@ export default function ReceiptModal({ receipt, onClose }) {
         </div>
       </div>
       <div>
-        <span class="badge-paid">âœ“ Verified & Paid</span>
+        <span class="badge-paid">✓ Verified & Paid</span>
       </div>
     </div>
 
@@ -77,11 +77,11 @@ export default function ReceiptModal({ receipt, onClose }) {
       </div>
       <div>
         <dt>Student Registration No</dt>
-        <dd>${receipt.studentRegNo || "STD-2026-090"}</dd>
+        <dd>${receipt.studentRegNo || "Unassigned"}</dd>
       </div>
       <div>
         <dt>Hostel Accommodation</dt>
-        <dd>${receipt.hostelRoom || "Male Hostel Block B - Room 204"}</dd>
+        <dd>${receipt.hostelRoom || "Not Allocated"}</dd>
       </div>
       <div>
         <dt>Payment Date & Time</dt>
@@ -239,7 +239,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Student ID / Reg
               </span>
               <span className="font-mono font-semibold text-slate-800">
-                {receipt.studentRegNo || "STD-2026-090"}
+                {receipt.studentRegNo || "Unassigned"}
               </span>
             </div>
 
@@ -376,7 +376,7 @@ export default function ReceiptModal({ receipt, onClose }) {
                 Bursary Accounts Division
               </p>
               <p className="text-[10px] text-emerald-400 font-mono mt-0.5">
-                âœ“ Digitally Signed & Sealed
+                ✓ Digitally Signed & Sealed
               </p>
             </div>
           </div>

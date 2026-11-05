@@ -331,7 +331,7 @@ export default function SubmitComplaint() {
           publicId: img.publicId,
           name: img.name,
         })),
-        studentId: user?.studentId || "STD-2026-090",
+        studentId: user?.studentId || user?.registrationNumber || "STD-NEW",
         studentName: user?.name || "Student User",
       };
 
@@ -513,7 +513,7 @@ export default function SubmitComplaint() {
                   to="/complaints"
                   className="text-xs font-bold text-emerald-800 underline hover:text-emerald-950"
                 >
-                  View in My Complaints â†’
+                  View in My Complaints →
                 </Link>
               </div>
             )}
@@ -806,7 +806,7 @@ export default function SubmitComplaint() {
                             {img.name}
                           </p>
                           <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700">
-                            âœ“ Cloud
+                            ✓ Cloud
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-400 mt-0.5">{img.size} MB</p>
@@ -849,7 +849,7 @@ export default function SubmitComplaint() {
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-400">Student ID</dt>
                   <dd className="font-mono font-bold text-slate-700">
-                    {user?.studentId || "STD-2026-090"}
+                    {user?.studentId || user?.registrationNumber || "Unassigned"}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">

@@ -74,7 +74,7 @@ function RouteLoading() {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             {/* Primary Entry Point: Root URL navigates to Login page */}
@@ -87,6 +87,8 @@ function App() {
             {/* Public Gatekeeper QR Scanner & Verification Terminal */}
             <Route path="/gate/verify" element={<GateVerification />} />
             <Route path="/gate-verify" element={<GateVerification />} />
+            <Route path="/verify-pass" element={<GateVerification />} />
+            <Route path="/verify" element={<GateVerification />} />
 
             {/* Authenticated Dashboard Workspace */}
             <Route

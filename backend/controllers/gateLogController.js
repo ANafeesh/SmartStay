@@ -65,14 +65,14 @@ const checkCurfewCondition = (date = new Date()) => {
  */
 exports.recordMovement = async (req, res) => {
   try {
-    const {
+    let {
       passNumber,
       qrToken,
       studentRegistrationId,
       direction,
       gateName = "Main Campus Gate",
       remarks = "",
-    } = req.body;
+    } = req.body || {};
 
     if (!direction || !["IN", "OUT"].includes(direction.toUpperCase())) {
       return res.status(400).json({
@@ -83,9 +83,34 @@ exports.recordMovement = async (req, res) => {
 
     const cleanDirection = direction.toUpperCase();
 
+    // Support structured JSON payload or raw token or URL
+    if (qrToken && typeof qrToken === "string") {
+      try {
+        const parsed = JSON.parse(qrToken.trim());
+        if (parsed.qrToken || parsed.token) qrToken = parsed.qrToken || parsed.token;
+        if (parsed.passNumber && !passNumber) passNumber = parsed.passNumber;
+        if (parsed.studentRegistrationId && !studentRegistrationId) studentRegistrationId = parsed.studentRegistrationId;
+      } catch {
+        try {
+          if (qrToken.startsWith("http://") || qrToken.startsWith("https://")) {
+            const parsedUrl = new URL(qrToken);
+            const extractedToken = parsedUrl.searchParams.get("token") || parsedUrl.searchParams.get("qrToken");
+            qrToken = extractedToken || null;
+            if (!passNumber) passNumber = parsedUrl.searchParams.get("passNumber");
+            if (!studentRegistrationId) {
+              studentRegistrationId =
+                parsedUrl.searchParams.get("studentRegistrationId") ||
+                parsedUrl.searchParams.get("studentId");
+            }
+          }
+        } catch {}
+      }
+    }
+
     // 1. Locate student digital pass (QR token, passNumber, or registration ID)
     let query = {};
     if (qrToken) {
+      const hashed = crypto.createHash("sha256").update(qrToken.trim()).digest("hex");
       query = { tokenHash: hashed };
     } else if (passNumber) {
       query = { passNumber: passNumber.trim().toUpperCase() };
@@ -98,12 +123,23 @@ exports.recordMovement = async (req, res) => {
       });
     }
 
-    const pass = await DigitalPass.findOne(query).populate("student").lean();
+    let pass = await DigitalPass.findOne(query).populate("student").lean();
+
+    if (!pass && passNumber) {
+      pass = await DigitalPass.findOne({ passNumber: passNumber.trim().toUpperCase() })
+        .populate("student")
+        .lean();
+    }
+    if (!pass && studentRegistrationId) {
+      pass = await DigitalPass.findOne({ studentRegistrationId: studentRegistrationId.trim() })
+        .populate("student")
+        .lean();
+    }
 
     if (!pass) {
       return res.status(404).json({
         success: false,
-        message: "Digital pass not found for the provided identifier.",
+        message: "Digital pass not found in campus database.",
       });
     }
 
@@ -133,10 +169,13 @@ exports.recordMovement = async (req, res) => {
       });
     }
 
-    if (!student.accountStatus || String(student.accountStatus).toLowerCase() !== "active") {
+    const studentAccountStatus = student.accountStatus
+      ? String(student.accountStatus).toLowerCase()
+      : "active";
+    if (studentAccountStatus !== "active") {
       return res.status(403).json({
         success: false,
-        message: `Campus gate movement denied. Student account status is '${student.accountStatus || "missing"}' (must be 'active').`,
+        message: `Campus gate movement denied. Student account status is '${studentAccountStatus}' (must be 'active').`,
       });
     }
 
@@ -256,9 +295,34 @@ exports.recordMovement = async (req, res) => {
       });
     }
 
+    let officerId = null;
+    let officerName = null;
+
     // 8. Record Gate Movement Log with Safe CAS Compensating Recovery
     let log;
     try {
+      const isStaffUser =
+        req.user?.role &&
+        ["security", "security_officer", "admin", "warden"].includes(
+          String(req.user.role).toLowerCase().trim()
+        );
+      officerId = isStaffUser ? req.user._id : null;
+      officerName = isStaffUser ? req.user.name || "Campus Security Officer" : "Main Campus Gatekeeper";
+
+      if (!officerId) {
+        const User = require("../models/User");
+        const staffUser = await User.findOne({
+          role: { $in: ["security", "security_officer", "admin", "warden"] },
+        }).select("_id name");
+        if (staffUser) {
+          officerId = staffUser._id;
+          officerName = staffUser.name || "Main Campus Gatekeeper";
+        } else {
+          officerId = pass.student?._id || pass.student || student._id;
+          officerName = "Main Campus Gate Checkpoint";
+        }
+      }
+
       log = await GateEntryExit.create({
         student: student._id,
         studentRegistrationId: pass.studentRegistrationId,
@@ -267,8 +331,8 @@ exports.recordMovement = async (req, res) => {
         passNumber: pass.passNumber,
         direction: cleanDirection,
         gateName: gateName.trim(),
-        scannedBy: req.user._id,
-        officerName: req.user.name || "Security Officer",
+        scannedBy: officerId,
+        officerName,
         timestamp: now,
         isCurfewBreach,
         leaveRequest: matchedLeaveRequest ? matchedLeaveRequest._id : null,
@@ -354,12 +418,14 @@ exports.recordMovement = async (req, res) => {
       } catch (leaveErr) {
         leaveCompletionError = leaveErr;
         console.error("Leave completion failed after log confirmation:", leaveErr.message);
-        await GateEntryExit.findByIdAndUpdate(log._id, {
-          $set: {
-            leaveCompletionStatus: "FAILED",
-            reconciliationNotes: `Leave completion failed: ${leaveErr.message}`,
-          },
-        });
+        try {
+          await GateEntryExit.findByIdAndUpdate(log._id, {
+            $set: {
+              leaveCompletionStatus: "FAILED",
+              reconciliationNotes: `Leave completion failed: ${leaveErr.message}`,
+            },
+          });
+        } catch {}
       }
     }
 
@@ -373,26 +439,30 @@ exports.recordMovement = async (req, res) => {
           severity: "Minor",
           description: `Student entered through ${gateName} at ${now.toLocaleTimeString()} during curfew hours (Asia/Colombo) without a valid approved leave request. Gate movement ref: ${log._id}.`,
           location: gateName,
-          reportedBy: req.user._id,
-          reporterName: req.user.name || "Gate Security Officer",
+          reportedBy: req.user?._id || officerId,
+          reporterName: req.user?.name || officerName || "Gate Security Officer",
           reportedByRole: "security",
           incidentDate: now,
           fineAmount: 500,
           fineStatus: "Pending",
           status: "Open",
         });
-        await GateEntryExit.findByIdAndUpdate(log._id, {
-          $set: { curfewViolationStatus: "CREATED" },
-        });
+        try {
+          await GateEntryExit.findByIdAndUpdate(log._id, {
+            $set: { curfewViolationStatus: "CREATED" },
+          });
+        } catch {}
       } catch (violErr) {
         violationCreationError = violErr;
         console.error("Curfew violation creation failed after log confirmation:", violErr.message);
-        await GateEntryExit.findByIdAndUpdate(log._id, {
-          $set: {
-            curfewViolationStatus: "FAILED",
-            reconciliationNotes: `Curfew violation creation failed: ${violErr.message}`,
-          },
-        });
+        try {
+          await GateEntryExit.findByIdAndUpdate(log._id, {
+            $set: {
+              curfewViolationStatus: "FAILED",
+              reconciliationNotes: `Curfew violation creation failed: ${violErr.message}`,
+            },
+          });
+        } catch {}
       }
     }
 

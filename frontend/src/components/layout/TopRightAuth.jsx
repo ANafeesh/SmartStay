@@ -37,7 +37,7 @@ export default function TopRightAuth({ compact = false }) {
           className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-1.5 sm:px-2.5 sm:py-1.5 shadow-2xs hover:border-blue-300 hover:bg-slate-50 transition cursor-pointer"
         >
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-[11px] font-black text-white shadow-2xs">
-            {user?.initials || "AN"}
+            {user?.initials || "U"}
           </div>
 
           {!compact && (

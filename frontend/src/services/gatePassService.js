@@ -63,13 +63,14 @@ export async function fetchGateLogsApi(params = {}) {
  * Generates or retrieves the student's unique digital pass info (fallback / display helper)
  */
 export function getStudentPassDetails(user) {
-  const studentId = user?.studentId || user?.registrationNumber || "STD-2026-090";
-  const name = user?.name || "Ahamed Nafeesh";
-  const room = user?.room || "Block B - Room 204";
-  const building = user?.building || "Olu Block";
+  const isDemo = user?.isDemo || user?.email === "nafeesh@campus.edu";
+  const studentId = user?.studentId || user?.registrationNumber || (user?.email ? user.email.split("@")[0].toUpperCase() : "STD-ACTIVE");
+  const name = user?.name || "Student User";
+  const room = user?.room || "Room Allocated";
+  const building = user?.building || "Hostel Residence";
 
-  const passNumber = `SP-2026-${studentId.replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "090"}`;
-  const passToken = `QR-SS-STU-${studentId.replace(/[^a-zA-Z0-9]/g, "")}-${passNumber}`;
+  const passNumber = `SP-2026-${String(studentId).replace(/[^a-zA-Z0-9]/g, "").slice(-4) || "101"}`;
+  const passToken = `QR-SS-STU-${String(studentId).replace(/[^a-zA-Z0-9]/g, "")}-${passNumber}`;
 
   return {
     studentId,
@@ -86,7 +87,7 @@ export function getStudentPassDetails(user) {
 /**
  * Returns student's live location and movement history from localStorage
  */
-export function getGateMovementState(studentId = "STD-2026-090") {
+export function getGateMovementState(studentId = "STD-ACTIVE") {
   const key = `${STORAGE_PREFIX}${studentId}`;
   try {
     const raw = localStorage.getItem(key);
@@ -181,8 +182,8 @@ export async function recordStudentMovement({
       direction,
       gateName,
       remarks: isExit
-        ? "Simulated Gate Exit Scan"
-        : "Simulated Gate Entry Scan",
+        ? "Student Gate Movement (OUT)"
+        : "Student Gate Movement (IN)",
     };
     if (qrToken) {
       payload.qrToken = qrToken;

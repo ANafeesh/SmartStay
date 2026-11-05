@@ -143,3 +143,9 @@ vite.config.ts.timestamp-*
 .vite/
 
 *.zip
+
+# Vercel output
+.vercel
+
+# Agent generated files
+.agents/
