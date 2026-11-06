@@ -52,16 +52,21 @@ export default function VendorDashboard() {
   useEffect(() => {
     loadDashboardData();
 
-    const handleSync = () => {
+    const handleSync = (e) => {
+      if (Array.isArray(e?.detail)) {
+        setLiveOrders(e.detail);
+      }
       fetchVendorOrders().then((ords) => {
         if (Array.isArray(ords)) setLiveOrders(ords);
       });
     };
 
     window.addEventListener("smartstay-food-orders-updated", handleSync);
+    window.addEventListener("smartstay-menu-updated", loadDashboardData);
     window.addEventListener("storage", handleSync);
     return () => {
       window.removeEventListener("smartstay-food-orders-updated", handleSync);
+      window.removeEventListener("smartstay-menu-updated", loadDashboardData);
       window.removeEventListener("storage", handleSync);
     };
   }, []);

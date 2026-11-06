@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { readFoodOrders, saveFoodOrders } from "../../data/foodOrders";
 import { addRealNotification } from "../../services/notificationService";
+import { fetchMenuItems } from "../../services/vendorApi";
+import { apiFetch } from "../../services/apiClient";
 
 function createOrderId() {
   return `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -27,37 +29,22 @@ function createOrderId() {
 
 const vendorsList = [
   {
-    id: "VND-01",
+    id: "VND-2026-09",
     name: "Campus Diner & Cafe",
     rating: 4.8,
-    deliveryTime: "20-25 mins",
-    tags: ["Sri Lankan", "Rice & Kottu", "Halal"],
-    hygieneGrade: "A+",
-  },
-  {
-    id: "VND-02",
-    name: "The Snack Shack",
-    rating: 4.6,
-    deliveryTime: "15-20 mins",
-    tags: ["Burgers", "Snacks", "Quick Bites"],
-    hygieneGrade: "A",
-  },
-  {
-    id: "VND-03",
-    name: "Bean & Brew Coffee Co.",
-    rating: 4.9,
-    deliveryTime: "10-15 mins",
-    tags: ["Coffee", "Beverages", "Desserts"],
+    deliveryTime: "15-25 mins",
+    tags: ["Sri Lankan", "Rice & Kottu", "Halal", "Fast Food"],
     hygieneGrade: "A+",
   },
 ];
 
 const initialFoodItems = [
   {
-    id: "FD-101",
+    id: "ITEM-01",
+    itemId: "ITEM-01",
     name: "Chicken Kottu Roti (Full Portion)",
     vendor: "Campus Diner & Cafe",
-    vendorId: "VND-01",
+    vendorId: "VND-2026-09",
     price: 850,
     category: "Main Dishes",
     image: "/food/kottu.jpg",
@@ -67,169 +54,80 @@ const initialFoodItems = [
     isSpicy: true,
     isVeg: false,
     prepTime: "15 mins",
+    calories: "620 kcal",
     description: "Chopped Godamba flatbread stir-fried with seasoned chicken, scrambled eggs, fresh leeks, carrots, and savory curry gravy.",
   },
   {
-    id: "FD-102",
-    name: "Crispy Chicken Burger & Fries",
-    vendor: "The Snack Shack",
-    vendorId: "VND-02",
-    price: 950,
-    category: "Fast Food",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=600",
-    available: true,
-    rating: 4.6,
-    isHalal: true,
-    isSpicy: false,
-    isVeg: false,
-    prepTime: "12 mins",
-    description: "Golden fried chicken fillet layered with melted cheddar, crisp iceberg lettuce, house spicy mayo, and salted fries.",
-  },
-  {
-    id: "FD-103",
+    id: "ITEM-02",
+    itemId: "ITEM-02",
     name: "Special Egg Fried Rice & Chili Paste",
     vendor: "Campus Diner & Cafe",
-    vendorId: "VND-01",
+    vendorId: "VND-2026-09",
     price: 650,
     category: "Main Dishes",
     image: "/food/fried_rice.jpg",
     available: true,
-    rating: 4.5,
+    rating: 4.7,
     isHalal: true,
     isSpicy: true,
     isVeg: false,
     prepTime: "10 mins",
+    calories: "510 kcal",
     description: "Fragrant basmati rice wok-tossed with farm eggs, scallions, sweet soy, and authentic homemade chili paste.",
   },
   {
-    id: "FD-104",
-    name: "Chicken Biriyani Special Pot",
+    id: "ITEM-03",
+    itemId: "ITEM-03",
+    name: "Crispy Chicken Burger & Fries",
     vendor: "Campus Diner & Cafe",
-    vendorId: "VND-01",
-    price: 920,
-    category: "Main Dishes",
-    image: "/food/biriyani.jpg",
-    available: true,
-    rating: 4.9,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: false,
-    prepTime: "15 mins",
-    description: "Fragrant spiced basmati rice slow-cooked with tender chicken, boiled egg, mint sambol, and spicy gravy.",
-  },
-  {
-    id: "FD-105",
-    name: "Sri Lankan Rice & Curry Plate",
-    vendor: "Campus Diner & Cafe",
-    vendorId: "VND-01",
-    price: 550,
-    category: "Main Dishes",
-    image: "/food/rice_and_curry.jpg",
-    available: true,
-    rating: 4.7,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: false,
-    prepTime: "10 mins",
-    description: "Steamed village rice served with authentic dhal, tempered beans, fried papadam, and chicken or fish curry.",
-  },
-  {
-    id: "FD-106",
-    name: "Wok-Tossed Chicken Noodles",
-    vendor: "Campus Diner & Cafe",
-    vendorId: "VND-01",
-    price: 780,
-    category: "Main Dishes",
-    image: "/food/noodles.jpg",
-    available: true,
-    rating: 4.7,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: false,
-    prepTime: "12 mins",
-    description: "Stir-fried egg noodles with shredded chicken, crunchy carrots, cabbage, scallions, and chili garlic sauce.",
-  },
-  {
-    id: "FD-107",
-    name: "Traditional Parotta & Creamy Dhal",
-    vendor: "The Snack Shack",
-    vendorId: "VND-02",
-    price: 360,
-    category: "Snacks",
-    image: "/food/parotta.jpg",
+    vendorId: "VND-2026-09",
+    price: 950,
+    category: "Fast Food",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=600",
     available: true,
     rating: 4.6,
     isHalal: true,
-    isSpicy: true,
-    isVeg: true,
-    prepTime: "8 mins",
-    description: "Two flaky layered golden parottas served with rich tempered coconut milk dhal and spicy lunu miris.",
-  },
-  {
-    id: "FD-108",
-    name: "Crispy Masala Thosai & Sambar",
-    vendor: "The Snack Shack",
-    vendorId: "VND-02",
-    price: 380,
-    category: "Snacks",
-    image: "/food/masal_thosse.jpg",
-    available: true,
-    rating: 4.8,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: true,
-    prepTime: "10 mins",
-    description: "Crisp golden crepe stuffed with spiced potato masala, served with warm vegetable sambar and coconut chutney.",
-  },
-  {
-    id: "FD-109",
-    name: "Steamed Idli Sambar Platter (3 Pcs)",
-    vendor: "The Snack Shack",
-    vendorId: "VND-02",
-    price: 300,
-    category: "Snacks",
-    image: "/food/itli.jpg",
-    available: true,
-    rating: 4.5,
-    isHalal: true,
     isSpicy: false,
-    isVeg: true,
-    prepTime: "8 mins",
-    description: "Steamed fluffy rice and lentil cakes served with aromatic vegetable sambar and fresh tomato chutney.",
+    isVeg: false,
+    prepTime: "12 mins",
+    calories: "680 kcal",
+    description: "Golden fried chicken fillet layered with melted cheddar, crisp iceberg lettuce, house spicy mayo, and salted fries.",
   },
   {
-    id: "FD-110",
-    name: "String Hoppers & Kiri Hodi (10 Pcs)",
-    vendor: "The Snack Shack",
-    vendorId: "VND-02",
-    price: 350,
-    category: "Snacks",
-    image: "/food/string_hoppers.jpg",
-    available: true,
-    rating: 4.8,
-    isHalal: true,
-    isSpicy: true,
-    isVeg: true,
-    prepTime: "10 mins",
-    description: "Freshly steamed rice vermicelli nests served with thick coconut milk kiri hodi and spicy pol sambol.",
-  },
-  {
-    id: "FD-111",
+    id: "ITEM-04",
+    itemId: "ITEM-04",
     name: "Iced Caramel Macchiato (500ml)",
-    vendor: "Bean & Brew Coffee Co.",
-    vendorId: "VND-03",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-2026-09",
     price: 450,
     category: "Beverages",
-    image:
-      "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=600",
-    available: true,
+    image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?auto=format&fit=crop&q=80&w=600",
+    available: false,
     rating: 4.9,
     isHalal: true,
     isSpicy: false,
     isVeg: true,
     prepTime: "5 mins",
-    description: "Double shot espresso poured over chilled creamy milk, vanilla infusion, and topped with rich salted caramel drizzle.",
+    calories: "210 kcal",
+    description: "Cold brewed espresso blended with sweetened creamy milk, vanilla, and salted caramel swirl.",
+  },
+  {
+    id: "ITEM-05",
+    itemId: "ITEM-05",
+    name: "Vegetable Roti & Creamy Dhal",
+    vendor: "Campus Diner & Cafe",
+    vendorId: "VND-2026-09",
+    price: 320,
+    category: "Snacks",
+    image: "/food/parotta.jpg",
+    available: true,
+    rating: 4.8,
+    isHalal: true,
+    isSpicy: true,
+    isVeg: true,
+    prepTime: "8 mins",
+    calories: "340 kcal",
+    description: "Freshly roasted wheat triangles served with seasoned coconut milk lentils and lunu miris.",
   },
 ];
 
@@ -327,7 +225,55 @@ export default function Marketplace() {
   const isDemo = isDemoUser(user) || user?.isDemo || user?.email === "nafeesh@campus.edu";
   const studentRegId = user?.studentId || user?.registrationNumber || "";
   const studentDisplayName = user?.name || "Student";
-  const [items] = useState(initialFoodItems);
+  const [items, setItems] = useState(initialFoodItems);
+
+  const loadMarketplaceItems = async () => {
+    try {
+      const liveItems = await fetchMenuItems();
+      if (Array.isArray(liveItems) && liveItems.length > 0) {
+        const normalizedLive = liveItems.map((m) => ({
+          id: m.id || m.itemId || m._id,
+          itemId: m.itemId || m.id,
+          name: m.name,
+          vendor: "Campus Diner & Cafe",
+          vendorId: "VND-2026-09",
+          price: Number(m.price) || 0,
+          category: m.category || "Main Dishes",
+          image: m.image || "/food/rice_and_curry.jpg",
+          available: m.available !== false,
+          rating: m.rating || 4.8,
+          isHalal: m.isHalal !== undefined ? Boolean(m.isHalal) : true,
+          isSpicy: m.isSpicy !== undefined ? Boolean(m.isSpicy) : false,
+          isVeg: m.isVeg !== undefined ? Boolean(m.isVeg) : false,
+          prepTime: m.prepTime || "15 mins",
+          calories: m.calories || "",
+          description: m.description || "",
+        }));
+
+        setItems(normalizedLive);
+      }
+    } catch (err) {
+      console.warn("Could not load dynamic menu items in marketplace:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadMarketplaceItems();
+
+    const handleMenuSync = () => {
+      loadMarketplaceItems();
+    };
+
+    window.addEventListener("smartstay-menu-updated", handleMenuSync);
+    window.addEventListener("storage", handleMenuSync);
+    const syncInterval = setInterval(loadMarketplaceItems, 8000);
+
+    return () => {
+      window.removeEventListener("smartstay-menu-updated", handleMenuSync);
+      window.removeEventListener("storage", handleMenuSync);
+      clearInterval(syncInterval);
+    };
+  }, []);
   const [myOrders, setMyOrders] = useState(() =>
     studentRegId ? readFoodOrders().filter((order) => order.studentId === studentRegId) : []
   );
@@ -369,10 +315,15 @@ export default function Marketplace() {
       );
     };
     window.addEventListener("storage", refreshOrders);
-    return () => window.removeEventListener("storage", refreshOrders);
+    window.addEventListener("smartstay-food-orders-updated", refreshOrders);
+    return () => {
+      window.removeEventListener("storage", refreshOrders);
+      window.removeEventListener("smartstay-food-orders-updated", refreshOrders);
+    };
   }, [studentRegId]);
 
   const addToCart = (item) => {
+    if (item.available === false) return;
     if (cart.length > 0 && cart[0].vendorId !== item.vendorId) {
       setCartConflictModal({
         existingVendor: cart[0].vendor,
@@ -430,11 +381,13 @@ export default function Marketplace() {
     const orderNo = createOrderId();
     const newOrder = {
       id: orderNo,
-      studentId: studentRegId,
-      studentName: studentDisplayName,
-      regNo: studentRegId,
-      vendorId: cart[0]?.vendorId || "VND-01",
-      vendor: cart[0]?.vendor || "Campus Vendor",
+      orderNo: orderNo,
+      studentId: studentRegId || "STD-2026-101",
+      studentName: studentDisplayName || "Ahamed Nafeesh",
+      regNo: studentRegId || "STD-2026-101",
+      phone: user?.phone || "+94 77 123 4567",
+      vendorId: "VND-2026-09",
+      vendor: "Campus Diner & Cafe",
       timeSlot: selectedSlot,
       deliveryLocation: selectedDropLocation,
       paymentMethod:
@@ -445,14 +398,11 @@ export default function Marketplace() {
             : "Campus Digital Wallet",
       subtotal,
       deliveryFee,
+      convenienceFee: hostelConvenience,
       totalAmount: grandTotal,
       status: "Placed",
-      createdAt: new Date().toLocaleString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      paymentStatus: "Pending",
+      createdAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       items: cart.map((item) => ({
         name: item.name,
         qty: item.quantity,
@@ -460,35 +410,68 @@ export default function Marketplace() {
       })),
     };
 
-    setTimeout(() => {
-      const updatedOrders = [newOrder, ...readFoodOrders()];
-      setMyOrders(
-        updatedOrders.filter(
-          (order) =>
-            !order.studentId ||
-            order.studentId === studentRegId ||
-            order.regNo === studentRegId ||
-            order.studentName === studentDisplayName,
-        ),
-      );
-      try {
-        saveFoodOrders(updatedOrders);
-        addRealNotification({
+    // 1. Immediately save to local storage
+    const currentOrders = readFoodOrders();
+    const updatedOrders = [newOrder, ...currentOrders.filter((o) => o.id !== newOrder.id && o.orderNo !== newOrder.id)];
+    saveFoodOrders(updatedOrders);
+
+    // 2. Dispatch event with detail so Vendor Orders & Dashboard update live in 0ms
+    window.dispatchEvent(new CustomEvent("smartstay-food-orders-updated", { detail: updatedOrders }));
+    window.dispatchEvent(new Event("storage"));
+
+    // 3. Update student's state
+    setMyOrders(
+      updatedOrders.filter(
+        (order) =>
+          !order.studentId ||
+          order.studentId === studentRegId ||
+          order.regNo === studentRegId ||
+          order.studentName === studentDisplayName,
+      ),
+    );
+
+    // 4. Asynchronously persist into MongoDB backend
+    apiFetch("/food-orders", {
+      method: "POST",
+      body: {
+        orderNo: newOrder.id,
+        studentId: newOrder.studentId,
+        studentName: newOrder.studentName,
+        regNo: newOrder.regNo,
+        vendorId: "VND-2026-09",
+        vendor: "Campus Diner & Cafe",
+        deliverySlotId: null,
+        timeSlot: newOrder.timeSlot,
+        deliveryLocation: newOrder.deliveryLocation,
+        paymentMethod: newOrder.paymentMethod,
+        subtotal: newOrder.subtotal,
+        deliveryFee: newOrder.deliveryFee,
+        convenienceFee: hostelConvenience,
+        totalAmount: newOrder.totalAmount,
+        items: newOrder.items,
+      },
+    }).catch((err) => console.warn("Backend order creation note:", err.message));
+
+    // 5. Resident notification
+    try {
+      addRealNotification(
+        {
           id: `order-placed-${newOrder.id}`,
           title: "Food Order Placed",
-                    message: `Your food order #${newOrder.id} (${newOrder.vendor}) for LKR ${newOrder.totalAmount.toLocaleString()} has been placed.`,
+          message: `Your food order #${newOrder.id} for LKR ${newOrder.totalAmount.toLocaleString()} has been placed to Campus Diner & Cafe.`,
           type: "food",
-        }, user);
-      } catch (err) {
-        console.error("Unable to save order.", err);
-      }
+        },
+        user,
+      );
+    } catch (notifErr) {
+      console.warn("Notification error:", notifErr);
+    }
 
       setOrderConfirmed(newOrder);
       setShowSuccessModal(true);
       setCart([]);
       setIsCartOpen(false);
       setIsSubmitting(false);
-    }, 350);
   };
 
   const simulateStatusStep = (orderId) => {
@@ -771,77 +754,43 @@ export default function Marketplace() {
       ) : (
         /* VIEW: MENU CATALOG */
         <div className="space-y-6">
-          {/* Approved Campus Outlets */}
+          {/* Approved Campus Food Vendor */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-slate-700">
-                Approved campus food outlets
+                Official Campus Food Outlet
               </h3>
-              <span className="text-[11px] font-mono text-slate-400">Security Gate Authorized</span>
+              <span className="text-[11px] font-mono text-emerald-600 font-medium">Security Gate Clearance Active</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {vendorsList.map((v) => {
-                const isSelected = selectedVendor === v.name;
-                return (
-                  <div
-                    key={v.id}
-                    onClick={() => setSelectedVendor(isSelected ? "All" : v.name)}
-                    className={`rounded-xl border p-4 sm:p-5 transition-colors cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? "border-slate-900 bg-slate-50/60"
-                        : "border-slate-200/80 bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                            <Store size={16} />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-semibold text-slate-900">{v.name}</h4>
-                            <p className="text-[11px] text-slate-500 font-mono mt-0.5">
-                              ~ {v.deliveryTime} · Grade {v.hygieneGrade}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                          <Star size={11} className="text-amber-500 fill-amber-500" />
-                          <span>{v.rating}</span>
-                        </span>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {v.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="rounded-md bg-slate-100 border border-slate-200/60 px-2 py-0.5 text-[11px] text-slate-600"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                      <span className="text-[11px] text-slate-500">
-                        {isSelected ? "Active filter" : "Select outlet"}
-                      </span>
-                      {isSelected ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-slate-900">
-                          <Check size={14} /> Selected
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">
-                          <ChevronRight size={14} />
-                        </span>
-                      )}
-                    </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                  <Store size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-900">Campus Diner & Cafe</h4>
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                      <CheckCircle2 size={11} />
+                      Approved Commercial Vendor
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/60 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                      <Star size={10} className="fill-amber-500 text-amber-500" />
+                      4.8
+                    </span>
                   </div>
-                );
-              })}
+                  <p className="text-xs text-slate-500 mt-1 font-mono">
+                    Cafeteria Complex Booth 03 · ~ 15-25 mins delivery · Hygiene Grade A+
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Kitchen Open & Connected
+                </span>
+              </div>
             </div>
           </div>
 
@@ -933,10 +882,15 @@ export default function Marketplace() {
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="h-full w-full object-cover"
+                      className={`h-full w-full object-cover transition duration-300 ${!item.available ? "opacity-50 grayscale-[40%]" : ""}`}
                     />
 
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                      {!item.available && (
+                        <span className="rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-xs">
+                          Sold Out
+                        </span>
+                      )}
                       <span className="inline-flex items-center gap-1 rounded-md bg-white/95 px-2 py-0.5 text-[11px] font-medium text-slate-800 shadow-xs border border-slate-200/70">
                         <Star size={10} className="text-amber-500 fill-amber-500" />
                         <span>{item.rating}</span>
@@ -987,7 +941,11 @@ export default function Marketplace() {
                       </div>
 
                       {/* Quantity Stepper */}
-                      {qty === 0 ? (
+                      {!item.available ? (
+                        <span className="inline-flex items-center rounded-lg bg-slate-100 border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-400 select-none">
+                          Sold Out
+                        </span>
+                      ) : qty === 0 ? (
                         <button
                           onClick={() => addToCart(item)}
                           className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition-colors cursor-pointer"
