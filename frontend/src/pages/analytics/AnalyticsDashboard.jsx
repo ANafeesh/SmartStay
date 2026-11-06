@@ -51,7 +51,13 @@ const CATEGORY_COLORS = [
   "#cbd5e1",
 ];
 
-const BLOCKS = ["All", "Block A", "Block B", "Block C"];
+const BLOCKS = [
+  "All",
+  "Block A - Aurora Hall",
+  "Block B - Horizon Hall",
+  "Block C - Lakeside Residence",
+  "Block D - Co-Living Annex",
+];
 
 const PERIODS = [
   { label: "All time records", value: "all" },
@@ -204,25 +210,34 @@ function AnalyticsDashboard() {
       setLoading(true);
       setError("");
 
-      const [
-        summaryRes,
-        blocksRes,
-        occupancyRes,
-        financialRes,
-        complaintsRes,
-      ] = await Promise.all([
+      // Execute non-dependent queries with individual resolution for faster initial rendering
+      getMonitoringSummary().then((res) => {
+        if (res?.data) setMonitoringSummary(Array.isArray(res.data) ? res.data : []);
+      }).catch(() => {});
+
+      getBlockSummary().then((res) => {
+        if (res?.data) setBlockSummary(Array.isArray(res.data) ? res.data : []);
+      }).catch(() => {});
+
+      getOccupancyAnalytics().then((res) => {
+        if (res?.data) setOccupancyData(res.data);
+      }).catch(() => {});
+
+      getFinancialAnalytics().then((res) => {
+        if (res?.data) setFinancialData(res.data);
+      }).catch(() => {});
+
+      getComplaintAnalytics().then((res) => {
+        if (res?.data) setComplaintData(res.data);
+      }).catch(() => {});
+
+      await Promise.allSettled([
         getMonitoringSummary(),
         getBlockSummary(),
         getOccupancyAnalytics(),
         getFinancialAnalytics(),
         getComplaintAnalytics(),
       ]);
-
-      setMonitoringSummary(Array.isArray(summaryRes?.data) ? summaryRes.data : []);
-      setBlockSummary(Array.isArray(blocksRes?.data) ? blocksRes.data : []);
-      setOccupancyData(occupancyRes?.data || null);
-      setFinancialData(financialRes?.data || null);
-      setComplaintData(complaintsRes?.data || null);
     } catch (err) {
       console.error("Dashboard data load error:", err);
       setError(err?.message || "Failed to load live analytics records.");
@@ -236,11 +251,18 @@ function AnalyticsDashboard() {
   }, []);
 
   const occupancyChartData = useMemo(() => {
-    if (!occupancyData?.blocksSummary?.length) return [];
-    return occupancyData.blocksSummary
-      .filter((b) => selectedBlock === "All" || b.blockName === selectedBlock)
+    const blocksList = occupancyData?.blocks || occupancyData?.blocksSummary || [];
+    if (!blocksList.length) return [];
+    return blocksList
+      .filter((b) => {
+        if (selectedBlock === "All") return true;
+        return (
+          b.blockName?.toLowerCase().includes(selectedBlock.toLowerCase()) ||
+          b.buildingCode?.toLowerCase().includes(selectedBlock.toLowerCase())
+        );
+      })
       .map((b) => ({
-        name: b.blockName,
+        name: b.buildingCode || b.blockName?.split(" - ")[0] || b.blockName,
         occupied: b.occupiedBeds || 0,
         available: b.availableBeds || 0,
         total: b.totalBeds || 0,
@@ -248,15 +270,22 @@ function AnalyticsDashboard() {
   }, [occupancyData, selectedBlock]);
 
   const revenueChartData = useMemo(() => {
-    if (!financialData?.monthlyTrends?.length) return [];
-    return financialData.monthlyTrends.map((t) => ({
-      month: t.month,
-      revenue: t.collectedRevenue || 0,
-      billed: t.billedAmount || 0,
+    const list = financialData?.monthlySummary || financialData?.monthlyTrends || [];
+    if (!list.length) return [];
+    return list.map((t) => ({
+      month: t.month || t.yearMonth,
+      revenue: t.collectedAmount ?? t.collectedRevenue ?? 0,
+      billed: t.billedAmount ?? 0,
     }));
   }, [financialData]);
 
   const complaintChartData = useMemo(() => {
+    if (complaintData?.categoryDistribution) {
+      return Object.entries(complaintData.categoryDistribution).map(([cat, count]) => ({
+        category: cat,
+        count: Number(count) || 0,
+      }));
+    }
     if (!complaintData?.categoryBreakdown?.length) return [];
     return complaintData.categoryBreakdown.map((c) => ({
       category: c.category,

@@ -81,7 +81,59 @@ function Notifications() {
   useEffect(() => {
     loadNotifications();
 
-    const handleSync = () => {
+    // Real-time polling with backend every 5 seconds, diff-checking to avoid UI flashing
+    const interval = setInterval(() => {
+      fetchUnifiedNotifications(user).then((list) => {
+        if (!Array.isArray(list)) return;
+        setNotifications((prev) => {
+          if (prev.length !== list.length) return list;
+          const isDiff = list.some((item, i) => {
+            const p = prev[i];
+            return !p || p.id !== item.id || p.read !== item.read;
+          });
+          return isDiff ? list : prev;
+        });
+      }).catch(() => {});
+    }, 5000);
+
+    const handleSync = (e) => {
+      // Optimistic local update handler for instant UI response
+      if (e?.detail?.readId) {
+        const targetId = String(e.detail.readId);
+        const targetBackendId = e.detail.backendId ? String(e.detail.backendId) : null;
+        setNotifications((prev) =>
+          prev.map((n) =>
+            String(n.id) === targetId ||
+            (targetBackendId && String(n.backendId) === targetBackendId) ||
+            (n.backendId && String(n.backendId) === targetId)
+              ? { ...n, read: true }
+              : n
+          )
+        );
+        return;
+      }
+      if (e?.detail?.allRead) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        return;
+      }
+      if (e?.detail?.deletedId) {
+        const targetId = String(e.detail.deletedId);
+        const targetBackendId = e.detail.backendId ? String(e.detail.backendId) : null;
+        setNotifications((prev) =>
+          prev.filter((n) =>
+            String(n.id) !== targetId &&
+            (!targetBackendId || String(n.backendId) !== targetBackendId)
+          )
+        );
+        return;
+      }
+      if (e?.detail?.fromFetch) {
+        return;
+      }
+      loadNotifications();
+    };
+
+    const onFocus = () => {
       loadNotifications();
     };
 
@@ -89,14 +141,17 @@ function Notifications() {
     window.addEventListener("smartstay-complaints-updated", handleSync);
     window.addEventListener("smartstay-food-orders-updated", handleSync);
     window.addEventListener("storage", handleSync);
+    window.addEventListener("focus", onFocus);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener("smartstay-notifications-updated", handleSync);
       window.removeEventListener("smartstay-complaints-updated", handleSync);
       window.removeEventListener("smartstay-food-orders-updated", handleSync);
       window.removeEventListener("storage", handleSync);
+      window.removeEventListener("focus", onFocus);
     };
-  }, [loadNotifications]);
+  }, [loadNotifications, user]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -107,10 +162,24 @@ function Notifications() {
   });
 
   const handleMarkAsRead = async (id, backendId) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    const target = notifications.find(
+      (n) =>
+        String(n.id) === String(id) ||
+        (backendId && String(n.backendId) === String(backendId)) ||
+        (n.backendId && String(n.backendId) === String(id))
     );
-    await markNotificationAsRead(id, user, backendId);
+
+    setNotifications((prev) =>
+      prev.map((n) =>
+        String(n.id) === String(id) ||
+        (backendId && String(n.backendId) === String(backendId)) ||
+        (n.backendId && String(n.backendId) === String(id)) ||
+        (target && n.title === target.title && n.message === target.message)
+          ? { ...n, read: true }
+          : n
+      )
+    );
+    await markNotificationAsRead(id, user, backendId, target);
   };
 
   const handleMarkAllAsRead = async () => {
@@ -119,8 +188,22 @@ function Notifications() {
   };
 
   const handleDelete = async (id, backendId) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    await deleteNotificationItem(id, user, backendId);
+    const target = notifications.find(
+      (n) =>
+        String(n.id) === String(id) ||
+        (backendId && String(n.backendId) === String(backendId)) ||
+        (n.backendId && String(n.backendId) === String(id))
+    );
+
+    setNotifications((prev) =>
+      prev.filter(
+        (n) =>
+          String(n.id) !== String(id) &&
+          (!backendId || String(n.backendId) !== String(backendId)) &&
+          (!target || n.title !== target.title || n.message !== target.message)
+      )
+    );
+    await deleteNotificationItem(id, user, backendId, target);
   };
 
   return (

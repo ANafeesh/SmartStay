@@ -1,10 +1,37 @@
 import { apiFetch } from "./apiClient";
 
+// In-memory response cache with TTL to eliminate re-fetching latency across tab switches
+const apiCache = new Map();
+const CACHE_TTL_MS = 60000; // 60 seconds
+
 /**
- * Reusable JSON fetch utility with centralized authentication
+ * Reusable JSON fetch utility with centralized authentication and intelligent caching
  */
-async function fetchJSON(endpoint, options = {}) {
-  return await apiFetch(endpoint, options);
+async function fetchJSON(endpoint, options = {}, useCache = true) {
+  const isGet = !options.method || options.method.toUpperCase() === "GET";
+  const cacheKey = isGet ? endpoint : null;
+
+  if (useCache && isGet && apiCache.has(cacheKey)) {
+    const cached = apiCache.get(cacheKey);
+    if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.data;
+    }
+  }
+
+  const result = await apiFetch(endpoint, options);
+
+  if (useCache && isGet && result) {
+    apiCache.set(cacheKey, {
+      data: result,
+      timestamp: Date.now(),
+    });
+  }
+
+  return result;
+}
+
+export function clearAnalyticsCache() {
+  apiCache.clear();
 }
 
 /**
@@ -37,11 +64,12 @@ export function getLatestMonitoringReadings() {
 
 // POST /api/monitoring
 export function createMonitoringReading(readingData) {
+  clearAnalyticsCache();
   return fetchJSON("/monitoring", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(readingData),
-  });
+  }, false);
 }
 
 /**

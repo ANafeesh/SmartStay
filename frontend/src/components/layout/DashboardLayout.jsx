@@ -3,7 +3,10 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import TopRightAuth from "./TopRightAuth";
 import Logo from "../ui/Logo";
 import { useAuth, normalizeRole } from "../../context/AuthContext";
-import { getUnreadNotificationCount } from "../../services/notificationService";
+import {
+  getUnreadNotificationCount,
+  fetchUnifiedNotifications,
+} from "../../services/notificationService";
 import {
   Activity,
   AlertTriangle,
@@ -63,7 +66,7 @@ const navigationGroups = [
   {
     title: "Hostel Management",
     role: "warden",
-    allowedRoles: ["warden", "admin", "maintenance"],
+    allowedRoles: ["warden", "admin"],
     items: [
       { name: "Hostel Dashboard", href: "/hostel", icon: Building },
       { name: "Buildings", href: "/hostel/buildings", icon: Building },
@@ -71,7 +74,17 @@ const navigationGroups = [
       { name: "Allocations", href: "/hostel/allocations", icon: Users },
       { name: "Transfers", href: "/hostel/transfers", icon: ArrowLeftRight },
       { name: "Occupancy", href: "/hostel/occupancy", icon: BarChart3 },
+    ],
+  },
+  {
+    title: "Maintenance Management",
+    role: "maintenance",
+    allowedRoles: ["maintenance", "admin"],
+    items: [
       { name: "Student Complaints", href: "/maintenance", icon: AlertTriangle },
+      { name: "Smart IoT Monitoring", href: "/monitoring", icon: Activity },
+      { name: "Utilities Telemetry", href: "/utilities", icon: Zap },
+      { name: "Notifications Center", href: "/notifications-center", icon: Bell },
     ],
   },
   {
@@ -130,26 +143,68 @@ function DashboardLayout() {
     getUnreadNotificationCount(user)
   );
 
+  const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
+  const isExecutiveOrMaintenance = currentRole === "executive" || currentRole === "maintenance";
+
   useEffect(() => {
-    const handleSync = () => {
-      setUnreadNotifCount(getUnreadNotificationCount(user));
+    if (!user) return;
+
+    const syncUnread = async () => {
+      if (isExecutiveOrMaintenance) {
+        const count = getUnreadNotificationCount(user);
+        setUnreadNotifCount((prev) => (prev !== count ? count : prev));
+        return;
+      }
+      try {
+        const list = await fetchUnifiedNotifications(user);
+        if (Array.isArray(list)) {
+          const count = list.filter((n) => !n.read).length;
+          setUnreadNotifCount((prev) => (prev !== count ? count : prev));
+        }
+      } catch {
+        const count = getUnreadNotificationCount(user);
+        setUnreadNotifCount((prev) => (prev !== count ? count : prev));
+      }
     };
-    handleSync();
+
+    // 1. Initial live sync on mount/route change
+    syncUnread();
+
+    // 2. Real-time event handler with zero-latency optimistic detail count
+    const handleSync = (e) => {
+      if (e?.detail && typeof e.detail.unreadCount === "number") {
+        setUnreadNotifCount(e.detail.unreadCount);
+        return;
+      }
+      syncUnread();
+    };
+
+    // 3. Steady background polling every 5 seconds without triggering re-fetch cascades
+    const interval = setInterval(() => {
+      syncUnread();
+    }, 5000);
+
+    const onFocus = () => {
+      syncUnread();
+    };
+
     window.addEventListener("smartstay-notifications-updated", handleSync);
     window.addEventListener("smartstay-complaints-updated", handleSync);
     window.addEventListener("smartstay-food-orders-updated", handleSync);
     window.addEventListener("storage", handleSync);
+    window.addEventListener("focus", onFocus);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener("smartstay-notifications-updated", handleSync);
       window.removeEventListener("smartstay-complaints-updated", handleSync);
       window.removeEventListener("smartstay-food-orders-updated", handleSync);
       window.removeEventListener("storage", handleSync);
+      window.removeEventListener("focus", onFocus);
     };
-  }, [user, location.pathname]);
+  }, [user, location.pathname, isExecutiveOrMaintenance]);
 
   const sidebarCollapsed = false;
-
-  const currentRole = user ? normalizeRole(user.role || user.roleKey) : "";
 
   // Filter navigation groups according to authenticated user's role
   const visibleGroups = navigationGroups
@@ -180,6 +235,10 @@ function DashboardLayout() {
       ? "Submit Complaint"
       : currentPage?.name ?? "Dashboard";
   const sidebarWidth = sidebarCollapsed ? "lg:w-20" : "lg:w-72";
+  const notificationsHref =
+    currentRole === "executive" || currentRole === "maintenance"
+      ? "/notifications-center"
+      : "/notifications";
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 lg:flex-row antialiased font-sans">
@@ -188,7 +247,7 @@ function DashboardLayout() {
         <Logo variant="horizontal" size="sm" asLink />
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Link
-            to="/notifications"
+            to={notificationsHref}
             aria-label="View notifications"
             className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-2xs transition hover:bg-slate-50 active:scale-95"
           >
@@ -226,9 +285,8 @@ function DashboardLayout() {
       {/* Primary Sidebar */}
       <aside
         id="smartstay-sidebar"
-        className={`fixed left-0 top-0 z-50 flex h-screen w-72 sm:w-80 max-w-[85vw] ${sidebarWidth} shrink-0 flex-col border-r border-slate-200/90 bg-white text-slate-800 shadow-2xl shadow-slate-900/10 transition-all duration-300 lg:sticky ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        className={`fixed left-0 top-0 z-50 flex h-screen w-72 sm:w-80 max-w-[85vw] ${sidebarWidth} shrink-0 flex-col border-r border-slate-200/90 bg-white text-slate-800 shadow-2xl shadow-slate-900/10 transition-all duration-300 lg:sticky ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          }`}
       >
         {/* Brand Header */}
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4">
@@ -263,9 +321,8 @@ function DashboardLayout() {
               <div key={group.title}>
                 {!sidebarCollapsed && (
                   <div className="flex items-center justify-between mb-2 px-2.5">
-                    <p className={`text-[10px] font-extrabold uppercase tracking-[0.18em] ${
-                      isUserPrimaryGroup ? "text-blue-600 font-black" : "text-slate-400"
-                    }`}>
+                    <p className={`text-[10px] font-extrabold uppercase tracking-[0.18em] ${isUserPrimaryGroup ? "text-blue-600 font-black" : "text-slate-400"
+                      }`}>
                       {group.title}
                     </p>
                     {isUserPrimaryGroup && (
@@ -287,19 +344,16 @@ function DashboardLayout() {
                         aria-current={active ? "page" : undefined}
                         onClick={() => setSidebarOpen(false)}
                         title={sidebarCollapsed ? item.name : undefined}
-                        className={`group relative flex items-center ${
-                          sidebarCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
-                        } rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
-                          active
+                        className={`group relative flex items-center ${sidebarCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
+                          } rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${active
                             ? "bg-blue-600 text-white shadow-md shadow-blue-600/25 ring-1 ring-inset ring-blue-500 font-bold"
                             : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
-                        }`}
+                          }`}
                       >
                         <Icon
                           size={17}
-                          className={`shrink-0 transition-colors ${
-                            active ? "text-white" : "text-slate-400 group-hover:text-slate-700"
-                          }`}
+                          className={`shrink-0 transition-colors ${active ? "text-white" : "text-slate-400 group-hover:text-slate-700"
+                            }`}
                         />
                         {!sidebarCollapsed && <span className="truncate">{item.name}</span>}
 
@@ -371,7 +425,7 @@ function DashboardLayout() {
 
           <div className="flex shrink-0 items-center gap-3">
             <Link
-              to="/notifications"
+              to={notificationsHref}
               aria-label="View notifications"
               title="Notifications"
               className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-blue-300 hover:text-blue-600 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

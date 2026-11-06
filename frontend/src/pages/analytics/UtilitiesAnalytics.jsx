@@ -179,37 +179,56 @@ export default function UtilitiesAnalytics() {
   const fetchData = async (targetPeriod = period) => {
     try {
       setError(null);
-      const [trendRes, foodRes, ordersRes, alertsRes, finRes] = await Promise.all([
-        getTelemetryTrend({ period: targetPeriod }).catch(() => ({ data: {} })),
-        getFoodOrderAnalytics().catch(() => ({ data: {} })),
-        getFoodOrders().catch(() => ({ data: [] })),
-        getMonitoringAlerts().catch(() => ({ data: [] })),
-        getFinancialAnalytics().catch(() => ({ data: {} })),
+
+      // Fast streaming response: set telemetry as soon as it arrives
+      getTelemetryTrend({ period: targetPeriod })
+        .then((trendRes) => {
+          if (trendRes?.data) {
+            setTelemetry({
+              totalWater: trendRes.data.totalWater || 0,
+              totalElectricity: trendRes.data.totalElectricity || 0,
+              dailySummary: trendRes.data.dailySummary || [],
+              monthlySummary: trendRes.data.monthlySummary || [],
+              timeline: trendRes.data.timeline || [],
+            });
+            setLoading(false);
+          }
+        })
+        .catch(() => {});
+
+      getFoodOrderAnalytics()
+        .then((foodRes) => {
+          if (foodRes?.data) {
+            setFoodAnalytics({
+              totalOrders: foodRes.data.totalOrders || 0,
+              realizedRevenue: foodRes.data.realizedRevenue || 0,
+              activeOrderRevenue: foodRes.data.activeOrderRevenue || 0,
+              popularMeals: foodRes.data.popularMeals || [],
+              volumeTrends: foodRes.data.volumeTrends || [],
+            });
+          }
+        })
+        .catch(() => {});
+
+      getFoodOrders()
+        .then((ordersRes) => setRawOrders(ordersRes?.data || []))
+        .catch(() => {});
+
+      getMonitoringAlerts()
+        .then((alertsRes) => setAlerts(alertsRes?.data || []))
+        .catch(() => {});
+
+      getFinancialAnalytics()
+        .then((finRes) => setFinancialData(finRes?.data || null))
+        .catch(() => {});
+
+      await Promise.allSettled([
+        getTelemetryTrend({ period: targetPeriod }),
+        getFoodOrderAnalytics(),
+        getFoodOrders(),
+        getMonitoringAlerts(),
+        getFinancialAnalytics(),
       ]);
-
-      if (trendRes?.data) {
-        setTelemetry({
-          totalWater: trendRes.data.totalWater || 0,
-          totalElectricity: trendRes.data.totalElectricity || 0,
-          dailySummary: trendRes.data.dailySummary || [],
-          monthlySummary: trendRes.data.monthlySummary || [],
-          timeline: trendRes.data.timeline || [],
-        });
-      }
-
-      if (foodRes?.data) {
-        setFoodAnalytics({
-          totalOrders: foodRes.data.totalOrders || 0,
-          realizedRevenue: foodRes.data.realizedRevenue || 0,
-          activeOrderRevenue: foodRes.data.activeOrderRevenue || 0,
-          popularMeals: foodRes.data.popularMeals || [],
-          volumeTrends: foodRes.data.volumeTrends || [],
-        });
-      }
-
-      setRawOrders(ordersRes?.data || []);
-      setAlerts(alertsRes?.data || []);
-      setFinancialData(finRes?.data || null);
     } catch (err) {
       console.error("Failed to load utilities analytics data:", err);
       setError(err.message || "Failed to load utility and food order analytics.");

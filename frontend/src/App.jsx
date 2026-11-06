@@ -54,6 +54,13 @@ const SubmitComplaint = lazy(
   () => import("./pages/maintance/Student/SubmitComplaint"),
 );
 
+const ExecutiveProfile = lazy(
+  () => import("./pages/analytics/ExecutiveProfile"),
+);
+const MaintenanceProfile = lazy(
+  () => import("./pages/maintance/MaintenanceProfile"),
+);
+
 function RouteLoading() {
   return (
     <div
@@ -76,6 +83,12 @@ function AdaptiveProfile() {
   const { user } = useAuth();
   if (user?.role === "vendor") {
     return <VendorProfile />;
+  }
+  if (user?.role === "executive" || user?.roleKey === "executive") {
+    return <ExecutiveProfile />;
+  }
+  if (user?.role === "maintenance" || user?.roleKey === "maintenance") {
+    return <MaintenanceProfile />;
   }
   return <Profile />;
 }
@@ -110,7 +123,7 @@ function App() {
               {/* Module 2 & 3: Student Portal */}
               <Route
                 element={
-                  <ProtectedRoute allowedRoles={["student", "admin", "warden", "finance", "vendor"]} />
+                  <ProtectedRoute allowedRoles={["student", "admin", "warden", "finance", "executive", "vendor", "maintenance"]} />
                 }
               >
                 <Route path="/dashboard" element={<StudentDashboard />} />
@@ -174,7 +187,7 @@ function App() {
               <Route
                 element={
                   <ProtectedRoute
-                    allowedRoles={["admin", "warden", "executive", "finance"]}
+                    allowedRoles={["admin", "warden", "executive", "finance", "maintenance"]}
                   />
                 }
               >
