@@ -10,10 +10,20 @@ if (process.platform === "win32") {
   }
 }
 
+// Disable Mongoose command buffering when disconnected to prevent 10s query hangs
+mongoose.set("bufferCommands", false);
+
 let isConnected = false;
+let lastAttemptTime = 0;
+const RETRY_COOLDOWN_MS = 20000; // 20s cooldown after failure to avoid stalling serverless requests
 
 const connectDB = async () => {
   if (isConnected || mongoose.connection.readyState >= 1) {
+    return;
+  }
+
+  // If a connection attempt recently failed, skip without blocking
+  if (Date.now() - lastAttemptTime < RETRY_COOLDOWN_MS) {
     return;
   }
 
@@ -25,8 +35,9 @@ const connectDB = async () => {
   }
 
   try {
+    lastAttemptTime = Date.now();
     const conn = await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 2000,
     });
 
     isConnected = true;
@@ -40,6 +51,8 @@ const connectDB = async () => {
       console.warn("Hostel auto-seed notice:", seedErr.message);
     }
   } catch (error) {
+    isConnected = false;
+    lastAttemptTime = Date.now();
     console.warn(`MongoDB notice: ${error.message} (system running with resilient fallback data)`);
   }
 };

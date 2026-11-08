@@ -62,7 +62,7 @@ export async function apiFetch(endpoint, options = {}) {
   }
 
   // Fast AbortController timeout (default 6 seconds) to prevent frozen UI spinning
-  const timeoutMs = options.timeout ?? 6000;
+  const timeoutMs = options.timeout ?? 15000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
