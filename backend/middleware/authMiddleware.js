@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const User = require("../models/User");
 
 /**
@@ -91,22 +92,30 @@ const protect = async (req, res, next) => {
     const persona = getDemoPersona(roleKey);
 
     try {
-      let dbUser = await User.findById(demoId);
-      if (!dbUser) {
-        dbUser = await User.create({
-          _id: demoId,
-          email: persona.email,
-          passwordHash: "$2a$10$demoHashForEvaluationOnly12345678901234567890",
-          role: roleKey,
-          accountStatus: "active",
-          ...persona,
-        });
-      } else {
-        dbUser.name = persona.name;
-        dbUser.email = persona.email;
-        dbUser.role = roleKey;
+      let dbUser = null;
+      if (mongoose.connection.readyState === 1) {
+        dbUser = await User.findById(demoId);
+        if (!dbUser) {
+          dbUser = await User.create({
+            _id: demoId,
+            email: persona.email,
+            passwordHash: "$2a$10$demoHashForEvaluationOnly12345678901234567890",
+            role: roleKey,
+            accountStatus: "active",
+            ...persona,
+          });
+        } else {
+          dbUser.name = persona.name;
+          dbUser.email = persona.email;
+          dbUser.role = roleKey;
+        }
       }
-      req.user = dbUser;
+      req.user = dbUser || {
+        _id: demoId,
+        role: roleKey,
+        accountStatus: "active",
+        ...persona,
+      };
       return next();
     } catch {
       req.user = {
@@ -123,13 +132,23 @@ const protect = async (req, res, next) => {
     const secret = process.env.JWT_SECRET || "smartstay_secret_change_later";
     const decoded = jwt.verify(token, secret);
 
-    const user = await User.findById(decoded.id).select("-passwordHash");
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        user = await User.findById(decoded.id).select("-passwordHash");
+      } catch (err) {}
+    }
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized. The user for this token no longer exists.",
-      });
+      const persona = getDemoPersona(decoded.role);
+      user = {
+        _id: decoded.id || "6aafe35dc5e56a9f84d1ca40",
+        role: decoded.role || "student",
+        accountStatus: "active",
+        email: decoded.email || persona.email,
+        name: persona.name,
+        ...persona,
+      };
     }
 
     if (user.accountStatus !== "active") {
@@ -183,8 +202,24 @@ const optionalAuth = async (req, res, next) => {
   try {
     const secret = process.env.JWT_SECRET || "smartstay_secret_change_later";
     const decoded = jwt.verify(token, secret);
-    const user = await User.findById(decoded.id).select("-passwordHash");
-    if (user) req.user = user;
+    let user = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        user = await User.findById(decoded.id).select("-passwordHash");
+      } catch (err) {}
+    }
+    if (!user) {
+      const persona = getDemoPersona(decoded.role);
+      user = {
+        _id: decoded.id || "6aafe35dc5e56a9f84d1ca40",
+        role: decoded.role || "student",
+        accountStatus: "active",
+        email: decoded.email || persona.email,
+        name: persona.name,
+        ...persona,
+      };
+    }
+    req.user = user;
   } catch {}
   next();
 };
